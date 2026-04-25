@@ -9,10 +9,13 @@ router.get("/", async (req, res) => {
 
     let query = {};
 
+    // ✅ FIXED latest mission logic
     if (mission === "latest") {
-      const latest = await Patient.find().sort({ missionDate: -1 }).limit(1);
-      if (latest.length > 0) {
-        query.missionDate = latest[0].missionDate;
+      const allDates = await Patient.distinct("missionDate");
+      const latestDate = allDates.sort().pop();
+
+      if (latestDate) {
+        query.missionDate = latestDate;
       }
     }
 
@@ -24,21 +27,24 @@ router.get("/", async (req, res) => {
 
     const prescriptions = await Prescription.find().populate("patientId");
 
+    // ✅ FIXED patient ID matching
+    const patientIds = new Set(patients.map((p) => p._id.toString()));
+
     prescriptions.forEach((p) => {
       if (!p.patientId) return;
 
-      const included = patients.some(
-        (pt) => pt._id.toString() === p.patientId._id.toString(),
-      );
+      if (!patientIds.has(p.patientId._id.toString())) return;
 
-      if (!included) return;
-
-      // diagnosis
-      if (p.diagnosis) {
+      // ✅ SAFE diagnosis handling
+      if (Array.isArray(p.diagnosis)) {
+        p.diagnosis.forEach((d) => {
+          diagnosisStats[d] = (diagnosisStats[d] || 0) + 1;
+        });
+      } else if (p.diagnosis) {
         diagnosisStats[p.diagnosis] = (diagnosisStats[p.diagnosis] || 0) + 1;
       }
 
-      // medicines
+      // ✅ SAFE medicine handling
       if (Array.isArray(p.medicines)) {
         p.medicines.forEach((m) => {
           medicineStats[m] = (medicineStats[m] || 0) + 1;
@@ -46,6 +52,7 @@ router.get("/", async (req, res) => {
       }
     });
 
+    // ✅ Gender stats
     patients.forEach((p) => {
       const gender = p.generalInfo?.gender;
       if (gender) {
@@ -53,6 +60,7 @@ router.get("/", async (req, res) => {
       }
     });
 
+    // ✅ ALWAYS send response
     res.json({
       patients,
       genderStats,
@@ -60,7 +68,11 @@ router.get("/", async (req, res) => {
       medicineStats,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("ANALYTICS ERROR:", err);
+
+    res.status(500).json({
+      error: err.message || "Analytics route failed",
+    });
   }
 });
 

@@ -15,16 +15,17 @@ exports.createPatient = async (req, res) => {
       missionDate,
     } = req.body;
 
-    // 🔴 VALIDATION
     if (!location || !missionDate) {
       return res.status(400).json({
         error: "Missing mission data (location or missionDate)",
       });
     }
 
-    // 🔴 FIX gender inconsistency
     if (generalInfo.sex && !generalInfo.gender) {
       generalInfo.gender = generalInfo.sex;
+    }
+    if (!generalInfo || !generalInfo.name) {
+      return res.status(400).json({ error: "Invalid patient data" });
     }
 
     const patient = new Patient({

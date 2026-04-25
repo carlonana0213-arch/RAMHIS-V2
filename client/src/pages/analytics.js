@@ -6,9 +6,18 @@ const Analytics = () => {
   const [mission, setMission] = useState("latest");
 
   useEffect(() => {
-    fetch(`/api/analytics?mission=${mission}`)
-      .then((res) => res.json())
-      .then(setData);
+    fetch("/api/analytics")
+      .then(async (res) => {
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(text || "Request failed");
+        }
+        return res.json();
+      })
+      .then(setData)
+      .catch((err) => {
+        console.error("Frontend analytics error:", err);
+      });
   }, [mission]);
 
   if (!data || !data.patients) return <div>Loading...</div>;
@@ -18,7 +27,7 @@ const Analytics = () => {
   );
 
   const grouped = filtered.reduce((acc, p) => {
-    const key = `${p.missionDate} - ${p.location}`;
+    const key = `${p.missionDate || "Unknown"} - ${p.location || "Unknown"}`;
     if (!acc[key]) acc[key] = [];
     acc[key].push(p);
     return acc;
