@@ -74,7 +74,7 @@ exports.addDoctorRecord = async (req, res) => {
     const updated = await Patient.findByIdAndUpdate(
       id,
       {
-        $push: { doctorSheets: record }, // 🔥 APPEND
+        $push: { doctorSheets: record },
       },
       { new: true },
     );

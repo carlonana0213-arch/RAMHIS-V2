@@ -111,6 +111,14 @@ const PatientSchema = new mongoose.Schema({
       deletedAt: Date,
     },
   ],
+  missionDate: {
+    type: Date,
+    default: Date.now,
+  },
+  location: {
+    type: String,
+    required: true,
+  },
 });
 
 module.exports = mongoose.model("Patient", PatientSchema);

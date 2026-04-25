@@ -10,6 +10,7 @@ import AppLayout from "./layouts/AppLayout";
 import ProtectedRoute from "./services/ProtectedRoute.js";
 import AdminDashboard from "./pages/AdminDashboard";
 import Patient from "./pages/Patient.js";
+import Analytics from "./pages/analytics.js";
 
 function App() {
   return (
@@ -88,6 +89,16 @@ function App() {
             <ProtectedRoute>
               <AppLayout>
                 <Account />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <Analytics />
               </AppLayout>
             </ProtectedRoute>
           }

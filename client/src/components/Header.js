@@ -56,6 +56,20 @@ function Header({ collapsed, toggleSidebar }) {
           </NavLink>
         )}
 
+        {hasAccess("admin") && (
+          <NavLink
+            to="/analytics"
+            className={({ isActive }) =>
+              isActive ? "nav-link active" : "nav-link"
+            }
+          >
+            <span className="nav-item">
+              <FaUsers className="nav-icon" />
+              {!collapsed && "  Analytics"}
+            </span>
+          </NavLink>
+        )}
+
         {/*   {hasAccess("registry") && (
           <NavLink
             to="/registry"

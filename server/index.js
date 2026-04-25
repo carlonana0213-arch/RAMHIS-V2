@@ -10,6 +10,7 @@ const protect = require("./middleware/protect");
 
 const connectDB = require("./config/db");
 const pharmacyRoutes = require("./routes/pharmacyRoutes");
+const analyticsRoutes = require("./routes/analytics");
 
 const allowedOrigins = ["http://localhost:3000"];
 
@@ -85,6 +86,7 @@ app.use("/api/patients", require("./routes/patientRoutes"));
 app.use("/api/prescriptions", require("./routes/prescriptionRoutes"));
 app.use("/pharmacy", pharmacyRoutes);
 app.use("/api/admin", require("./routes/adminRoutes"));
+app.use("/api/analytics", analyticsRoutes);
 
 app.use(express.static(path.join(__dirname, "../client/build")));
 
