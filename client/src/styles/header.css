@@ -1,0 +1,112 @@
+/* SIDEBAR */
+
+.app-sidebar {
+  width: 230px;
+  background: #3f5fbe;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  height: 100vh;
+}
+
+/* LOGO AREA */
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 30px;
+}
+
+.logo {
+  width: 60px;
+}
+
+.app-title {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.logo-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+/* NAV LINKS */
+
+.nav-links {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: #cce0ff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: 0.2s;
+}
+
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+}
+
+.nav-link.active {
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+}
+
+.sidebar-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 30px;
+}
+
+.app-layout.collapsed .sidebar-top {
+  justify-content: center;
+  gap: 0;
+}
+
+.toggle-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.app-layout.collapsed .nav-links {
+  align-items: center;
+}
+
+.app-layout.collapsed .nav-link.active {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* collapsed mode */
+.app-layout.collapsed .nav-item {
+  justify-content: center;
+}
+
+.nav-icon {
+  font-size: 20px;
+  min-width: 20px;
+  text-align: center;
+}

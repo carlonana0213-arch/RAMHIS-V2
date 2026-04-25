@@ -1,0 +1,24 @@
+.app-layout {
+  display: flex;
+  height: 100vh;
+}
+
+/* sidebar width */
+
+.app-sidebar {
+  width: 230px;
+  transition: width 0.25s ease;
+}
+
+.app-layout.collapsed .app-sidebar {
+  width: 70px;
+}
+
+/* content area */
+
+.app-content {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  background: #f6f8fb;
+}

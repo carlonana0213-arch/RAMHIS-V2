@@ -1,0 +1,321 @@
+/* ================================
+GLOBAL PAGE CONTAINER
+================================ */
+
+.registry-container {
+  max-width: 1700px;
+  margin: 40px auto;
+  padding: 40px;
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 35px;
+  font-family: "Segoe UI", sans-serif;
+}
+
+/* ================================
+SECTION TITLES
+================================ */
+
+.registry-container h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  border-left: 4px solid #2563eb;
+  padding-left: 10px;
+  margin-bottom: 10px;
+}
+
+/* ================================
+SEARCH BAR
+================================ */
+
+.search-bar {
+  display: flex;
+  gap: 12px;
+}
+
+.search-bar input {
+  flex: 1;
+}
+
+.search-bar button {
+  padding: 12px 22px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.search-bar button:hover {
+  background: #1d4ed8;
+}
+
+/* ================================
+INPUT FIELDS
+================================ */
+
+.registry-container input,
+.registry-container textarea,
+.registry-container select {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  font-size: 14px;
+  box-sizing: border-box;
+  transition: 0.15s;
+}
+
+.registry-container input:focus,
+.registry-container textarea:focus,
+.registry-container select:focus {
+  outline: none;
+  border-color: #2563eb;
+  background: white;
+}
+
+/* ================================
+GENERAL INFORMATION GRID
+================================ */
+
+.general-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
+.general-grid .field-group {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ================================
+HISTORY CARD ROW
+================================ */
+
+.history-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+/* CARD STYLE */
+
+.history-column {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 260px;
+}
+
+/* CARD TITLE */
+
+.history-column h3 {
+  border: none;
+  padding: 0;
+  margin-bottom: 10px;
+}
+
+/* ================================
+CHECKBOX ITEMS
+================================ */
+
+.checkbox-item {
+  display: grid;
+  grid-template-columns: 18px auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  padding: 6px 0;
+}
+
+.checkbox-item input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+/* ================================
+OBSTETRIC HISTORY
+================================ */
+
+.ObsHist {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+}
+
+/* keep checkbox row aligned */
+
+.checkbox-row {
+  display: grid;
+  grid-template-columns: 18px auto;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ================================
+PERINATAL HISTORY
+================================ */
+
+.perinatal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+}
+
+/* ================================
+COMPLAINT TEXTAREA
+================================ */
+
+.complaint textarea {
+  width: 100%;
+  height: 140px;
+  resize: none;
+}
+
+/* ================================
+DEPARTMENT DROPDOWN
+================================ */
+
+.select-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ================================
+BUTTON BAR
+================================ */
+
+.buttons {
+  display: flex;
+  gap: 15px;
+}
+
+.buttons button {
+  margin-top: 20px;
+  flex: 1;
+  padding: 13px;
+  border-radius: 10px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.15s;
+  color: white;
+}
+
+/* ACTION COLORS */
+
+.buttons button:nth-child(1) {
+  background: #2563eb;
+}
+
+.buttons button:nth-child(2) {
+  background: #22c55e;
+}
+
+.buttons button:nth-child(3) {
+  background: #ef4444;
+}
+
+.buttons button:nth-child(4) {
+  background: #64748b;
+}
+
+.buttons button:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
+}
+
+/* ================================
+RESPONSIVE LAYOUT
+================================ */
+
+@media (max-width: 1000px) {
+  .general-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .history-row {
+    grid-template-columns: 1fr;
+  }
+
+  .ObsHist {
+    grid-template-columns: 1fr;
+  }
+
+  .perinatal-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .buttons {
+    flex-direction: column;
+  }
+}
+
+.button-group {
+  display: flex;
+  gap: 8px;
+}
+
+.button-group button {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #f1f5f9;
+  cursor: pointer;
+}
+
+.button-group button.active {
+  background: #3b82f6;
+  color: white;
+  border: none;
+}
+
+/* Label groups */
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+/* BP inline fix */
+.bp-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bp-group input {
+  width: 100%;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.button-group:focus {
+  outline: 2px solid #3b82f6;
+  border-radius: 8px;
+}

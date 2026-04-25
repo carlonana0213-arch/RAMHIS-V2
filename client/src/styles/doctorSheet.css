@@ -1,0 +1,321 @@
+:root {
+  --primary-blue: #2563eb;
+  --success-green: #10b981;
+  --danger-red: #ef4444;
+  --bg-gray: #f8fafc;
+  --border-color: #e2e8f0;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --card-bg: #ffffff;
+}
+
+.doctor-sheet-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family:
+    "Inter",
+    -apple-system,
+    sans-serif;
+  color: var(--text-main);
+  background-color: var(--bg-gray);
+  min-height: 100vh;
+}
+
+/* --- Search Bar Section --- */
+.search-bar {
+  display: flex;
+  gap: 12px;
+  background: var(--card-bg);
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.search-bar input {
+  flex: 1;
+  padding: 10px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.search-bar button {
+  background: var(--primary-blue);
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+
+.search-results {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.search-result {
+  background: white;
+  padding: 8px 15px;
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.search-result:hover {
+  border-color: var(--primary-blue);
+  color: var(--primary-blue);
+}
+
+/* --- Header --- */
+.patient-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  border-left: 6px solid var(--primary-blue);
+}
+
+.patient-header h2 {
+  margin: 0 0 5px 0;
+  font-size: 1.5rem;
+}
+
+.status {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.status.active {
+  background: #dcfce7;
+  color: #166534;
+}
+.status.released {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* --- Main Layout Grid --- */
+.sheet-grid {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* --- Left Column: Registry Data --- */
+.registry-data {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.registry-data h3 {
+  font-size: 1rem;
+  color: var(--primary-blue);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 8px;
+  margin-top: 24px;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  align-items: center;
+  margin-bottom: 10px;
+  gap: 10px;
+}
+
+.field-row label {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.field-row input {
+  width: 60%;
+  border: none;
+  background: #f8fafc;
+  border: 1px solid var(--border-color);
+  transition: 0.2s;
+  padding: 4px 8px;
+  border-radius: 4px;
+  text-align: right;
+}
+
+.field-row input:focus {
+  border-color: var(--primary-blue);
+  background: white;
+}
+/* --- Right Column: Doctor Data --- */
+.doctor-data {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.sheet-tabs {
+  display: flex;
+  gap: 10px;
+  border-bottom: 2px solid var(--border-color);
+  margin-bottom: 25px;
+}
+
+.sheet-tabs button {
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: -2px;
+}
+
+.sheet-tabs button.active {
+  color: var(--primary-blue);
+  border-bottom: 2px solid var(--primary-blue);
+}
+
+/* --- Form Elements --- */
+textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  margin-top: 8px;
+  margin-bottom: 16px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.examination {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.examination label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* --- Prescriptions --- */
+.medicine-autocomplete {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.medicine-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: white;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  border-radius: 8px;
+}
+
+.medicine-option {
+  padding: 10px;
+  cursor: pointer;
+}
+
+.medicine-option:hover {
+  background: var(--bg-gray);
+}
+
+/* --- History Cards --- */
+.history-card {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  background: #f8fafc;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.delete-record-btn {
+  background: #fee2e2;
+  color: #991b1b;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+/* --- Action Buttons Footer --- */
+.sheet-buttons {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sheet-buttons button {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border-color);
+  background: white;
+}
+
+.sheet-buttons button:first-child {
+  background: var(--primary-blue);
+  color: white;
+  border: none;
+}
+
+.sheet-buttons button:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.sheet-buttons button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Referral Box */
+.referral-box {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  padding: 20px;
+  border-radius: 12px;
+  margin-top: 20px;
+}
+
+.history-card.clickable {
+  cursor: pointer;
+}

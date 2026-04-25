@@ -1,0 +1,54 @@
+/* TAB BAR */
+.patient-tabs {
+  display: flex;
+  align-items: flex-end;
+  background: #e5e7eb;
+  padding: 6px 6px 0;
+  gap: 4px;
+}
+
+.patient-tabs .tab {
+  padding: 10px 18px;
+  background: #deebff;
+  border-radius: 10px 10px 0 0;
+  cursor: pointer;
+  font-size: 14px;
+  color: #374151;
+  transition: all 0.2s ease;
+  border: none;
+  outline: none;
+}
+
+.patient-tabs .tab:hover {
+  background: #e5e7eb;
+}
+
+.patient-tabs .tab.active {
+  background: white;
+  font-weight: 600;
+  color: #111827;
+  position: relative;
+  z-index: 2;
+}
+
+/* CONTENT (CONNECTS TO TAB) */
+.patient-content {
+  background: white;
+  border-radius: 0 10px 10px 10px;
+  padding: 16px;
+  margin-top: -1px; /* 🔥 connects tab to content */
+}
+
+.tab {
+  outline: none;
+  border: none;
+}
+
+.tab:focus {
+  outline: none;
+}
+
+.tab:active {
+  outline: none;
+  box-shadow: none;
+}

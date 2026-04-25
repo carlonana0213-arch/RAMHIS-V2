@@ -1,0 +1,250 @@
+/* ================================
+MAIN LAYOUT
+================================ */
+
+.pharmacy-container {
+  max-width: 1100px;
+  margin: 40px auto;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  font-family: "Inter", "Segoe UI", sans-serif;
+}
+
+/* SECTION CARD */
+
+.pharmacy-section {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e5e7eb;
+}
+
+/* TITLES */
+
+.pharmacy-section h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  border-left: 4px solid #2563eb;
+  padding-left: 10px;
+  margin-bottom: 16px;
+}
+
+/* ================================
+PRESCRIPTION QUEUE
+================================ */
+
+.prescription-card {
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.prescription-card h4 {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+/* ITEMS */
+
+.prescription-item {
+  background: white;
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+/* BUTTON */
+
+.prescription-item button {
+  margin-top: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: none;
+  background: #3f5fbe;
+  color: white;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.prescription-item button:hover {
+  background: #7a96ec;
+}
+
+/* ================================
+INVENTORY FORM
+================================ */
+
+.inventory-form {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.inventory-form input {
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  background: #f8fafc;
+}
+
+.inventory-form input:focus {
+  outline: none;
+  border-color: #3f5fbe;
+  background: white;
+}
+
+.inventory-form button {
+  grid-column: span 3;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: #3f5fbe;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.inventory-form button:hover {
+  background: #7a96ec;
+}
+
+/* ================================
+TABLE
+================================ */
+
+.inventory-table {
+  width: 100%;
+}
+
+.inventory-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* HEADER */
+
+.inventory-table th {
+  text-align: left;
+  padding: 12px;
+  background: #f1f5f9;
+  font-size: 14px;
+}
+
+/* ROW */
+
+.inventory-table td {
+  padding: 12px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 14px;
+}
+
+/* HOVER */
+
+.inventory-table tr:hover {
+  background: #f9fafb;
+}
+
+/* LOW STOCK WARNING */
+
+.low-stock {
+  background: #fef2f2 !important;
+}
+
+.low-stock td {
+  color: #991b1b;
+  font-weight: 500;
+}
+
+/* SMALL WARNING TEXT (optional if you add later) */
+
+.low-stock::after {
+  content: "⚠ Low Stock";
+  color: #dc2626;
+  font-size: 12px;
+  margin-left: 10px;
+}
+
+/* INPUT INSIDE TABLE */
+
+.inventory-table td input {
+  width: 70px;
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+}
+
+/* ACTION BUTTONS */
+
+.inventory-table td button {
+  margin-right: 6px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* BUTTON COLORS */
+
+.inventory-table td button:nth-child(1) {
+  background: #6d95eb;
+  color: white;
+}
+
+.inventory-table td button:nth-child(2) {
+  background: #ef4444;
+  color: white;
+}
+
+/* ================================
+PRESCRIPTION SCROLL ROW
+================================ */
+
+.prescription-row {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+}
+
+/* SCROLLBAR (nice styling) */
+
+.prescription-row::-webkit-scrollbar {
+  height: 8px;
+}
+
+.prescription-row::-webkit-scrollbar-thumb {
+  background: #cbd5f5;
+  border-radius: 10px;
+}
+
+/* ================================
+CARD SIZE FOR ROW
+================================ */
+
+.prescription-card {
+  min-width: 260px;
+  max-width: 260px;
+  flex: 0 0 auto;
+}
+
+/* ================================
+RESPONSIVE
+================================ */
+
+@media (max-width: 768px) {
+  .inventory-form {
+    grid-template-columns: 1fr;
+  }
+
+  .inventory-form button {
+    grid-column: span 1;
+  }
+}

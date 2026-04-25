@@ -1,0 +1,53 @@
+.form-container {
+  width: 100%;
+  max-width: 400px;
+  margin: 80px auto;
+  padding: 2rem;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.form-container h2 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+.form-container input,
+.form-container select {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 1rem;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+.form-container input:focus,
+.form-container select:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.form-container button {
+  width: 100%;
+  padding: 10px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.form-container button:hover {
+  background: #0056b3;
+}
+
+img {
+  display: block; /* Make it block-level */
+  margin: 0 auto; /* Top 0, bottom 20px spacing */
+  width: 120px; /* Adjust size as needed */
+  height: auto; /* Keep aspect ratio */
+}
