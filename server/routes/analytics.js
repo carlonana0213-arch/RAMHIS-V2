@@ -10,29 +10,42 @@ router.get("/", async (req, res) => {
     let query = {};
 
     // ✅ FIXED latest mission logic
-    if (mission === "latest") {
-      const allDates = await Patient.distinct("missionDate");
-      const latestDate = allDates.sort().pop();
+    let latestDate = null;
 
-      if (latestDate) {
+    if (mission === "latest") {
+      const latestPatient = await Patient.findOne()
+        .sort({ missionDate: -1 })
+        .lean();
+
+      if (latestPatient?.missionDate) {
+        latestDate = latestPatient.missionDate;
         query.missionDate = latestDate;
       }
     }
 
     const patients = await Patient.find(query);
-
+    if (!patients || patients.length === 0) {
+      return res.json({
+        patients: [],
+        genderStats: {},
+        diagnosisStats: {},
+        medicineStats: {},
+      });
+    }
     const genderStats = {};
     const diagnosisStats = {};
     const medicineStats = {};
 
-    const prescriptions = await Prescription.find().populate("patientId");
-
+    const prescriptions = await Prescription.find().populate({
+      path: "patientId",
+      model: "Patient",
+      options: { strictPopulate: false },
+    });
     // ✅ FIXED patient ID matching
     const patientIds = new Set(patients.map((p) => p._id.toString()));
 
     prescriptions.forEach((p) => {
-      if (!p.patientId) return;
-
+      if (!p.patientId || !p.patientId._id) return;
       if (!patientIds.has(p.patientId._id.toString())) return;
 
       // ✅ SAFE diagnosis handling
