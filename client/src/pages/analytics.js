@@ -11,10 +11,10 @@ const Analytics = () => {
       .then(setData);
   }, [mission]);
 
-  if (!data) return <div>Loading...</div>;
+  if (!data || !data.patients) return <div>Loading...</div>;
 
   const filtered = data.patients.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase()),
+    p.generalInfo?.name?.toLowerCase().includes(search.toLowerCase()),
   );
 
   const grouped = filtered.reduce((acc, p) => {
@@ -94,9 +94,9 @@ const Analytics = () => {
             <tbody>
               {patients.map((p) => (
                 <tr key={p._id}>
-                  <td>{p.name}</td>
-                  <td>{p.age}</td>
-                  <td>{p.gender}</td>
+                  <td>{p.generalInfo?.name}</td>
+                  <td>{p.generalInfo?.age}</td>
+                  <td>{p.generalInfo?.gender}</td>
                 </tr>
               ))}
             </tbody>

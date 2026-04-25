@@ -7,22 +7,18 @@ router.get("/", async (req, res) => {
   try {
     const { mission } = req.query;
 
-    const patients = await Patient.find();
+    let query = {};
 
-    // 🔍 Get latest mission
-    const latestDate = [...new Set(patients.map((p) => p.missionDate))]
-      .sort()
-      .pop();
+    if (mission === "latest") {
+      const latest = await Patient.find().sort({ missionDate: -1 }).limit(1);
+      if (latest.length > 0) {
+        query.missionDate = latest[0].missionDate;
+      }
+    }
 
-    const filteredPatients =
-      mission === "latest"
-        ? patients.filter((p) => p.missionDate === latestDate)
-        : patients;
+    const patients = await Patient.find(query);
 
-    // 📊 Gender
     const genderStats = {};
-
-    // 📊 Diagnosis + Medicine
     const diagnosisStats = {};
     const medicineStats = {};
 
@@ -31,27 +27,34 @@ router.get("/", async (req, res) => {
     prescriptions.forEach((p) => {
       if (!p.patientId) return;
 
-      const isIncluded = filteredPatients.some(
-        (fp) => fp._id.toString() === p.patientId._id.toString(),
+      const included = patients.some(
+        (pt) => pt._id.toString() === p.patientId._id.toString(),
       );
 
-      if (!isIncluded) return;
+      if (!included) return;
 
       // diagnosis
-      diagnosisStats[p.diagnosis] = (diagnosisStats[p.diagnosis] || 0) + 1;
+      if (p.diagnosis) {
+        diagnosisStats[p.diagnosis] = (diagnosisStats[p.diagnosis] || 0) + 1;
+      }
 
       // medicines
-      p.medicines.forEach((m) => {
-        medicineStats[m] = (medicineStats[m] || 0) + 1;
-      });
+      if (Array.isArray(p.medicines)) {
+        p.medicines.forEach((m) => {
+          medicineStats[m] = (medicineStats[m] || 0) + 1;
+        });
+      }
     });
 
-    filteredPatients.forEach((p) => {
-      genderStats[p.gender] = (genderStats[p.gender] || 0) + 1;
+    patients.forEach((p) => {
+      const gender = p.generalInfo?.gender;
+      if (gender) {
+        genderStats[gender] = (genderStats[gender] || 0) + 1;
+      }
     });
 
     res.json({
-      patients: filteredPatients,
+      patients,
       genderStats,
       diagnosisStats,
       medicineStats,

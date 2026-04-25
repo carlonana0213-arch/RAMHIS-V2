@@ -2,17 +2,50 @@ const Patient = require("../models/Patient");
 
 exports.createPatient = async (req, res) => {
   try {
-    console.log("Incoming payload:", JSON.stringify(req.body, null, 2));
+    const {
+      generalInfo,
+      medicalHistory,
+      familyHistory,
+      examination,
+      obstetricHistory,
+      perinatalHistory,
+      department,
+      initComplaint,
+      location,
+      missionDate,
+    } = req.body;
 
-    const patient = new Patient(req.body);
+    // 🔴 VALIDATION
+    if (!location || !missionDate) {
+      return res.status(400).json({
+        error: "Missing mission data (location or missionDate)",
+      });
+    }
+
+    // 🔴 FIX gender inconsistency
+    if (generalInfo.sex && !generalInfo.gender) {
+      generalInfo.gender = generalInfo.sex;
+    }
+
+    const patient = new Patient({
+      generalInfo,
+      medicalHistory,
+      familyHistory,
+      examination,
+      obstetricHistory,
+      perinatalHistory,
+      department,
+      initComplaint,
+      location,
+      missionDate,
+    });
+
     await patient.save();
 
-    res.json(patient);
+    res.status(201).json(patient);
   } catch (err) {
-    console.error("MONGOOSE SAVE ERROR:");
-    console.error(err);
-
-    res.status(500).json({ msg: "Error saving patient" });
+    console.error("MONGOOSE SAVE ERROR:", err);
+    res.status(500).json({ error: err.message });
   }
 };
 
