@@ -10,7 +10,7 @@ const Analytics = () => {
       .then(async (res) => {
         if (!res.ok) {
           const text = await res.text();
-          throw new Error(text || "Request failed");
+          throw new Error(`Request failed: ${text}`);
         }
         return res.json();
       })

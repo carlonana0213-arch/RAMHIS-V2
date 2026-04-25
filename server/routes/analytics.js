@@ -9,13 +9,23 @@ router.get("/", async (req, res) => {
 
     let query = {};
 
-    // ✅ FIXED latest mission logic
     let latestDate = null;
 
     if (mission === "latest") {
-      const latestPatient = await Patient.findOne()
-        .sort({ missionDate: -1 })
-        .lean();
+      let latestDate = null;
+
+      if (mission === "latest") {
+        const latestPatient = await Patient.findOne({
+          missionDate: { $exists: true, $ne: null },
+        })
+          .sort({ missionDate: -1 })
+          .lean();
+
+        if (latestPatient?.missionDate) {
+          latestDate = latestPatient.missionDate;
+          query.missionDate = latestDate;
+        }
+      }
 
       if (latestPatient?.missionDate) {
         latestDate = latestPatient.missionDate;
@@ -36,11 +46,7 @@ router.get("/", async (req, res) => {
     const diagnosisStats = {};
     const medicineStats = {};
 
-    const prescriptions = await Prescription.find().populate({
-      path: "patientId",
-      model: "Patient",
-      options: { strictPopulate: false },
-    });
+    const prescriptions = await Prescription.find().populate("patientId");
     // ✅ FIXED patient ID matching
     const patientIds = new Set(patients.map((p) => p._id.toString()));
 
@@ -81,10 +87,11 @@ router.get("/", async (req, res) => {
       medicineStats,
     });
   } catch (err) {
-    console.error("ANALYTICS ERROR:", err);
+    console.error("ANALYTICS ERROR FULL:", err);
 
     res.status(500).json({
-      error: err.message || "Analytics route failed",
+      error: err.message,
+      stack: err.stack, // 👈 ADD THIS TEMPORARILY
     });
   }
 });
