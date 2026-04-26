@@ -1,5 +1,14 @@
 const Patient = require("../models/Patient");
 
+exports.getAllPatients = async (req, res) => {
+  try {
+    const patients = await Patient.find().sort({ createdAt: -1 });
+    res.json(patients);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 exports.createPatient = async (req, res) => {
   try {
     const {
@@ -136,7 +145,6 @@ exports.deleteDoctorRecord = async (req, res) => {
       return res.status(404).json({ message: "Record not found" });
     }
 
-    // 🔥 Save deleted record (audit trail)
     patient.deletedDoctorRecords = patient.deletedDoctorRecords || [];
 
     patient.deletedDoctorRecords.push({
@@ -145,7 +153,6 @@ exports.deleteDoctorRecord = async (req, res) => {
       deletedAt,
     });
 
-    // 🔥 Remove from active records
     record.deleteOne();
 
     await patient.save();

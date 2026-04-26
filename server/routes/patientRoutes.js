@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const controller = require("../controllers/patientController");
 const { updatePatientInfo } = require("../controllers/patientController");
+const { getAllPatients } = require("../controllers/patientController");
+
 const patientController = require("../controllers/patientController");
 const auth = require("../middleware/authMiddleware");
 const checkPermission = require("../middleware/permissionMiddleware");
@@ -11,6 +13,8 @@ const Patient = require("../models/Patient");
 router.patch("/:id/referral", referPatient);
 
 router.post("/", auth, checkPermission("registry"), controller.createPatient);
+
+router.get("/", getAllPatients);
 
 router.get(
   "/",
