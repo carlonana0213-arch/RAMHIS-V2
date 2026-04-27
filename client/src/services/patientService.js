@@ -4,7 +4,14 @@ const API = "http://localhost:5000/api/patients";
 
 export const getPatients = async () => {
   try {
-    const res = await fetch("http://localhost:5000/api/patients");
+    const token = localStorage.getItem("token");
+
+    const res = await fetch("http://localhost:5000/api/patients", {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
     if (!res.ok) throw new Error("Failed to fetch patients");
 

@@ -14,10 +14,10 @@ router.patch("/:id/referral", referPatient);
 
 router.post("/", auth, checkPermission("registry"), controller.createPatient);
 
-router.get("/", getAllPatients);
+router.get("/", auth, checkPermission("registry"), getAllPatients);
 
 router.get(
-  "/",
+  "/search",
   auth,
   checkPermission("registry"),
   controller.getPatientsByName,

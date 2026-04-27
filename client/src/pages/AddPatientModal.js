@@ -58,6 +58,8 @@ const AddPatientModal = ({ onClose }) => {
       ...form,
       obstetricHistory: form.obstetricHistory || {},
       perinatalHistory: form.perinatalHistory || {},
+      location: "Default Location", // or from user input
+      missionDate: new Date(),
     };
 
     await addPatient(payload);

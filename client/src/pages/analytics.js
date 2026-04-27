@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { getPatients } from "../services/patientService";
 
 const Analytics = () => {
   const [patients, setPatients] = useState([]);
@@ -8,17 +9,10 @@ const Analytics = () => {
   useEffect(() => {
     const loadPatients = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/patients");
-
-        if (!res.ok) {
-          throw new Error("Failed to fetch patients");
-        }
-
-        const data = await res.json();
+        const data = await getPatients();
         setPatients(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Analytics load error:", err);
-        setPatients([]);
       } finally {
         setLoading(false);
       }
