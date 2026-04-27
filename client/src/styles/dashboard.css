@@ -1,0 +1,47 @@
+.dashboard-container {
+  margin-bottom: 30px;
+}
+
+.dashboard-title {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+/* GRID LAYOUT */
+.dashboard-grid {
+  display: flex;
+  gap: 20px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+/* EACH CHART CARD */
+.chart-card {
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  height: 300px;
+  flex: 1;
+  height: 300px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-card h3 {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+/* MAKE CHART FILL SPACE */
+.chart-card canvas {
+  flex: 1;
+}
+
+/* RESPONSIVE (stack on small screens) */
+@media (max-width: 900px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}

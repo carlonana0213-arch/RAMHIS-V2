@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { getPatients } from "../services/patientService";
+import Dashboard from "./analytics/dashboard";
 
 const Analytics = () => {
   const [patients, setPatients] = useState([]);
@@ -70,7 +71,7 @@ const Analytics = () => {
 
   return (
     <div className="p-6">
-      {" "}
+      <Dashboard patients={patients} />
       <h1 className="text-2xl font-bold mb-4">Patient Analytics </h1>
       <input
         type="text"
