@@ -10,6 +10,7 @@ import {
   FaUsers,
   FaUserCircle,
 } from "react-icons/fa";
+import { MdOutlineAnalytics } from "react-icons/md";
 
 import { HiMenu } from "react-icons/hi";
 
@@ -64,7 +65,7 @@ function Header({ collapsed, toggleSidebar }) {
             }
           >
             <span className="nav-item">
-              <FaUsers className="nav-icon" />
+              <MdOutlineAnalytics className="nav-icon" />
               {!collapsed && "  Analytics"}
             </span>
           </NavLink>

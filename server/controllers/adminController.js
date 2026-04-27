@@ -60,3 +60,19 @@ exports.updateUser = async (req, res) => {
     res.status(500).json({ msg: "Update failed" });
   }
 };
+
+exports.updateUserStatus = async (req, res) => {
+  try {
+    const { verificationStatus } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { verificationStatus },
+      { new: true },
+    );
+
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

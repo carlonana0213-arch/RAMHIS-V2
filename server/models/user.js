@@ -36,7 +36,7 @@ const UserSchema = new mongoose.Schema({
   ========================= */
   verificationStatus: {
     type: String,
-    enum: ["Pending", "Approved", "Rejected"],
+    enum: ["Pending", "Approved", "Rejected", "Deactivated"],
     default: "Pending",
   },
   volunteerType: {

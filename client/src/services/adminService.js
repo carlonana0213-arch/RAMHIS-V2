@@ -50,3 +50,15 @@ export const updateUser = async (data) => {
 
   return res.json();
 };
+
+export const updateUserStatus = (id, status) =>
+  fetch(`${API}/${id}/status`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+    body: JSON.stringify({
+      verificationStatus: status,
+    }),
+  });
