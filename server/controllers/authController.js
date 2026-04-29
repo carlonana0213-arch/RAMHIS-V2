@@ -12,8 +12,14 @@ exports.register = async (req, res) => {
       return res.status(400).json({ msg: "User already exists" });
     }
 
+    const generateTempPassword = () => {
+      return Math.random().toString(36).slice(-8);
+    };
+
+    const tempPassword = generateTempPassword();
+
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const hashedPassword = await bcrypt.hash(tempPassword, salt);
 
     user = new User({
       name,
@@ -22,6 +28,8 @@ exports.register = async (req, res) => {
       role,
       volunteerType,
       doctorInfo,
+      tempPassword, //  STORE TEMP PASSWORD
+      mustChangePassword: true, //  FORCE CHANGE
     });
 
     await user.save();
@@ -38,10 +46,10 @@ exports.login = async (req, res) => {
 
   try {
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ msg: "Invalid credentials" });
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ msg: "Invalid credentials" });
+    if (!user) {
+      return res.status(400).json({ msg: "Invalid credentials" });
+    }
 
     if (user.verificationStatus === "Pending") {
       return res.status(403).json({
@@ -54,6 +62,13 @@ exports.login = async (req, res) => {
         msg: "Your account is deactivated, please contact administrator",
       });
     }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(400).json({ msg: "Invalid credentials" });
+    }
+
     const token = jwt.sign(
       {
         id: user._id,
@@ -63,6 +78,7 @@ exports.login = async (req, res) => {
       { expiresIn: "1h" },
     );
 
+    // ✅ SINGLE RESPONSE ONLY
     res.json({
       msg: "Login successful",
       token,
@@ -71,8 +87,10 @@ exports.login = async (req, res) => {
         name: user.name,
         role: user.role,
       },
+      mustChangePassword: user.mustChangePassword, // optional
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ msg: "Server error" });
   }
 };

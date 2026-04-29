@@ -11,6 +11,7 @@ const {
   getAllUsers,
   updateUser,
   updateUserStatus,
+  resetUserPassword,
 } = require("../controllers/adminController");
 
 router.get("/pending", auth, authorize("Admin"), getPendingUsers);
@@ -19,4 +20,10 @@ router.patch("/reject/:id", auth, authorize("Admin"), rejectUser);
 router.get("/users", auth, authorize("Admin"), getAllUsers);
 router.put("/users/:id", auth, authorize("Admin"), updateUser);
 router.patch("/:id/status", auth, authorize("Admin"), updateUserStatus);
+router.patch(
+  "/reset-password/:id",
+  auth,
+  authorize("Admin"),
+  resetUserPassword,
+);
 module.exports = router;

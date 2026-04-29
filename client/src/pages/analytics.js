@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { getPatients } from "../services/patientService";
 import Dashboard from "./analytics/dashboard";
+import "../styles/analytics.css";
 
 const Analytics = () => {
   const [patients, setPatients] = useState([]);
@@ -70,52 +71,53 @@ const Analytics = () => {
   }
 
   return (
-    <div className="p-6">
+    <div className="admin-container">
+      {" "}
+      {/* Changed class to match AdminDashboard */}
       <Dashboard patients={patients} />
-      <h1 className="text-2xl font-bold mb-4">Patient Analytics </h1>
-      <input
-        type="text"
-        placeholder="Search name or diagnosis..."
-        className="w-full border p-2 rounded mb-4"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
-      <div className="overflow-x-auto">
-        <table className="w-full border rounded">
-          <thead className="bg-blue-900 text-white">
+      <div className="admin-header-actions">
+        {" "}
+        {/* New wrapper for consistency */}
+        <h1 className="text-2xl font-bold">Patient Analytics</h1>
+        <div className="admin-controls">
+          <input
+            type="text"
+            placeholder="Search name or diagnosis..."
+            className="search-input"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+      </div>
+      <div className="table-container">
+        <table className="admin-table">
+          <thead>
             <tr>
-              <th className="p-2 text-left">Name</th>
-              <th className="p-2">Sex</th>
-              <th className="p-2">Age</th>
-              <th className="p-2">Diagnosis</th>
-              <th className="p-2">Date of Visit</th>
-              <th className="p-2">Place of Visit</th>
+              <th>Name</th>
+              <th className="text-center col-small">Sex</th>
+              <th className="text-center col-small">Age</th>
+              <th>Diagnosis</th>
+              <th className="text-center">Date of Visit</th>
+              <th className="text-center">Place of Visit</th>
             </tr>
           </thead>
-
           <tbody>
-            {filteredPatients.length === 0 ? (
-              <tr>
-                <td colSpan="6" className="text-center p-4">
-                  No patients found
+            {filteredPatients.map((p) => (
+              <tr key={p.id}>
+                <td>
+                  <strong>{p.name}</strong>
                 </td>
+                <td className="text-center">{p.sex}</td>
+                <td className="text-center">{p.age}</td>
+                <td className="diagnosis-cell">{p.diagnosis}</td>
+                <td className="text-center">
+                  {p.visitDate
+                    ? new Date(p.visitDate).toLocaleDateString()
+                    : "—"}
+                </td>
+                <td className="text-center">{p.visitPlace}</td>
               </tr>
-            ) : (
-              filteredPatients.map((p) => (
-                <tr key={p.id} className="border-t">
-                  <td className="p-2">{p.name}</td>
-                  <td className="p-2 text-center">{p.sex}</td>
-                  <td className="p-2 text-center">{p.age}</td>
-                  <td className="p-2">{p.diagnosis}</td>
-                  <td className="p-2 text-center">
-                    {p.visitDate
-                      ? new Date(p.visitDate).toLocaleDateString()
-                      : "—"}
-                  </td>
-                  <td className="p-2 text-center">{p.visitPlace}</td>
-                </tr>
-              ))
-            )}
+            ))}
           </tbody>
         </table>
       </div>

@@ -28,7 +28,7 @@ function AddUser({ onClose, onSuccess }) {
       const dataToSend = {
         name: form.name,
         email: form.email,
-        password: form.password,
+
         role: form.role,
       };
 
@@ -66,12 +66,6 @@ function AddUser({ onClose, onSuccess }) {
         {error && <p className="error">{error}</p>}
         <input name="name" placeholder="Name" onChange={handleChange} />
         <input name="email" placeholder="Email" onChange={handleChange} />
-        <input
-          name="password"
-          type="password"
-          placeholder="Password"
-          onChange={handleChange}
-        />
         <select name="role" value={form.role} onChange={handleChange}>
           <option value="Doctor">Doctor</option>
           <option value="Volunteer">Volunteer</option>

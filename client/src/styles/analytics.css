@@ -1,0 +1,122 @@
+/* analytics.css */
+
+:root {
+  --primary-color: #3f5fbe;
+  --primary-hover: #324a9a;
+  --bg-color: #f8fafc;
+  --card-bg: #ffffff;
+  --text-main: #2d3748;
+  --text-muted: #718096;
+  --border-color: #e2e8f0;
+}
+
+.admin-container {
+  padding: 2rem;
+  background-color: var(--bg-color);
+  min-height: 100vh;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* --- HEADER & CONTROLS --- */
+.admin-header-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.admin-controls {
+  display: flex;
+  gap: 15px;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.search-input {
+  width: 100%;
+  max-width: 400px;
+  border: 1px solid var(--border-color);
+  padding: 10px 15px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(63, 95, 190, 0.1);
+}
+
+/* --- TABLE CONTAINER --- */
+.table-container {
+  background: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--card-bg);
+}
+
+/* --- TABLE HEADERS --- */
+.admin-table th {
+  background-color: #f1f5f9;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 15px;
+  border-bottom: 1px solid var(--border-color);
+  text-align: inherit; /* Allows className="text-center" on <th> to work */
+}
+
+/* --- TABLE BODY --- */
+.admin-table td {
+  padding: 15px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.9rem;
+  color: var(--text-main);
+  vertical-align: middle;
+}
+
+.admin-table tr:hover {
+  background-color: #f8fafc;
+}
+
+.admin-table td strong {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.diagnosis-cell {
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
+/* --- ALIGNMENT HELPERS --- */
+.text-center {
+  text-align: center !important;
+}
+
+/* Left align first column and add breathing room */
+.admin-table th:first-child,
+.admin-table td:first-child {
+  text-align: left;
+  padding-left: 25px;
+}
+
+/* Column width constraints */
+.col-small {
+  width: 80px;
+}
+
+/* Loading state */
+.loading-container {
+  padding: 2rem;
+  color: var(--text-muted);
+  text-align: center;
+}

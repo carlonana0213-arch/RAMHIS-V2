@@ -8,6 +8,7 @@ import {
 } from "../services/adminService";
 import { registerUser } from "../services/authService";
 import AddUser from "./adminModal/addUser";
+import EditUser from "./adminModal/editUser";
 import UserDashboard from "./analytics/userDashboard";
 import "../styles/admin.css";
 
@@ -215,6 +216,9 @@ function AdminDashboard() {
             <th>Name</th>
             <th>Role</th>
             <th>Status</th>
+            <th>Date Added</th>
+            <th>License Proof</th>
+            <th>Doctorate Proof</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -232,6 +236,38 @@ function AdminDashboard() {
               <td>{user.name}</td>
               <td>{user.role}</td>
               <td>{user.verificationStatus}</td>
+              <td>
+                {user.createdAt
+                  ? new Date(user.createdAt).toLocaleDateString()
+                  : "N/A"}
+              </td>
+              <td>
+                {user.role === "Doctor" && user.doctorInfo?.proofOfLicense ? (
+                  <a
+                    href={user.doctorInfo.proofOfLicense}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    View
+                  </a>
+                ) : (
+                  "-"
+                )}
+              </td>
+
+              <td>
+                {user.role === "Doctor" && user.doctorInfo?.proofOfDoctorate ? (
+                  <a
+                    href={user.doctorInfo.proofOfDoctorate}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    View
+                  </a>
+                ) : (
+                  "-"
+                )}
+              </td>
 
               <td onClick={(e) => e.stopPropagation()}>
                 {/* PENDING */}
@@ -267,37 +303,11 @@ function AdminDashboard() {
 
       {/* EDIT MODAL */}
       {selectedUser && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <h3>User Details</h3>
-
-            <input
-              value={editUser?.name || ""}
-              disabled={!isEditing}
-              onChange={(e) =>
-                setEditUser({ ...editUser, name: e.target.value })
-              }
-            />
-
-            <input
-              value={editUser?.email || ""}
-              disabled={!isEditing}
-              onChange={(e) =>
-                setEditUser({ ...editUser, email: e.target.value })
-              }
-            />
-
-            <div className="modal-actions">
-              {!isEditing ? (
-                <button onClick={() => setIsEditing(true)}>Edit</button>
-              ) : (
-                <button onClick={handleUpdateUser}>Save Changes</button>
-              )}
-
-              <button onClick={() => setSelectedUser(null)}>Close</button>
-            </div>
-          </div>
-        </div>
+        <EditUser
+          user={selectedUser}
+          onClose={() => setSelectedUser(null)}
+          onSuccess={loadUsers}
+        />
       )}
 
       {/* APPROVE MODAL */}
