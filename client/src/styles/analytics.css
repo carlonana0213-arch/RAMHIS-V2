@@ -1,4 +1,4 @@
-/* analytics.css */
+/* dashboard.css */
 
 :root {
   --primary-color: #3f5fbe;
@@ -8,115 +8,103 @@
   --text-main: #2d3748;
   --text-muted: #718096;
   --border-color: #e2e8f0;
+
+  /* Chart Colors for consistent branding */
+  --chart-blue: #3f5fbe;
+  --chart-light-blue: #5c7cfa;
+  --chart-gray: #cbd5e0;
 }
 
-.admin-container {
-  padding: 2rem;
-  background-color: var(--bg-color);
-  min-height: 100vh;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+/* --- DASHBOARD GRID --- */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
 }
 
-/* --- HEADER & CONTROLS --- */
-.admin-header-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.admin-controls {
-  display: flex;
-  gap: 15px;
-  flex: 1;
-  justify-content: flex-end;
-}
-
-.search-input {
-  width: 100%;
-  max-width: 400px;
-  border: 1px solid var(--border-color);
-  padding: 10px 15px;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-  outline: none;
-}
-
-.search-input:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(63, 95, 190, 0.1);
-}
-
-/* --- TABLE CONTAINER --- */
-.table-container {
+/* --- CHART CARDS --- */
+.chart-card {
   background: var(--card-bg);
+  padding: 20px;
   border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  height: 350px; /* Consistent height for the grid */
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
-.admin-table {
+.chart-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.chart-card h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-main);
+  border-left: 4px solid var(--primary-color);
+  padding-left: 12px;
+  line-height: 1.2;
+}
+
+/* Chart Canvas Wrapper Styling */
+.chart-card > div {
+  flex-grow: 1;
+  position: relative;
   width: 100%;
-  border-collapse: collapse;
-  background: var(--card-bg);
 }
 
-/* --- TABLE HEADERS --- */
-.admin-table th {
-  background-color: #f1f5f9;
-  color: var(--text-muted);
-  font-weight: 600;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 15px;
-  border-bottom: 1px solid var(--border-color);
-  text-align: inherit; /* Allows className="text-center" on <th> to work */
+/* --- RESPONSIVE ADJUSTMENTS --- */
+@media (max-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-card {
+    height: 300px;
+  }
 }
 
-/* --- TABLE BODY --- */
-.admin-table td {
-  padding: 15px;
-  border-bottom: 1px solid var(--border-color);
-  font-size: 0.9rem;
-  color: var(--text-main);
-  vertical-align: middle;
-}
+/* --- DATA CONSISTENCY HELPERS (Optional) --- */
+/* If you use specific labels in your charts, you can match them to these classes */
 
-.admin-table tr:hover {
-  background-color: #f8fafc;
-}
-
-.admin-table td strong {
-  color: var(--text-main);
-  font-weight: 600;
-}
-
-.diagnosis-cell {
+.text-primary {
   color: var(--primary-color);
-  font-weight: 500;
 }
 
-/* --- ALIGNMENT HELPERS --- */
-.text-center {
-  text-align: center !important;
+.font-bold {
+  font-weight: 700;
 }
 
-/* Left align first column and add breathing room */
-.admin-table th:first-child,
-.admin-table td:first-child {
-  text-align: left;
-  padding-left: 25px;
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 15px;
 }
 
-/* Column width constraints */
-.col-small {
-  width: 80px;
+.pagination button {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  background-color: #e5e7eb;
+  cursor: pointer;
 }
 
-/* Loading state */
-.loading-container {
-  padding: 2rem;
-  color: var(--text-muted);
-  text-align: center;
+.pagination button:hover {
+  background-color: #c7d2fe;
+}
+
+.pagination .active-page {
+  background-color: #1e3a8a;
+  color: white;
 }

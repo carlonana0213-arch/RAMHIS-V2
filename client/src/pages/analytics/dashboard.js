@@ -22,6 +22,13 @@ ChartJS.register(
   Legend,
 );
 
+const brandColors = [
+  "#3f5fbe", // Primary Blue
+  "#5c7cfa", // Secondary Blue
+  "#748ffc", // Muted Blue
+  "#91a7ff", // Light Blue
+  "#dbeafe", // Pale Blue
+];
 const Dashboard = ({ patients }) => {
   const [prescriptions, setPrescriptions] = useState([]);
 
@@ -72,10 +79,12 @@ const Dashboard = ({ patients }) => {
         {
           label: "Male",
           data: Object.values(groups).map((g) => g.Male || 0),
+          backgroundColor: brandColors,
         },
         {
           label: "Female",
           data: Object.values(groups).map((g) => g.Female || 0),
+          backgroundColor: brandColors,
         },
       ],
     };
@@ -104,6 +113,7 @@ const Dashboard = ({ patients }) => {
       datasets: [
         {
           data: sorted.map((d) => d[1]),
+          backgroundColor: brandColors,
         },
       ],
     };
@@ -132,6 +142,7 @@ const Dashboard = ({ patients }) => {
       datasets: [
         {
           data: sorted.map((s) => s[1]),
+          backgroundColor: brandColors,
         },
       ],
     };

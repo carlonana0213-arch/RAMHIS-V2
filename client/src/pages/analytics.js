@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { getPatients } from "../services/patientService";
 import Dashboard from "./analytics/dashboard";
+import PatientTable from "./analytics/PatientsTable";
 import "../styles/analytics.css";
 
 const Analytics = () => {
@@ -22,8 +24,13 @@ const Analytics = () => {
 
     loadPatients();
   }, []);
+  const navigate = useNavigate();
 
-  // Normalize backend data safely
+  const handleSelectPatient = (id) => {
+    navigate("/registry", {
+      state: { patientId: id },
+    });
+  };
   const normalizedPatients = useMemo(() => {
     return patients.map((p) => {
       const g = p.generalInfo || {};
@@ -89,38 +96,10 @@ const Analytics = () => {
           />
         </div>
       </div>
-      <div className="table-container">
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th className="text-center col-small">Sex</th>
-              <th className="text-center col-small">Age</th>
-              <th>Diagnosis</th>
-              <th className="text-center">Date of Visit</th>
-              <th className="text-center">Place of Visit</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredPatients.map((p) => (
-              <tr key={p.id}>
-                <td>
-                  <strong>{p.name}</strong>
-                </td>
-                <td className="text-center">{p.sex}</td>
-                <td className="text-center">{p.age}</td>
-                <td className="diagnosis-cell">{p.diagnosis}</td>
-                <td className="text-center">
-                  {p.visitDate
-                    ? new Date(p.visitDate).toLocaleDateString()
-                    : "—"}
-                </td>
-                <td className="text-center">{p.visitPlace}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <PatientTable
+        patients={filteredPatients}
+        onSelectPatient={handleSelectPatient}
+      />
     </div>
   );
 };

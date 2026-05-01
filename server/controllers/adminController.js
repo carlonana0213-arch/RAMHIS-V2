@@ -76,6 +76,7 @@ exports.getAllUsers = async (req, res) => {
 };
 
 exports.updateUser = async (req, res) => {
+  delete updates.createdAt;
   try {
     const user = await User.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
