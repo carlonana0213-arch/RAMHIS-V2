@@ -1,0 +1,14 @@
+.confirm-modal {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  width: 320px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+}

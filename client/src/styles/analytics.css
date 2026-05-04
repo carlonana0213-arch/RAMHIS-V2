@@ -74,9 +74,6 @@
   }
 }
 
-/* --- DATA CONSISTENCY HELPERS (Optional) --- */
-/* If you use specific labels in your charts, you can match them to these classes */
-
 .text-primary {
   color: var(--primary-color);
 }

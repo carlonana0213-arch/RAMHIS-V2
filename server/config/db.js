@@ -2,12 +2,8 @@ const mongoose = require("mongoose");
 
 const connectDB = async () => {
   try {
-    const dbUser = process.env.DB_USER;
-    const dbPass = process.env.DB_PASS;
-    const dbHost = process.env.DB_HOST;
-    const dbName = process.env.DB_NAME;
-
-    const uri = "mongodb://127.0.0.1:27017/medical_app";
+    const uri =
+      "mongodb+srv://carlonana0213_db_user:LikhaNU2026@cluster0.jucnt4q.mongodb.net/?appName=Cluster0";
 
     await mongoose.connect(uri);
 
@@ -15,7 +11,7 @@ const connectDB = async () => {
     console.log("Connected to DB:", mongoose.connection.name);
   } catch (error) {
     console.error("DB connection error:", error.message);
-    process.exit(1); // stop server if DB fails
+    process.exit(1);
   }
 };
 

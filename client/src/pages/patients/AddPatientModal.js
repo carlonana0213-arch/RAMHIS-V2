@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
-import { addPatient } from "../services/patientService";
-import "../styles/modal.css";
-import GeneralStep from "./steps/GeneralStep";
-import MedicalStep from "./steps/MedicalStep";
-import FamilyStep from "./steps/FamilyStep";
-import ExaminationStep from "./steps/ExaminationStep";
-import DepartmentStep from "./steps/DepartmentStep";
-import PerinatalStep from "./steps/PerinatalStep";
+import { addPatient } from "../../services/patientService";
+import "../../styles/modal.css";
+import GeneralStep from "../steps/GeneralStep";
+import MedicalStep from "../steps/MedicalStep";
+import FamilyStep from "../steps/FamilyStep";
+import ExaminationStep from "../steps/ExaminationStep";
+import DepartmentStep from "../steps/DepartmentStep";
+import PerinatalStep from "../steps/PerinatalStep";
+import SummaryStep from "../steps/SummaryStep";
 
 const getSteps = (form) => {
   const baseSteps = ["General", "Medical", "Family", "Examination"];
@@ -16,6 +17,7 @@ const getSteps = (form) => {
   }
 
   baseSteps.push("Department");
+  baseSteps.push("Summary");
 
   return baseSteps;
 };
@@ -90,7 +92,6 @@ const AddPatientModal = ({ onClose }) => {
         next.focus();
       }
     } else {
-      // 🔥 LAST FIELD → GO NEXT STEP
       document.querySelector(".next-btn")?.click();
     }
   };
@@ -120,7 +121,6 @@ const AddPatientModal = ({ onClose }) => {
         </div>
 
         <div className="modal-container">
-          <h2>{steps[step]}</h2>
           <div className="progress-container">
             {steps.map((label, index) => (
               <div
@@ -182,8 +182,8 @@ const AddPatientModal = ({ onClose }) => {
               handleEnterKey={handleEnterKey}
             />
           )}
+          {currentStep === "Summary" && <SummaryStep form={form} />}
 
-          {/* FOOTER */}
           <div className="modal-actions">
             {step > 0 && <button onClick={prev}>Back</button>}
 

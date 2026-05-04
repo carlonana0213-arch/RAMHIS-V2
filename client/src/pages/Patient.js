@@ -1,50 +1,43 @@
 import { useState, useEffect } from "react";
-import PatientQueue from "./PatientQueue";
-import Registry from "./Registry";
-import AddPatientModal from "./AddPatientModal";
+import PatientQueue from "./patients/PatientQueue";
+import AddPatientModal from "./patients/AddPatientModal";
+import PatientViewModal from "./patients/PatientViewModal";
 import "../styles/patient.css";
 import { useLocation } from "react-router-dom";
 
 const Patient = () => {
-  const [activeTab, setActiveTab] = useState("queue");
   const [showAddModal, setShowAddModal] = useState(false);
 
-  const location = useLocation();
-
-  useEffect(() => {
-    if (location.state?.tab) {
-      setActiveTab(location.state.tab);
-    }
-  }, [location.state]);
+  const [selectedPatient, setSelectedPatient] = useState(null);
   return (
     <div className="patient-page">
-      <div className="patient-tabs">
-        <div
-          className={`tab ${activeTab === "queue" ? "active" : ""}`}
-          onClick={() => setActiveTab("queue")}
+      {/* HEADER */}
+      <div className="patient-header">
+        <h2>Patient Queue</h2>
+
+        <button
+          className="add-patient-btn"
+          onClick={() => setShowAddModal(true)}
         >
-          Queue
-        </div>
-        <div
-          className={`tab ${activeTab === "view" ? "active" : ""}`}
-          onClick={() => setActiveTab("view")}
-        >
-          Patient View
-        </div>
-        <div className="tab" onClick={() => setShowAddModal(true)}>
-          Add Patient
-        </div>
+          + Add Patient
+        </button>
       </div>
 
+      {/* MAIN CONTENT */}
       <div className="patient-content">
-        {activeTab === "queue" && <PatientQueue />}
-        {activeTab === "view" && (
-          <Registry patientIdFromQueue={location.state?.patientId} />
-        )}
+        <PatientQueue onSelectPatient={setSelectedPatient} />
       </div>
 
+      {/* MODAL */}
       {showAddModal && (
         <AddPatientModal onClose={() => setShowAddModal(false)} />
+      )}
+
+      {selectedPatient && (
+        <PatientViewModal
+          patient={selectedPatient}
+          onClose={() => setSelectedPatient(null)}
+        />
       )}
     </div>
   );

@@ -6,9 +6,9 @@ import {
   updatePatient,
   deletePatient,
   getPatientById,
-} from "../services/patientService";
-import "../styles/registry.css";
-import "../styles/registry-modern.css";
+} from "../../services/patientService";
+import "../../styles/registry.css";
+import "../../styles/registry-modern.css";
 
 const HISTORY_OPTIONS = [
   "Diabetes",
@@ -66,6 +66,7 @@ function Registry({ patientIdFromQueue }) {
   const [patientId, setPatientId] = useState(null);
   const [search, setSearch] = useState("");
   const [results, setResults] = useState([]);
+  const [confirmState, setConfirmState] = useState(null);
   const handleButtonGroupKey = (e, options, currentValue, setValue) => {
     const currentIndex = options.indexOf(currentValue);
 
@@ -235,6 +236,13 @@ function Registry({ patientIdFromQueue }) {
   //edit butt
   const handleEdit = async () => {
     if (!patientId) return;
+
+    const confirmEdit = window.confirm(
+      "Are you sure you want to save changes to this patient?",
+    );
+
+    if (!confirmEdit) return;
+
     try {
       const payload = {
         generalInfo: {
@@ -827,17 +835,39 @@ function Registry({ patientIdFromQueue }) {
       </div>
 
       <div className="action-bar">
-        <button onClick={handleEdit} disabled={!patientId}>
-          Edit
+        <button
+          disabled={!patientId}
+          onClick={() => {
+            if (!patientId) return;
+
+            setConfirmState({
+              message: "Save changes to this patient?",
+              onConfirm: async () => {
+                await handleEdit();
+                setConfirmState(null);
+              },
+            });
+          }}
+        >
+          Save Changes
         </button>
         <button
           className="danger"
-          onClick={async () => {
-            if (!patientId) return;
-            await deletePatient(patientId);
-            clearForm();
-          }}
           disabled={!patientId}
+          onClick={() => {
+            if (!patientId) return;
+
+            setConfirmState({
+              message:
+                "Are you sure you want to DELETE this patient? This cannot be undone.",
+              onConfirm: async () => {
+                await deletePatient(patientId);
+                alert("Patient deleted successfully");
+                clearForm();
+                setConfirmState(null);
+              },
+            });
+          }}
         >
           Delete
         </button>
@@ -845,8 +875,35 @@ function Registry({ patientIdFromQueue }) {
           Clear
         </button>
       </div>
+      {confirmState && (
+        <ConfirmModal
+          message={confirmState.message}
+          onConfirm={confirmState.onConfirm}
+          onCancel={() => setConfirmState(null)}
+        />
+      )}
     </form>
   );
 }
+
+const ConfirmModal = ({ message, onConfirm, onCancel }) => {
+  return (
+    <div className="modal-overlay">
+      <div className="confirm-modal">
+        <p>{message}</p>
+
+        <div className="confirm-actions">
+          <button className="ghost" onClick={onCancel}>
+            Cancel
+          </button>
+
+          <button className="danger" onClick={onConfirm}>
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default Registry;

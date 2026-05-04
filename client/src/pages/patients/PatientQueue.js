@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { apiFetch } from "../services/api";
-import { useNavigate } from "react-router-dom";
-import "../styles/queue.css";
+import { apiFetch } from "../../services/api";
+
+import "../../styles/queue.css";
 
 const departments = [
   "Pediatrics",
@@ -22,12 +22,11 @@ const statusRowColors = {
   beingSeen: "#e0f2fe",
 };
 
-const PatientQueue = () => {
+const PatientQueue = ({ onSelectPatient }) => {
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("All");
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchQueue = async () => {
@@ -57,18 +56,11 @@ const PatientQueue = () => {
     );
 
   const openPatient = (patient) => {
-    navigate("/patient", {
-      state: {
-        patientId: patient._id,
-        tab: "view",
-      },
-    });
+    onSelectPatient(patient);
   };
 
   return (
     <div className="queue-container">
-      <h2>Patient Queue</h2>
-
       {/* SEARCH */}
       <div className="queue-search">
         <input

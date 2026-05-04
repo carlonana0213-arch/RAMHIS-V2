@@ -29,7 +29,7 @@ export const addPatient = (data) =>
   });
 
 export const searchPatients = async (name) => {
-  return apiFetch(`${API}?name=${name}`);
+  return apiFetch(`${API}/search?name=${name}`);
 };
 
 export const updatePatient = (id, data) =>

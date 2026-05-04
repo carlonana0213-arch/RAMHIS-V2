@@ -12,7 +12,7 @@ import EditUser from "./adminModal/editUser";
 import UserDashboard from "./analytics/userDashboard";
 import "../styles/admin.css";
 
-function AdminDashboard() {
+function UserManagement() {
   const [users, setUsers] = useState([]);
   const [tab, setTab] = useState("pending");
 
@@ -168,42 +168,64 @@ function AdminDashboard() {
     <div className="admin-container">
       <UserDashboard users={users} />
       {/* TOP BAR */}
-      <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
-        <button onClick={() => setShowCreateModal(true)}>+ Add User </button>
-
+      <div className="topbar">
         <input
+          className="search-input"
           placeholder="Search users..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
 
-        <select value={filter} onChange={(e) => setFilter(e.target.value)}>
-          <option value="All">All</option>
-          <option value="Doctor">Doctor</option>
-          <option value="Volunteer">Volunteer</option>
-        </select>
-      </div>
+        {/* STATUS */}
+        <div className="filter-group">
+          <button
+            className={tab === "active" ? "active" : ""}
+            onClick={() => setTab("active")}
+          >
+            Active
+          </button>
+          <button
+            className={tab === "pending" ? "active" : ""}
+            onClick={() => setTab("pending")}
+          >
+            Pending
+          </button>
+          <button
+            className={tab === "deactivated" ? "active" : ""}
+            onClick={() => setTab("deactivated")}
+          >
+            Deactivated
+          </button>
+        </div>
 
-      {/* TABS */}
-      <div className="admin-tabs">
-        <button
-          className={tab === "active" ? "active" : ""}
-          onClick={() => setTab("active")}
-        >
-          Active Users
-        </button>
+        {/* ROLE */}
+        <div className="filter-group">
+          <button
+            className={filter === "All" ? "active" : ""}
+            onClick={() => setFilter("All")}
+          >
+            All
+          </button>
+          <button
+            className={filter === "Doctor" ? "active" : ""}
+            onClick={() => setFilter("Doctor")}
+          >
+            Doctors
+          </button>
+          <button
+            className={filter === "Volunteer" ? "active" : ""}
+            onClick={() => setFilter("Volunteer")}
+          >
+            Volunteers
+          </button>
+        </div>
 
         <button
-          className={tab === "pending" ? "active" : ""}
-          onClick={() => setTab("pending")}
+          className="add-user-btn"
+          className="add-user-btn"
+          onClick={() => setShowCreateModal(true)}
         >
-          Pending
-        </button>
-        <button
-          className={tab === "deactivated" ? "active" : ""}
-          onClick={() => setTab("deactivated")}
-        >
-          Deactivated
+          + Add User
         </button>
       </div>
 
@@ -339,4 +361,4 @@ function AdminDashboard() {
   );
 }
 
-export default AdminDashboard;
+export default UserManagement;

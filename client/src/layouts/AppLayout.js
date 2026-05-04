@@ -1,5 +1,7 @@
 import { useState } from "react";
 import Header from "../components/Header";
+import TopNav from "../components/TopNav";
+
 import "../styles/layout.css";
 
 function AppLayout({ children }) {
@@ -17,7 +19,11 @@ function AppLayout({ children }) {
     <div className={`app-layout ${collapsed ? "collapsed" : ""}`}>
       <Header collapsed={collapsed} toggleSidebar={toggleSidebar} />
 
-      <main className="app-content">{children}</main>
+      {/* RIGHT SIDE */}
+      <div className="main-area">
+        <TopNav />
+        <main className="app-content">{children}</main>
+      </div>
     </div>
   );
 }
