@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import PatientQueue from "./patients/PatientQueue";
+import PatientDashboard from "./patients/PatientDashboard";
 import AddPatientModal from "./patients/AddPatientModal";
 import PatientViewModal from "./patients/PatientViewModal";
 import "../styles/patient.css";
@@ -25,6 +26,8 @@ const Patient = () => {
 
       {/* MAIN CONTENT */}
       <div className="patient-content">
+        <PatientDashboard />
+
         <PatientQueue onSelectPatient={setSelectedPatient} />
       </div>
 

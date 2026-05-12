@@ -44,11 +44,14 @@ export const updateUser = async (data) => {
     body: JSON.stringify(data),
   });
 
+  const result = await res.json(); // 👈 get backend response
+
   if (!res.ok) {
-    throw new Error("Failed to update user");
+    console.error("Backend error:", result);
+    throw new Error(result.message || "Failed to update user");
   }
 
-  return res.json();
+  return result;
 };
 
 export const updateUserStatus = (id, status) =>

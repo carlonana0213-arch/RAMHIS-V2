@@ -39,7 +39,10 @@
 .nav-links {
   display: flex;
   flex-direction: column;
+
   gap: 10px;
+
+  flex: 1;
 }
 
 .nav-link {
@@ -150,4 +153,23 @@
 
 .nav-sublink:hover {
   opacity: 1;
+}
+
+.logout-section {
+  margin-top: auto;
+}
+
+/* OPTIONAL RED HOVER */
+.logout-link:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.nav-subitem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-subicon {
+  font-size: 0.9rem;
 }

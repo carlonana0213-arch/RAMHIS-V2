@@ -31,12 +31,26 @@ const SummaryStep = ({ form }) => {
 
       <div className="summary-section">
         <h4>Medical History</h4>
-        <p>{form.medicalHistory?.join(", ")}</p>
+        <p>
+          {[
+            ...form.medicalHistory,
+            form.medicalHistory.includes("Other") ? form.medicalOther : null,
+          ]
+            .filter(Boolean)
+            .join(", ")}
+        </p>
       </div>
 
       <div className="summary-section">
         <h4>Family History</h4>
-        <p>{form.familyHistory?.join(", ")}</p>
+        <p>
+          {[
+            ...form.familyHistory,
+            form.familyHistory.includes("Other") ? form.familyOther : null,
+          ]
+            .filter(Boolean)
+            .join(", ")}
+        </p>
       </div>
 
       <div className="summary-section">

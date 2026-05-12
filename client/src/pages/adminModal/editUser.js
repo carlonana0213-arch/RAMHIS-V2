@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { updateUser } from "../../services/adminService";
+import ConfirmModal from "../../components/ConfirmModal";
+import AlertModal from "../../components/AlertModal";
 
 function EditUser({ user, onClose, onSuccess }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -8,7 +10,9 @@ function EditUser({ user, onClose, onSuccess }) {
   const handleChange = (field, value) => {
     setForm({ ...form, [field]: value });
   };
-
+  const [alertMessage, setAlertMessage] = useState("");
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const handleDoctorChange = (field, value) => {
     setForm({
       ...form,
@@ -33,12 +37,12 @@ function EditUser({ user, onClose, onSuccess }) {
         doctorInfo: form.doctorInfo,
       });
 
-      alert("User updated");
+      setAlertMessage("User updated successfully");
       setIsEditing(false);
       onSuccess();
     } catch (err) {
       console.error(err);
-      alert("Update failed");
+      setAlertMessage("Update failed");
     }
   };
 
@@ -56,10 +60,10 @@ function EditUser({ user, onClose, onSuccess }) {
 
       const data = await res.json();
 
-      alert("Temporary password reset and emailed to user");
+      setAlertMessage("Password reset successful. Email sent to user.");
     } catch (err) {
       console.error(err);
-      alert("Failed to reset password");
+      setAlertMessage("Failed to reset password");
     }
   };
 
@@ -136,14 +140,46 @@ function EditUser({ user, onClose, onSuccess }) {
           {!isEditing ? (
             <button onClick={() => setIsEditing(true)}>Edit</button>
           ) : (
-            <button onClick={handleSave}>Save</button>
+            <button onClick={() => setShowConfirm(true)}>Save</button>
           )}
 
-          <button onClick={handleResetPassword}>Reset Password</button>
+          <button onClick={() => setShowResetConfirm(true)}>
+            Reset Password
+          </button>
 
           <button onClick={onClose}>Close</button>
         </div>
       </div>
+      {showConfirm && (
+        <ConfirmModal
+          message="Are you sure you want to save changes to this user?"
+          onConfirm={async () => {
+            setShowConfirm(false);
+            await handleSave();
+          }}
+          onCancel={() => setShowConfirm(false)}
+        />
+      )}
+      {showResetConfirm && (
+        <ConfirmModal
+          message="Are you sure you want to reset this user's password? A temporary password will be emailed."
+          onConfirm={async () => {
+            setShowResetConfirm(false);
+            await handleResetPassword();
+          }}
+          onCancel={() => setShowResetConfirm(false)}
+        />
+      )}
+      {alertMessage && (
+        <AlertModal
+          message={alertMessage}
+          onClose={() => {
+            setAlertMessage("");
+            setIsEditing(false);
+            onSuccess();
+          }}
+        />
+      )}
     </div>
   );
 }

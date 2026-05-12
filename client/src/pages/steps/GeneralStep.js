@@ -187,20 +187,6 @@ const GeneralStep = ({ form, setForm }) => {
               onKeyDown={handleEnterKey}
             />
           </div>
-          {/* COMPLAINT CARD */}
-          <div className="field-group full">
-            <label>Main Complaint</label>
-            <textarea
-              value={form.initComplaint || ""}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  initComplaint: e.target.value,
-                }))
-              }
-              onKeyDown={handleEnterKey}
-            />
-          </div>
         </div>
       </div>
     </div>

@@ -37,7 +37,6 @@ function UserManagement() {
     licenseNumber: "",
   });
 
-  // 🔹 LOAD USERS
   const loadUsers = async () => {
     try {
       const data = await getAllUsers();
@@ -52,10 +51,8 @@ function UserManagement() {
     loadUsers();
   }, []);
 
-  // 🔹 FILTER + SEARCH + TAB (FIXED)
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
-      // TAB FILTER
       let matchesTab = false;
 
       if (tab === "pending") {
@@ -66,10 +63,8 @@ function UserManagement() {
         matchesTab = user.verificationStatus === "Deactivated";
       }
 
-      // ROLE FILTER
       const matchesFilter = filter === "All" || user.role === filter;
 
-      // SEARCH
       const matchesSearch =
         user.name?.toLowerCase().includes(search.toLowerCase()) ||
         user.email?.toLowerCase().includes(search.toLowerCase());
@@ -166,7 +161,11 @@ function UserManagement() {
 
   return (
     <div className="admin-container">
+      <div className="users-header">
+        <h2>Account Management</h2>
+      </div>
       <UserDashboard users={users} />
+
       {/* TOP BAR */}
       <div className="topbar">
         <input
@@ -295,10 +294,17 @@ function UserManagement() {
                 {/* PENDING */}
                 {tab === "pending" && (
                   <>
-                    <button onClick={() => handleApproveClick(user._id)}>
+                    <button
+                      className="approve-btn"
+                      onClick={() => handleApproveClick(user._id)}
+                    >
                       Approve
                     </button>
-                    <button onClick={() => handleReject(user._id)}>
+
+                    <button
+                      className="reject-btn"
+                      onClick={() => handleReject(user._id)}
+                    >
                       Reject
                     </button>
                   </>
@@ -306,14 +312,20 @@ function UserManagement() {
 
                 {/* ACTIVE */}
                 {tab === "active" && (
-                  <button onClick={() => handleDeactivate(user._id)}>
+                  <button
+                    className="deactivate-btn"
+                    onClick={() => handleDeactivate(user._id)}
+                  >
                     Deactivate
                   </button>
                 )}
 
                 {/* DEACTIVATED */}
                 {tab === "deactivated" && (
-                  <button onClick={() => handleReactivate(user._id)}>
+                  <button
+                    className="reactivate-btn"
+                    onClick={() => handleReactivate(user._id)}
+                  >
                     Reactivate
                   </button>
                 )}

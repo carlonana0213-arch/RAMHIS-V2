@@ -20,6 +20,7 @@ exports.createPatient = async (req, res) => {
       perinatalHistory,
       department,
       initComplaint,
+      isPriority,
       location,
       missionDate,
     } = req.body;
@@ -46,6 +47,7 @@ exports.createPatient = async (req, res) => {
       perinatalHistory,
       department,
       initComplaint,
+      isPriority,
       location,
       missionDate,
     });

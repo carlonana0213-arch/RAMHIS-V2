@@ -53,7 +53,12 @@ const PatientQueue = ({ onSelectPatient }) => {
     )
     .filter((p) =>
       departmentFilter === "All" ? true : p.department === departmentFilter,
-    );
+    )
+    .sort((a, b) => {
+      if (a.isPriority && !b.isPriority) return -1;
+      if (!a.isPriority && b.isPriority) return 1;
+      return 0;
+    });
 
   const openPatient = (patient) => {
     onSelectPatient(patient);
@@ -62,31 +67,29 @@ const PatientQueue = ({ onSelectPatient }) => {
   return (
     <div className="queue-container">
       {/* SEARCH */}
-      <div className="queue-search">
+      <div className="queue-toolbar">
         <input
+          className="queue-search-input"
           placeholder="Search patient..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-      </div>
-      <div className="queue-tabs">
-        <button
-          className={departmentFilter === "All" ? "tab active" : "tab"}
-          onClick={() => setDepartmentFilter("All")}
-        >
-          All
-        </button>
 
-        {departments.map((dept) => (
-          <button
-            key={dept}
-            className={departmentFilter === dept ? "tab active" : "tab"}
-            onClick={() => setDepartmentFilter(dept)}
-          >
-            {dept}
-          </button>
-        ))}
+        <select
+          className="department-dropdown"
+          value={departmentFilter}
+          onChange={(e) => setDepartmentFilter(e.target.value)}
+        >
+          <option value="All">All Departments</option>
+
+          {departments.map((dept) => (
+            <option key={dept} value={dept}>
+              {dept}
+            </option>
+          ))}
+        </select>
       </div>
+
       {/* MAIN QUEUE TABLE */}
 
       <div className="queue-table">
@@ -107,17 +110,31 @@ const PatientQueue = ({ onSelectPatient }) => {
               key={patient._id}
               className="queue-row"
               style={{
-                backgroundColor: statusRowColors[patient.status] || "white",
+                backgroundColor: patient.isPriority
+                  ? "#fee2e2"
+                  : statusRowColors[patient.status] || "white",
+
+                borderLeft: patient.isPriority
+                  ? "5px solid #dc2626"
+                  : "5px solid transparent",
               }}
               onClick={() => openPatient(patient)}
             >
               <span className="queue-number">{index + 1}</span>
 
-              <span>{patient.generalInfo.name}</span>
+              <span className="queue-patient-name">
+                {patient.generalInfo.name}
+
+                {patient.isPriority && (
+                  <span className="queue-priority-badge">PRIORITY</span>
+                )}
+              </span>
 
               <span>{patient.generalInfo.age}</span>
 
-              <span>{patient.generalInfo.sex}</span>
+              <span>
+                {patient.generalInfo.sex || patient.generalInfo.gender || "--"}
+              </span>
 
               <span>{patient.department}</span>
 

@@ -63,3 +63,89 @@
   background-color: #102f8d;
   color: white;
 }
+
+/* ===== DASHBOARD ===== */
+.patient-dashboard {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+/* ===== CARD ===== */
+.patient-card {
+  background: white;
+
+  border-radius: 14px;
+  padding: 18px;
+
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.patient-card:hover {
+  transform: translateY(-3px);
+
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+}
+
+/* ===== ICON ===== */
+.patient-card-icon {
+  width: 48px;
+  height: 48px;
+
+  border-radius: 12px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #e0e7ff;
+  color: #3f5fbe;
+
+  font-size: 1.4rem;
+}
+
+/* ===== TEXT ===== */
+.patient-card-content h4 {
+  margin: 0;
+
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.patient-card-content p {
+  margin: 2px 0 0;
+
+  font-size: 1.8rem;
+  font-weight: 700;
+
+  color: #1e293b;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1400px) {
+  .patient-dashboard {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .patient-dashboard {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 500px) {
+  .patient-dashboard {
+    grid-template-columns: 1fr;
+  }
+}

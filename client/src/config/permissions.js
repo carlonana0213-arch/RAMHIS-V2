@@ -7,4 +7,5 @@ export const permissions = {
   admin: ["Admin"],
   patient: ["Doctor", "Admin", "Volunteer"],
   analytics: ["Admin"],
+  dashboard: ["Admin"],
 };

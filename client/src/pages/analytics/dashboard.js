@@ -1,8 +1,8 @@
 import { useMemo, useEffect, useState } from "react";
-import { Bar, Pie } from "react-chartjs-2";
+import { Bar, Doughnut } from "react-chartjs-2";
 import "../../styles/dashboard.css";
 import { apiFetch } from "../../services/api";
-
+import { FiUsers, FiFileText, FiActivity } from "react-icons/fi"; // Modern, clean icons
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -22,17 +22,18 @@ ChartJS.register(
   Legend,
 );
 
-const brandColors = [
-  "#3f5fbe", // Primary Blue
-  "#5c7cfa", // Secondary Blue
-  "#748ffc", // Muted Blue
-  "#91a7ff", // Light Blue
-  "#dbeafe", // Pale Blue
+// Professional Blue-Centric Palette
+const bluePalette = [
+  "#1e40af", // Deep Blue
+  "#2563eb", // Royal Blue
+  "#3b82f6", // Bright Blue
+  "#60a5fa", // Sky Blue
+  "#93c5fd", // Soft Blue
 ];
-const Dashboard = ({ patients }) => {
+
+const PatientDashboard = ({ patients }) => {
   const [prescriptions, setPrescriptions] = useState([]);
 
-  // 🔹 LOAD PRESCRIPTIONS
   useEffect(() => {
     const loadPrescriptions = async () => {
       try {
@@ -42,35 +43,67 @@ const Dashboard = ({ patients }) => {
         console.error("Failed to load prescriptions", err);
       }
     };
-
     loadPrescriptions();
   }, []);
 
-  // 🔹 1. AGE + SEX DISTRIBUTION
+  const commonOptions = {
+    responsive: true,
+    maintainAspectRatio: false, // Allows chart to fill the 240px wrapper exactly
+    layout: {
+      padding: {
+        top: 0,
+        bottom: 0, // Remove internal canvas padding
+      },
+    },
+    plugins: {
+      legend: {
+        position: "bottom",
+        labels: {
+          usePointStyle: true,
+          padding: 10, // Reduced from 20
+          boxWidth: 8,
+          font: { size: 11 },
+        },
+      },
+    },
+  };
+
+  const stats = useMemo(
+    () => ({
+      totalPatients: patients.length,
+      activePrescriptions: prescriptions.length,
+      averageAge: Math.round(
+        patients.reduce((acc, p) => acc + (p.generalInfo?.age || 0), 0) /
+          (patients.length || 1),
+      ),
+    }),
+    [patients, prescriptions],
+  );
+
   const ageSexData = useMemo(() => {
     const groups = {
-      "0-12": { Male: 0, Female: 0 },
-      "13-19": { Male: 0, Female: 0 },
-      "20-35": { Male: 0, Female: 0 },
-      "36-60": { Male: 0, Female: 0 },
-      "60+": { Male: 0, Female: 0 },
+      "0-12": { M: 0, F: 0 },
+      "13-19": { M: 0, F: 0 },
+      "20-35": { M: 0, F: 0 },
+      "36-60": { M: 0, F: 0 },
+      "60+": { M: 0, F: 0 },
     };
-
     patients.forEach((p) => {
-      const g = p.generalInfo || {};
-      const age = g.age;
-      const sex = g.gender || g.sex;
-
+      const age = p.generalInfo?.age;
+      const sex = (p.generalInfo?.gender ||
+        p.generalInfo?.sex)?.[0]?.toUpperCase();
       if (!age || !sex) return;
-
-      let group = "60+";
-      if (age <= 12) group = "0-12";
-      else if (age <= 19) group = "13-19";
-      else if (age <= 35) group = "20-35";
-      else if (age <= 60) group = "36-60";
-
-      if (!groups[group][sex]) groups[group][sex] = 0;
-      groups[group][sex]++;
+      let group =
+        age <= 12
+          ? "0-12"
+          : age <= 19
+            ? "13-19"
+            : age <= 35
+              ? "20-35"
+              : age <= 60
+                ? "36-60"
+                : "60+";
+      if (groups[group]) groups[group][sex]++;
     });
 
     return {
@@ -78,94 +111,95 @@ const Dashboard = ({ patients }) => {
       datasets: [
         {
           label: "Male",
-          data: Object.values(groups).map((g) => g.Male || 0),
-          backgroundColor: brandColors,
+          data: Object.values(groups).map((g) => g.M),
+          backgroundColor: "#1d4ed8",
+          borderRadius: 4,
         },
         {
           label: "Female",
-          data: Object.values(groups).map((g) => g.Female || 0),
-          backgroundColor: brandColors,
+          data: Object.values(groups).map((g) => g.F),
+          backgroundColor: "#0ea5e9",
+          borderRadius: 4,
         },
       ],
     };
   }, [patients]);
 
-  // 🔹 2. MOST COMMON DIAGNOSES
   const diagnosisData = useMemo(() => {
     const count = {};
-
     patients.forEach((p) => {
-      const latest = p.doctorSheets?.[p.doctorSheets.length - 1];
-
-      const diag = latest?.diagnosis || p.diagnosis || p.medicalInfo?.diagnosis;
-
-      if (!diag) return;
-
-      count[diag] = (count[diag] || 0) + 1;
+      const diag =
+        p.doctorSheets?.[p.doctorSheets.length - 1]?.diagnosis ||
+        p.medicalInfo?.diagnosis;
+      if (diag) count[diag] = (count[diag] || 0) + 1;
     });
-
     const sorted = Object.entries(count)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5);
-
     return {
       labels: sorted.map((d) => d[0]),
       datasets: [
         {
           data: sorted.map((d) => d[1]),
-          backgroundColor: brandColors,
+          backgroundColor: bluePalette,
+          borderWidth: 2,
+          borderColor: "#ffffff",
+          cutout: "75%",
         },
       ],
     };
   }, [patients]);
 
-  // 🔹 3. MOST USED MEDICINES (ONLY GIVEN)
-  const suppliesData = useMemo(() => {
-    const count = {};
-
-    prescriptions.forEach((prescription) => {
-      prescription.items?.forEach((item) => {
-        if (!item.isGiven) return;
-
-        const name = item.medicine?.name || "Unknown";
-
-        count[name] = (count[name] || 0) + 1;
-      });
-    });
-
-    const sorted = Object.entries(count)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5);
-
-    return {
-      labels: sorted.map((s) => s[0]),
-      datasets: [
-        {
-          data: sorted.map((s) => s[1]),
-          backgroundColor: brandColors,
-        },
-      ],
-    };
-  }, [prescriptions]);
-
   return (
-    <div className="dashboard-grid">
-      {" "}
-      <div className="chart-card">
-        {" "}
-        <h3>Patients by Age & Sex</h3>
-        <Bar data={ageSexData} options={{ maintainAspectRatio: false }} />{" "}
+    <div className="dashboard-container">
+      <div className="stats-grid">
+        <div className="stat-card blue-tint">
+          <div className="stat-content">
+            <span className="stat-label">Total Patients</span>
+            <span className="stat-value">{stats.totalPatients}</span>
+          </div>
+          <div>
+            <FiUsers className="stat-icon-wrapper blue-bg" />
+          </div>
+        </div>
+
+        <div className="stat-card cyan-tint">
+          <div className="stat-content">
+            <span className="stat-label">Active Prescriptions</span>
+            <span className="stat-value">{stats.activePrescriptions}</span>
+          </div>
+          <div className="stat-icon-wrapper cyan-bg">
+            <FiFileText className="stat-icon-wrapper cyan-bg" />
+          </div>
+        </div>
+
+        <div className="stat-card navy-tint">
+          <div className="stat-content">
+            <span className="stat-label">Avg. Patient Age</span>
+            <span className="stat-value">{stats.averageAge}</span>
+          </div>
+          <div className="stat-icon-wrapper navy-bg">
+            <FiActivity className="stat-icon-wrapper navy-bg" />
+          </div>
+        </div>
       </div>
-      <div className="chart-card">
-        <h3>Most Common Diagnoses</h3>
-        <Pie data={diagnosisData} options={{ maintainAspectRatio: false }} />
-      </div>
-      <div className="chart-card">
-        <h3>Most Used Medicines</h3>
-        <Pie data={suppliesData} options={{ maintainAspectRatio: false }} />
+
+      <div className="dashboard-grid">
+        <div className="chart-card">
+          <h3>Demographics by Age & Sex</h3>
+          <div className="chart-wrapper">
+            <Bar data={ageSexData} options={commonOptions} />
+          </div>
+        </div>
+        <div className="chart-card">
+          <h3>Diagnosis Distribution</h3>
+          <div className="chart-wrapper">
+            <Doughnut data={diagnosisData} options={commonOptions} />
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
-export default Dashboard;
+export default PatientDashboard;

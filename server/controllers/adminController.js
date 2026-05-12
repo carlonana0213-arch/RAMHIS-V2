@@ -76,15 +76,19 @@ exports.getAllUsers = async (req, res) => {
 };
 
 exports.updateUser = async (req, res) => {
-  delete updates.createdAt;
   try {
-    const user = await User.findByIdAndUpdate(req.params.id, req.body, {
+    const updates = { ...req.body };
+
+    delete updates.createdAt;
+
+    const user = await User.findByIdAndUpdate(req.params.id, updates, {
       new: true,
     });
 
     res.json(user);
   } catch (err) {
-    res.status(500).json({ msg: "Update failed" });
+    console.error(err);
+    res.status(500).json({ message: "Update failed", error: err.message });
   }
 };
 

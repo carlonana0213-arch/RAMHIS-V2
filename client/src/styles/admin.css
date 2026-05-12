@@ -145,12 +145,18 @@ td button {
   font-size: 0.85rem;
 }
 
-td button:last-child {
+td
+  button:not(.approve-btn):not(.reject-btn):not(.deactivate-btn):not(
+    .reactivate-btn
+  ) {
   background-color: #edf2f7;
   color: var(--text-main);
 }
 
-td button:last-child:hover {
+td
+  button:not(.approve-btn):not(.reject-btn):not(.deactivate-btn):not(
+    .reactivate-btn
+  ):hover {
   background-color: #e2e8f0;
 }
 
@@ -400,4 +406,58 @@ td button:last-child:hover {
 /* hover = darker */
 .add-user-btn:hover {
   background-color: var(--primary-hover);
+}
+.createbtn {
+  background-color: var(--primary);
+}
+
+.approve-btn,
+.reactivate-btn {
+  background-color: var(--status-approved);
+  color: white;
+}
+
+.approve-btn:hover,
+.reactivate-btn:hover {
+  opacity: 0.9;
+}
+
+.reject-btn,
+.deactivate-btn {
+  background-color: var(--status-deactivated);
+  color: white;
+}
+
+.reject-btn:hover,
+.deactivate-btn:hover {
+  opacity: 0.9;
+}
+
+.users-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  background: white;
+
+  padding: 22px 26px;
+  margin-bottom: 20px;
+
+  border-radius: 14px;
+  border-left: 6px solid #3f5fbe;
+
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+.users-header h2 {
+  margin: 0;
+
+  font-size: 1.8rem;
+  font-weight: 700;
+
+  color: #111827;
+}
+
+.icon-box.total {
+  background: #2563eb;
 }

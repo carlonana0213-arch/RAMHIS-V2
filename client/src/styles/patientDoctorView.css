@@ -1,0 +1,230 @@
+/* patientDoctorView.css */
+:root {
+  --navy: #1e3a8a;
+  --primary-blue: #2563eb;
+  --soft-blue: #eff6ff;
+  --text-dark: #0f172a;
+  --text-light: #64748b;
+  --white: #ffffff;
+  --bg-subtle: #f8fafc;
+  --shadow: 0 10px 25px -5px rgba(30, 58, 138, 0.1);
+  --radius: 16px;
+}
+
+/* OVERLAY - Added Blur */
+.doctor-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+/* MAIN MODAL CONTAINER */
+.doctor-modal {
+  width: min(1400px, 95vw);
+  height: 92vh;
+  background: var(--bg-subtle);
+  border-radius: 24px;
+  overflow: visible; /* KEPT AS REQUESTED */
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* HEADER */
+.doctor-modal-header {
+  padding: 1.5rem 2rem;
+  background: var(--white);
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.doctor-modal-header h2 {
+  font-weight: 800;
+  color: var(--navy);
+  margin: 0;
+}
+
+/* BODY LAYOUT */
+.doctor-modal-body {
+  flex: 1;
+  display: flex;
+  overflow: visible; /* KEPT AS REQUESTED */
+  min-height: 0; /* KEPT AS REQUESTED */
+}
+
+/* SIDEBAR - Fixed width info section */
+.doctor-sidebar {
+  width: 320px;
+  padding: 1.5rem;
+  overflow-y: auto;
+  background: var(--white);
+  border-right: 1px solid #e2e8f0;
+}
+
+/* MAIN EDITING AREA */
+.doctor-main-content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+  overflow-x: visible; /* KEPT AS REQUESTED */
+  position: relative;
+  background: var(--bg-subtle);
+}
+
+/* CARDS WITHIN CONTENT */
+.doctor-info-card {
+  background: var(--white);
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow);
+  border: 1px solid #e2e8f0;
+}
+
+.doctor-info-card h3,
+.doctor-info-card h4 {
+  color: var(--navy);
+  margin-top: 0;
+  font-weight: 700;
+  border-bottom: 2px solid var(--soft-blue);
+  padding-bottom: 8px;
+  margin-bottom: 15px;
+}
+
+/* TABS STYLING */
+.doctor-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  background: #e2e8f0;
+  padding: 4px;
+  border-radius: 12px;
+  width: fit-content;
+}
+
+.doctor-tabs button {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-light);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.doctor-tabs button.active {
+  background: var(--white);
+  color: var(--primary-blue);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* FORM INPUTS */
+.doctor-sheet-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-light);
+  text-transform: uppercase;
+}
+
+textarea,
+input {
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* STICKY FOOTER */
+.doctor-modal-footer {
+  background: var(--white);
+  padding: 1.5rem 2rem;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.doctor-modal-footer button {
+  padding: 0.8rem 1.8rem;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.save-btn {
+  background: #f1f5f9;
+  color: var(--text-dark);
+}
+.pharmacy-btn {
+  background: var(--primary-blue);
+  color: white;
+}
+.release-btn {
+  background: #ef4444;
+  color: white;
+}
+
+.pharmacy-btn:hover {
+  background: var(--navy);
+  transform: translateY(-2px);
+}
+.release-btn:hover {
+  background: #b91c1c;
+}
+
+.prescription-row {
+  position: relative;
+  overflow: visible;
+}
+
+.medicine-autocomplete {
+  position: relative;
+  z-index: 9999;
+}
+
+.medicine-dropdown {
+  z-index: 99999;
+}
+
+.doctor-modal-footer {
+  position: relative;
+  z-index: 1;
+}
+
+.exam-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Two equal columns */
+  column-gap: 2rem; /* Space between columns */
+  row-gap: 1.5rem; /* Space between rows */
+  width: 100%;
+}

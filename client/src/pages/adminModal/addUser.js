@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { registerUser } from "../../services/authService";
 import "../../styles/admin.css";
+import ConfirmModal from "../../components/ConfirmModal";
+import AlertModal from "../../components/AlertModal";
 
 function AddUser({ onClose, onSuccess }) {
   const [form, setForm] = useState({
@@ -16,7 +18,8 @@ function AddUser({ onClose, onSuccess }) {
   });
 
   const [error, setError] = useState("");
-
+  const [alertMessage, setAlertMessage] = useState("");
+  const [showConfirm, setShowConfirm] = useState(false);
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -47,13 +50,13 @@ function AddUser({ onClose, onSuccess }) {
 
       await registerUser(dataToSend);
 
-      alert("User created successfully");
+      setAlertMessage("User created successfully");
 
-      onSuccess(); // reload users
-      onClose(); // close modal
+      onSuccess();
+      onClose();
     } catch (err) {
       console.error(err);
-      setError(err.message || "Failed to create user");
+      setAlertMessage("User Creation Error");
     }
   };
 
@@ -107,10 +110,32 @@ function AddUser({ onClose, onSuccess }) {
           </>
         )}
         <div className="modal-actions">
-          <button onClick={handleSubmit}>Create</button>
+          <button className="createbtn" onClick={() => setShowConfirm(true)}>
+            Create
+          </button>
           <button onClick={onClose}>Cancel</button>
         </div>
       </div>
+      {showConfirm && (
+        <ConfirmModal
+          message="Are you sure you want to create this user?"
+          onConfirm={async () => {
+            setShowConfirm(false);
+            await handleSubmit();
+          }}
+          onCancel={() => setShowConfirm(false)}
+        />
+      )}
+      {alertMessage && (
+        <AlertModal
+          message={alertMessage}
+          onClose={() => {
+            setAlertMessage("");
+            onSuccess();
+            onClose();
+          }}
+        />
+      )}
     </div>
   );
 }

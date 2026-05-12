@@ -1,0 +1,278 @@
+/* doctor.css */
+:root {
+  --navy: #1e3a8a;
+  --primary-blue: #2563eb;
+  --soft-blue: #eff6ff;
+  --text-dark: #0f172a;
+  --text-light: #64748b;
+  --white: #ffffff;
+  --bg-subtle: #f8fafc;
+  --shadow: 0 10px 25px -5px rgba(30, 58, 138, 0.05);
+  --radius: 16px;
+}
+
+.doctor-page {
+  padding: 2rem;
+  background-color: var(--bg-subtle);
+  min-height: 100vh;
+}
+
+.doctor-header h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--navy);
+  margin-bottom: 1.5rem;
+}
+
+/* TOP PATIENT CARDS */
+.doctor-card-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.patient-queue-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  display: flex;
+  gap: 1.25rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.patient-queue-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--primary-blue);
+  box-shadow: 0 20px 25px -5px rgba(30, 58, 138, 0.1);
+}
+
+.patient-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  background: var(--soft-blue);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.patient-card-content h3 {
+  margin: 0 0 4px 0;
+  font-size: 1.1rem;
+  color: var(--text-dark);
+}
+
+.patient-card-content p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-light);
+}
+
+.complaint-preview {
+  margin-top: 8px !important;
+  font-weight: 500;
+  color: var(--primary-blue) !important;
+}
+
+/* SEARCH BAR */
+.doctor-search-bar input {
+  width: 100%;
+  max-width: 400px;
+  padding: 0.8rem 1.2rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+  box-shadow: var(--shadow);
+}
+
+.doctor-search-bar input:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+/* TABLE STYLING */
+.doctor-queue-table-wrapper {
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.doctor-queue-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.doctor-queue-table th {
+  background: #f1f5f9;
+  text-align: left;
+  padding: 1rem 1.5rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-light);
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.doctor-queue-table td {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: var(--text-dark);
+  font-size: 0.95rem;
+}
+
+.queue-action-btn {
+  background: var(--soft-blue);
+  color: var(--primary-blue);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.queue-action-btn:hover {
+  background: var(--primary-blue);
+  color: white;
+}
+
+.priority-row {
+  background: #fef2f2;
+}
+
+.priority-row td:first-child {
+  border-left: 5px solid #dc2626;
+}
+
+.priority-row:hover {
+  background: #fee2e2;
+}
+
+/* PRIORITY BADGE */
+
+.patient-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.priority-badge {
+  background: #dc2626;
+  color: white;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  padding: 4px 8px;
+  border-radius: 999px;
+
+  letter-spacing: 0.5px;
+}
+
+/* FILTER BUTTONS */
+
+/* =========================
+   TOPBAR
+========================= */
+
+.doctor-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 16px;
+
+  margin-bottom: 20px;
+}
+
+/* =========================
+   SEARCH INPUT
+========================= */
+
+.doctor-search-input {
+  flex: 1;
+  max-width: 400px;
+
+  padding: 12px 16px;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+
+  background: white;
+
+  font-size: 0.95rem;
+
+  transition: all 0.2s;
+  box-shadow: var(--shadow);
+}
+
+.doctor-search-input:focus {
+  outline: none;
+
+  border-color: var(--primary-blue);
+
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+/* =========================
+   FILTER GROUP
+========================= */
+
+.doctor-filter-group {
+  display: flex;
+  gap: 10px;
+
+  padding: 6px;
+
+  border-radius: 16px;
+
+  border: 1px solid #e2e8f0;
+
+  background: #f8fafc;
+}
+
+/* FILTER BUTTONS */
+
+.doctor-filter-group button {
+  background: transparent;
+
+  color: var(--primary-blue);
+
+  border: 1px solid transparent;
+
+  border-radius: 10px;
+
+  padding: 10px 18px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+}
+
+/* ACTIVE */
+
+.doctor-filter-group button.active {
+  background: var(--primary-blue);
+
+  color: white;
+}
+
+/* HOVER */
+
+.doctor-filter-group button:hover {
+  background: #e0e7ff;
+}

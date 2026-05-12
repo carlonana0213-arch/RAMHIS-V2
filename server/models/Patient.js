@@ -6,7 +6,7 @@ const PatientSchema = new mongoose.Schema(
       name: String,
       age: { type: Number, default: null },
       birthdate: String,
-      gender: String,
+      sex: String,
       insurance: String,
       tobacco: String,
       alcohol: String,
@@ -47,6 +47,7 @@ const PatientSchema = new mongoose.Schema(
         date: { type: Date, default: Date.now },
         doctorName: { type: String, required: true },
         department: { type: String, required: true },
+
         examination: {
           generalAppearance: String,
           heent: String,
@@ -80,7 +81,7 @@ const PatientSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["waiting", "beingSeen", "released"],
+      enum: ["waiting", "beingSeen", "forPharmacy", "released"],
       default: "waiting",
     },
     needsFurtherTreatment: {
@@ -96,6 +97,10 @@ const PatientSchema = new mongoose.Schema(
     department: {
       type: String,
       enum: ["Pediatrics", "Ortho", "Opta", "Dental", "Cardio", "General"],
+    },
+    isPriority: {
+      type: Boolean,
+      default: false,
     },
     deletedDoctorRecords: [
       {

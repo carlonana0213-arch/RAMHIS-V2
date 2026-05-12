@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { loginUser } from "../services/authService";
+import { loginUser } from "../../services/authService";
 import { Link, useNavigate } from "react-router-dom";
-import ramlogo from "../resources/ramhislogo.png";
-import "../styles/form.css";
-import "../styles/auth.css";
+import ramlogo from "../../resources/ramhislogo.png";
+import "../../styles/login.css";
 import * as yup from "yup";
 
-function Login() {
+const LoginPage = () => {
   const [form, setForm] = useState({ email: "", password: "" });
   const navigate = useNavigate();
 
@@ -43,7 +42,13 @@ function Login() {
         localStorage.setItem("token", res.token);
         localStorage.setItem("user", JSON.stringify(res.user));
         localStorage.setItem("userName", res.user.name);
-        navigate("/patient");
+
+        // ROLE-BASED REDIRECT
+        if (res.user.role === "Admin") {
+          navigate("/dashboard");
+        } else {
+          navigate("/patient");
+        }
       }
     } catch (err) {
       // Yup validation error
@@ -53,51 +58,42 @@ function Login() {
           formattedErrors[error.path] = error.message;
         });
         setErrors(formattedErrors);
-      }
-      // Backend invalid credentials
-      else {
+      } else {
         setServerError(err.message);
       }
     }
   };
-
   return (
-    <div className="auth-page">
-      <div className="auth-container">
-        {/* LEFT PANEL */}
-        <div className="auth-left">
-          <h1>Welcome Back!</h1>
-          <p>To keep connected with us please login with your personal info</p>
-        </div>
+    <div className="center-page">
+      <div className="auth-form-wrapper">
+        <img src={ramlogo} alt="RAMHIS Logo" className="auth-logo" />
+        <p className="login-subtitle">
+          RAMHIS
+          <br />
+          Remote Area Medical Health Information System
+        </p>
+        <h2>Enter Your Credentials to Continue</h2>
+        <form className="auth-form" onSubmit={handleSubmit}>
+          {errors.email && <p className="error">{errors.email}</p>}
+          <input name="email" placeholder="Email" onChange={handleChange} />
 
-        {/* RIGHT PANEL */}
-        <div className="auth-right">
-          <form className="auth-form" onSubmit={handleSubmit}>
-            <img src={ramlogo} width="80" />
+          {serverError && <p className="error">{serverError}</p>}
 
-            <h2>Sign In</h2>
+          {errors.password && <p className="error">{errors.password}</p>}
+          <input
+            name="password"
+            type="password"
+            placeholder="Password"
+            onChange={handleChange}
+          />
 
-            {errors.email && <p className="error">{errors.email}</p>}
-            <input name="email" placeholder="Email" onChange={handleChange} />
-
-            {serverError && <p className="error">{serverError}</p>}
-
-            {errors.password && <p className="error">{errors.password}</p>}
-            <input
-              name="password"
-              type="password"
-              placeholder="Password"
-              onChange={handleChange}
-            />
-
-            <button type="submit" className="primary-btn">
-              SIGN IN
-            </button>
-          </form>
-        </div>
+          <button type="submit" className="primary-btn">
+            Sign in
+          </button>
+        </form>
       </div>
     </div>
   );
-}
+};
 
-export default Login;
+export default LoginPage;

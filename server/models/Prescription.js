@@ -29,7 +29,7 @@ const prescriptionSchema = new mongoose.Schema(
     },
     doctor: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User", // if you have doctors in user model
+      ref: "User",
     },
     items: [prescriptionItemSchema],
     status: {

@@ -26,11 +26,10 @@
 
 .auth-container {
   backdrop-filter: blur(6px);
-
-  position: relative;
+  position: center;
   z-index: 1;
-  width: 900px;
-  height: 550px;
+  width: 1200px;
+  height: 750px;
   display: flex;
   background: white;
   border-radius: 14px;
@@ -201,5 +200,13 @@
 }
 
 .label {
+  align-items: center;
+}
+
+.center-page {
+  padding-top: 0%;
+
+  display: flex;
+  justify-content: center;
   align-items: center;
 }

@@ -359,3 +359,152 @@ textarea {
   height: 100%;
   overflow-y: auto;
 }
+
+/* Container para sa buong modal background */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.5); /* Semi-transparent navy background */
+  backdrop-filter: blur(
+    4px
+  ); /* Blur effect sa background para sa modern look */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.consent-container {
+  background: var(--white);
+  width: 90%;
+  max-width: 550px;
+  padding: 2rem;
+  border-radius: var(--radius); /* Gamit ang 12px/16px radius mo */
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  animation: modalAppear 0.3s ease-out;
+}
+
+@keyframes modalAppear {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.consent-container h3 {
+  color: var(--navy);
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Scrollable area para sa mahabang text */
+.consent-text {
+  background: var(--bg-subtle);
+  padding: 1.5rem;
+  border-radius: 10px;
+  max-height: 350px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 2rem;
+}
+
+.consent-text p {
+  color: var(--text-dark);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.consent-text p:last-child {
+  margin-bottom: 0;
+}
+
+/* Actions area */
+.consent-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.consent-actions button {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.cancel-btn {
+  background: transparent;
+  color: var(--text-light);
+  border: 1px solid #e2e8f0 !important;
+}
+
+.cancel-btn:hover {
+  background: #f1f5f9;
+  color: var(--text-dark);
+}
+
+.consent-actions .primary {
+  background: var(--primary-blue);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+}
+
+.consent-actions .primary:hover {
+  background: var(--navy);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 10px -1px rgba(37, 99, 235, 0.3);
+}
+
+.history-section {
+  margin-bottom: 2rem;
+}
+
+.checklist-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 1rem;
+}
+
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 12px;
+
+  border: 1px solid #dbeafe;
+  border-radius: 10px;
+
+  background: #f8fafc;
+
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.checklist-item:hover {
+  background: #eff6ff;
+}
+
+.checklist-item input {
+  width: 16px;
+  height: 16px;
+}
