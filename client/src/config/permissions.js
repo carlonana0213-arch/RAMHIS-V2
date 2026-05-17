@@ -6,4 +6,6 @@ export const permissions = {
   accounts: ["Admin", "Doctor", "Volunteer", "Pharmacist"],
   admin: ["Admin"],
   patient: ["Doctor", "Admin", "Volunteer"],
+  analytics: ["Admin"],
+  dashboard: ["Admin"],
 };

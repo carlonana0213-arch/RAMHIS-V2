@@ -6,10 +6,11 @@ import {
   updatePatient,
   deletePatient,
   getPatientById,
-} from "../services/patientService";
-import "../styles/registry.css";
-import "../styles/registry-modern.css";
-
+} from "../../services/patientService";
+import "../../styles/registry.css";
+import "../../styles/registry-modern.css";
+import AlertModal from "../../components/AlertModal";
+import ConfirmModal from "../../components/ConfirmModal";
 const HISTORY_OPTIONS = [
   "Diabetes",
   "Hypertension",
@@ -66,6 +67,8 @@ function Registry({ patientIdFromQueue }) {
   const [patientId, setPatientId] = useState(null);
   const [search, setSearch] = useState("");
   const [results, setResults] = useState([]);
+  const [confirmState, setConfirmState] = useState(null);
+  const [alertMessage, setAlertMessage] = useState("");
   const handleButtonGroupKey = (e, options, currentValue, setValue) => {
     const currentIndex = options.indexOf(currentValue);
 
@@ -235,6 +238,7 @@ function Registry({ patientIdFromQueue }) {
   //edit butt
   const handleEdit = async () => {
     if (!patientId) return;
+
     try {
       const payload = {
         generalInfo: {
@@ -258,11 +262,11 @@ function Registry({ patientIdFromQueue }) {
 
       const res = await updatePatient(patientId, payload);
       console.log("Update patient response:", res);
-      alert("Patient updated successfully");
+      setAlertMessage("Patient updated successfully");
       clearForm();
     } catch (err) {
       console.error("Error updating patient:", err);
-      alert("Failed to update patient. See console for details.");
+      setAlertMessage("Failed to update patient");
     }
   };
 
@@ -827,17 +831,48 @@ function Registry({ patientIdFromQueue }) {
       </div>
 
       <div className="action-bar">
-        <button onClick={handleEdit} disabled={!patientId}>
-          Edit
+        <button
+          disabled={!patientId}
+          onClick={() => {
+            if (!patientId) return;
+
+            setConfirmState({
+              message: "Save changes to this patient?",
+              onConfirm: async () => {
+                await handleEdit();
+                setConfirmState(null);
+              },
+            });
+          }}
+        >
+          Save Changes
         </button>
         <button
           className="danger"
-          onClick={async () => {
-            if (!patientId) return;
-            await deletePatient(patientId);
-            clearForm();
-          }}
           disabled={!patientId}
+          onClick={() => {
+            if (!patientId) return;
+
+            setConfirmState({
+              message:
+                "Are you sure you want to DELETE this patient? This cannot be undone.",
+              onConfirm: async () => {
+                try {
+                  await deletePatient(patientId);
+
+                  setAlertMessage("Patient deleted successfully");
+
+                  clearForm();
+                } catch (err) {
+                  console.error(err);
+
+                  setAlertMessage("Failed to delete patient");
+                }
+
+                setConfirmState(null);
+              },
+            });
+          }}
         >
           Delete
         </button>
@@ -845,6 +880,19 @@ function Registry({ patientIdFromQueue }) {
           Clear
         </button>
       </div>
+      {confirmState && (
+        <ConfirmModal
+          message={confirmState.message}
+          onConfirm={confirmState.onConfirm}
+          onCancel={() => setConfirmState(null)}
+        />
+      )}
+      {alertMessage && (
+        <AlertModal
+          message={alertMessage}
+          onClose={() => setAlertMessage("")}
+        />
+      )}
     </form>
   );
 }

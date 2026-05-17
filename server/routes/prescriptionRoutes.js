@@ -28,8 +28,20 @@ router.get(
 router.patch(
   "/:prescriptionId/:itemId",
   auth,
-  checkPermission("prescriptions"),
+  checkPermission("pharmacy"),
   controller.markAsGiven,
 );
+
+router.get("/", auth, checkPermission("pharmacy"), async (req, res) => {
+  try {
+    const prescriptions = await require("../models/Prescription")
+      .find()
+      .populate("items.medicine");
+
+    res.json(prescriptions);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 module.exports = router;

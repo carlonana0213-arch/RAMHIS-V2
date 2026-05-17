@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { apiFetch } from "../services/api";
-import { useNavigate } from "react-router-dom";
-import "../styles/queue.css";
+import { apiFetch } from "../../services/api";
+
+import "../../styles/queue.css";
 
 const departments = [
   "Pediatrics",
@@ -17,22 +17,17 @@ const statusColors = {
   beingSeen: "#38bdf8",
 };
 
-const statusRowColors = {
-  waiting: "#fef9c3",
-  beingSeen: "#e0f2fe",
-};
-
-const PatientQueue = () => {
+const PatientQueue = ({ onSelectPatient }) => {
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("All");
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchQueue = async () => {
       try {
         const data = await apiFetch("http://localhost:5000/api/patients/queue");
+
         setPatients(data);
       } catch (err) {
         console.error("Error loading patient queue", err);
@@ -42,6 +37,13 @@ const PatientQueue = () => {
     };
 
     fetchQueue();
+
+    const interval = setInterval(() => {
+      fetchQueue();
+    }, 3000);
+
+    // CLEANUP
+    return () => clearInterval(interval);
   }, []);
 
   if (loading) return <p>Loading patient queue...</p>;
@@ -54,47 +56,43 @@ const PatientQueue = () => {
     )
     .filter((p) =>
       departmentFilter === "All" ? true : p.department === departmentFilter,
-    );
+    )
+    .sort((a, b) => {
+      if (a.isPriority && !b.isPriority) return -1;
+      if (!a.isPriority && b.isPriority) return 1;
+      return 0;
+    });
 
   const openPatient = (patient) => {
-    navigate("/patient", {
-      state: {
-        patientId: patient._id,
-        tab: "view",
-      },
-    });
+    onSelectPatient(patient);
   };
 
   return (
     <div className="queue-container">
-      <h2>Patient Queue</h2>
-
       {/* SEARCH */}
-      <div className="queue-search">
+      <div className="queue-toolbar">
         <input
+          className="queue-search-input"
           placeholder="Search patient..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-      </div>
-      <div className="queue-tabs">
-        <button
-          className={departmentFilter === "All" ? "tab active" : "tab"}
-          onClick={() => setDepartmentFilter("All")}
-        >
-          All
-        </button>
 
-        {departments.map((dept) => (
-          <button
-            key={dept}
-            className={departmentFilter === dept ? "tab active" : "tab"}
-            onClick={() => setDepartmentFilter(dept)}
-          >
-            {dept}
-          </button>
-        ))}
+        <select
+          className="department-dropdown"
+          value={departmentFilter}
+          onChange={(e) => setDepartmentFilter(e.target.value)}
+        >
+          <option value="All">All Departments</option>
+
+          {departments.map((dept) => (
+            <option key={dept} value={dept}>
+              {dept}
+            </option>
+          ))}
+        </select>
       </div>
+
       {/* MAIN QUEUE TABLE */}
 
       <div className="queue-table">
@@ -114,18 +112,23 @@ const PatientQueue = () => {
             <div
               key={patient._id}
               className="queue-row"
-              style={{
-                backgroundColor: statusRowColors[patient.status] || "white",
-              }}
               onClick={() => openPatient(patient)}
             >
               <span className="queue-number">{index + 1}</span>
 
-              <span>{patient.generalInfo.name}</span>
+              <span className="queue-patient-name">
+                {patient.generalInfo.name}
+
+                {patient.isPriority && (
+                  <span className="queue-priority-badge">PRIORITY</span>
+                )}
+              </span>
 
               <span>{patient.generalInfo.age}</span>
 
-              <span>{patient.generalInfo.sex}</span>
+              <span>
+                {patient.generalInfo.sex || patient.generalInfo.gender || "--"}
+              </span>
 
               <span>{patient.department}</span>
 

@@ -5,8 +5,9 @@ import * as yup from "yup";
 
 import ramlogo from "../resources/ramhislogo.png";
 
-import "../styles/form.css";
-import "../styles/auth.css";
+/*import "../styles/form.css";*/
+
+/*import "../styles/auth.css";*/
 
 function Register() {
   const [form, setForm] = useState({

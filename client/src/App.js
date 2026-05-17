@@ -1,22 +1,38 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Login from "./pages/login";
 import Register from "./pages/register";
-import Registry from "./pages/Registry";
+import Registry from "./pages/patients/Registry";
 import DoctorSheet from "./pages/DoctorSheet.js";
 import Pharmacy from "./pages/Pharmacy.js";
-import PatientQueue from "./pages/PatientQueue.js";
+import PatientQueue from "./pages/patients/PatientQueue.js";
 import Account from "./pages/Account.js";
 import AppLayout from "./layouts/AppLayout";
 import ProtectedRoute from "./services/ProtectedRoute.js";
-import AdminDashboard from "./pages/AdminDashboard";
+import UserManagement from "./pages/UserManagement";
 import Patient from "./pages/Patient.js";
+import Analytics from "./pages/analytics.js";
+import PharmacyQueue from "./pages/pharmacy/PharmacyQueue";
+import PharmacyInventory from "./pages/pharmacy/PharmacyInventory";
+import LandingPage from "./pages/Landing";
+import Dashboard from "./pages/Dashboard.js";
+import Doctor from "./pages/Doctor.js";
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Login />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/register" element={<Register />} />
+
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <Dashboard />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/patient"
           element={
@@ -29,17 +45,26 @@ function App() {
         />
 
         <Route
-          path="/admin"
+          path="/users"
           element={
             <ProtectedRoute>
               <AppLayout>
                 {" "}
-                <AdminDashboard />
+                <UserManagement />
               </AppLayout>
             </ProtectedRoute>
           }
         />
-
+        <Route
+          path="/doctor"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <Doctor />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/registry"
           element={
@@ -50,12 +75,24 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
-          path="/pharmacy"
+          path="/pharmacy/queue"
           element={
             <ProtectedRoute>
               <AppLayout>
-                <Pharmacy />
+                <PharmacyQueue />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/pharmacy/inventory"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <PharmacyInventory />
               </AppLayout>
             </ProtectedRoute>
           }
@@ -88,6 +125,16 @@ function App() {
             <ProtectedRoute>
               <AppLayout>
                 <Account />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <Analytics />
               </AppLayout>
             </ProtectedRoute>
           }

@@ -1,12 +1,16 @@
 import { useState, useEffect } from "react";
-import { searchPatients, updatePatient } from "../services/patientService";
+import {
+  searchPatients,
+  updatePatient,
+  getPatientQueue,
+} from "../services/patientService";
 import { getMedicines } from "../services/pharmacyService";
 import { apiFetch } from "../services/api";
 import "../styles/doctorSheet.css";
 
 function DoctorSheet() {
   const storedUser = JSON.parse(localStorage.getItem("user"));
-
+  const doctorDepartment = storedUser?.doctorInfo?.specialization || "General";
   const [patients, setPatients] = useState([]);
   const [patient, setPatient] = useState(null);
   const [search, setSearch] = useState("");
@@ -54,7 +58,26 @@ function DoctorSheet() {
     }
   };
   const [medicines, setMedicines] = useState([]);
+  const loadDepartmentQueue = async () => {
+    try {
+      const queue = await getPatientQueue();
 
+      const filtered = queue.filter(
+        (p) => p.department === doctorDepartment && p.status !== "released",
+      );
+
+      setPatients(filtered);
+
+      // auto-select first patient
+      if (filtered.length > 0) {
+        selectPatient(filtered[0]);
+      } else {
+        setPatient(null);
+      }
+    } catch (err) {
+      console.error("Failed loading department queue", err);
+    }
+  };
   const emptyDoctorSheet = {
     examination: {
       generalAppearance: "",
@@ -123,7 +146,9 @@ function DoctorSheet() {
     };
     loadMedicines();
   }, []);
-
+  useEffect(() => {
+    loadDepartmentQueue();
+  }, []);
   const loadPatientPrescriptions = async (patientId) => {
     try {
       const data = await apiFetch(
@@ -221,6 +246,9 @@ function DoctorSheet() {
         method: "POST",
         body: JSON.stringify({
           patient: patient._id,
+
+          doctor: storedUser?.id,
+
           items: validItems.map((i) => ({
             medicine: i.medicine,
             quantity: Number(i.quantity),
@@ -301,6 +329,7 @@ function DoctorSheet() {
       setReferralDept("");
       setReferralReason("");
       setNewComplaint("");
+      await loadDepartmentQueue();
 
       alert("Referral + record saved");
     } catch (err) {
@@ -310,21 +339,26 @@ function DoctorSheet() {
 
   const handleReleased = async () => {
     if (!patient) return;
-    await updatePatient(patient._id, { status: "released" });
+
+    await updatePatient(patient._id, {
+      status: "released",
+    });
+
+    await loadDepartmentQueue();
+
     alert("Patient Has Been Treated");
   };
 
-  const handleNextPatient = () => {
-    if (!patients.length || !patient) return;
+  const handleForPharmacy = async () => {
+    if (!patient) return;
 
-    const index = patients.findIndex(
-      (p) => String(p._id) === String(patient._id),
-    );
+    await updatePatient(patient._id, {
+      status: "forPharmacy",
+    });
 
-    if (index === -1) return;
+    await loadDepartmentQueue();
 
-    const next = patients[index + 1];
-    if (next) selectPatient(next);
+    alert("Patient sent to pharmacy");
   };
 
   const activePrescriptions = Array.isArray(existingPrescriptions)
@@ -752,7 +786,8 @@ function DoctorSheet() {
                     {prescription.items.map((item) => (
                       <div key={item._id} style={{ marginBottom: "6px" }}>
                         <strong>
-                          {item.medicine?.name || "Unknown Medicine"}{" "}
+                          {item.medicine?.names?.join(", ") ||
+                            "Unknown Medicine"}{" "}
                           {item.medicine?.dosage
                             ? `(${item.medicine.dosage})`
                             : ""}
@@ -810,9 +845,13 @@ function DoctorSheet() {
                         <div className="medicine-dropdown">
                           {medicines
                             .filter((m) =>
-                              m.name
-                                .toLowerCase()
-                                .includes(medicineSearch[index].toLowerCase()),
+                              m.names?.some((name) =>
+                                name
+                                  .toLowerCase()
+                                  .includes(
+                                    medicineSearch[index].toLowerCase(),
+                                  ),
+                              ),
                             )
                             .slice(0, 5)
                             .map((m) => (
@@ -826,14 +865,15 @@ function DoctorSheet() {
 
                                   setMedicineSearch({
                                     ...medicineSearch,
-                                    [index]: `${m.name} (Stock: ${m.dosage}) (Stock: ${m.quantity})`,
+                                    [index]: `${m.names?.join(", ")}${m.dosage ? ` (${m.dosage})` : ""} (Stock: ${m.quantity})`,
                                   });
 
                                   setActiveDropdown(null);
                                 }}
                               >
-                                {m.name} {m.dosage ? `(${m.dosage})` : ""}{" "}
-                                (Stock: {m.quantity})
+                                {m.names?.join(", ")}
+                                {m.dosage ? ` (${m.dosage})` : ""} (Stock:{" "}
+                                {m.quantity})
                               </div>
                             ))}
                         </div>
@@ -890,7 +930,7 @@ function DoctorSheet() {
 
                   <button onClick={handleReleased}>Cleared</button>
 
-                  <button onClick={handleNextPatient}>For Pharmacy</button>
+                  <button onClick={handleForPharmacy}>For Pharmacy</button>
 
                   <button onClick={() => setShowReferral(true)}>
                     Further Treatment
@@ -1023,7 +1063,8 @@ function DoctorSheet() {
                     {prescription.items.map((item) => (
                       <div key={item._id}>
                         <strong>
-                          {item.medicine?.name || "Unknown Medicine"}{" "}
+                          {item.medicine?.names?.join(", ") ||
+                            "Unknown Medicine"}{" "}
                           {item.medicine?.dosage
                             ? `(${item.medicine.dosage})`
                             : ""}

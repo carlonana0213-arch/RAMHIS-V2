@@ -3,10 +3,10 @@ const Medicine = require("../models/Medicine");
 
 exports.createPrescription = async (req, res) => {
   try {
-    const { patient, items } = req.body;
-
+    const { patient, doctor, items } = req.body;
     const prescription = await Prescription.create({
       patient,
+      doctor,
       items,
       status: "Pending",
     });
@@ -19,13 +19,16 @@ exports.createPrescription = async (req, res) => {
 
 exports.getPendingPrescriptions = async (req, res) => {
   try {
-    const prescriptions = await Prescription.find({ status: "Pending" })
+    const prescriptions = await Prescription.find()
       .populate("patient")
+      .populate("doctor")
       .populate("items.medicine");
 
     res.json(prescriptions);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({
+      message: err.message,
+    });
   }
 };
 
@@ -42,8 +45,17 @@ exports.markAsGiven = async (req, res) => {
 
     const medicine = await Medicine.findById(item.medicine);
 
-    if (medicine.quantity < item.quantity)
-      return res.status(400).json({ message: "Not enough stock" });
+    if (!medicine) {
+      return res.status(404).json({
+        message: "Medicine not found",
+      });
+    }
+
+    if (medicine.quantity < item.quantity) {
+      return res.status(400).json({
+        message: "Not enough stock",
+      });
+    }
 
     // deduct stock
     medicine.quantity -= item.quantity;
@@ -68,6 +80,7 @@ exports.getPrescriptionsByPatient = async (req, res) => {
     const prescriptions = await Prescription.find({
       patient: req.params.patientId,
     })
+      .populate("doctor")
       .populate("items.medicine")
       .populate("patient");
 

@@ -12,6 +12,12 @@ const UserSchema = new mongoose.Schema({
     unique: true,
   },
 
+  createdAt: {
+    type: Date,
+    default: Date.now,
+    immutable: true,
+  },
+
   password: {
     type: String,
     required: true,
@@ -36,8 +42,16 @@ const UserSchema = new mongoose.Schema({
   ========================= */
   verificationStatus: {
     type: String,
-    enum: ["Pending", "Approved", "Rejected"],
+    enum: ["Pending", "Approved", "Rejected", "Deactivated"],
     default: "Pending",
+  },
+  mustChangePassword: {
+    type: Boolean,
+    default: true,
+  },
+
+  tempPassword: {
+    type: String,
   },
   volunteerType: {
     type: String,

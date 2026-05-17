@@ -1,18 +1,63 @@
 const Patient = require("../models/Patient");
 
+exports.getAllPatients = async (req, res) => {
+  try {
+    const patients = await Patient.find().sort({ createdAt: -1 });
+    res.json(patients);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 exports.createPatient = async (req, res) => {
   try {
-    console.log("Incoming payload:", JSON.stringify(req.body, null, 2));
+    const {
+      generalInfo,
+      medicalHistory,
+      familyHistory,
+      examination,
+      obstetricHistory,
+      perinatalHistory,
+      department,
+      initComplaint,
+      isPriority,
+      location,
+      missionDate,
+    } = req.body;
 
-    const patient = new Patient(req.body);
+    if (!location || !missionDate) {
+      return res.status(400).json({
+        error: "Missing mission data (location or missionDate)",
+      });
+    }
+
+    if (generalInfo.sex && !generalInfo.gender) {
+      generalInfo.gender = generalInfo.sex;
+    }
+    if (!generalInfo || !generalInfo.name) {
+      return res.status(400).json({ error: "Invalid patient data" });
+    }
+
+    const patient = new Patient({
+      generalInfo,
+      medicalHistory,
+      familyHistory,
+      examination,
+      obstetricHistory,
+      perinatalHistory,
+      department,
+      initComplaint,
+      isPriority,
+      location,
+      missionDate,
+    });
+
     await patient.save();
 
-    res.json(patient);
+    res.status(201).json(patient);
   } catch (err) {
-    console.error("MONGOOSE SAVE ERROR:");
-    console.error(err);
-
-    res.status(500).json({ msg: "Error saving patient" });
+    console.error("MONGOOSE SAVE ERROR:", err);
+    res.status(500).json({ error: err.message });
   }
 };
 
@@ -74,7 +119,7 @@ exports.addDoctorRecord = async (req, res) => {
     const updated = await Patient.findByIdAndUpdate(
       id,
       {
-        $push: { doctorSheets: record }, // 🔥 APPEND
+        $push: { doctorSheets: record },
       },
       { new: true },
     );
@@ -102,7 +147,6 @@ exports.deleteDoctorRecord = async (req, res) => {
       return res.status(404).json({ message: "Record not found" });
     }
 
-    // 🔥 Save deleted record (audit trail)
     patient.deletedDoctorRecords = patient.deletedDoctorRecords || [];
 
     patient.deletedDoctorRecords.push({
@@ -111,7 +155,6 @@ exports.deleteDoctorRecord = async (req, res) => {
       deletedAt,
     });
 
-    // 🔥 Remove from active records
     record.deleteOne();
 
     await patient.save();

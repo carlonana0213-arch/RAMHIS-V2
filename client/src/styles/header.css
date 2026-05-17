@@ -39,7 +39,10 @@
 .nav-links {
   display: flex;
   flex-direction: column;
+
   gap: 10px;
+
+  flex: 1;
 }
 
 .nav-link {
@@ -109,4 +112,64 @@
   font-size: 20px;
   min-width: 20px;
   text-align: center;
+}
+
+.nav-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-parent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+/* submenu */
+.nav-submenu {
+  display: flex;
+  flex-direction: column;
+  margin-left: 28px;
+  margin-top: 6px;
+}
+
+/* links */
+.nav-sublink {
+  padding: 6px 0;
+  font-size: 14px;
+  color: #64748b;
+  text-decoration: none;
+  color: white; /* ✅ make text white */
+  opacity: 0.8; /* subtle inactive look */
+  transition: all 0.2s ease;
+}
+
+.nav-sublink.active {
+  color: white;
+  opacity: 1;
+  font-weight: 600;
+}
+
+.nav-sublink:hover {
+  opacity: 1;
+}
+
+.logout-section {
+  margin-top: auto;
+}
+
+/* OPTIONAL RED HOVER */
+.logout-link:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.nav-subitem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-subicon {
+  font-size: 0.9rem;
 }

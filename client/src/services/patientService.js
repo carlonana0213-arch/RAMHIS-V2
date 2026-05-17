@@ -3,7 +3,23 @@ import { apiFetch } from "./api";
 const API = "http://localhost:5000/api/patients";
 
 export const getPatients = async () => {
-  return apiFetch(API);
+  try {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch("http://localhost:5000/api/patients", {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) throw new Error("Failed to fetch patients");
+
+    return await res.json();
+  } catch (error) {
+    console.error("Error fetching patients:", error);
+    return [];
+  }
 };
 
 export const addPatient = (data) =>
@@ -13,7 +29,7 @@ export const addPatient = (data) =>
   });
 
 export const searchPatients = async (name) => {
-  return apiFetch(`${API}?name=${name}`);
+  return apiFetch(`${API}/search?name=${name}`);
 };
 
 export const updatePatient = (id, data) =>

@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { updateUser } from "../services/patientService";
 import "../styles/account.css";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import ConfirmModal from "../components/ConfirmModal";
 
 function Account() {
   const [formData, setFormData] = useState(null);
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [confirmState, setConfirmState] = useState(null);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -199,14 +201,44 @@ function Account() {
       {/* ACTIONS */}
       <div className="account-footer">
         <div className="left-actions">
-          <button onClick={handleSave}>Save Changes</button>
+          <button
+            onClick={() => {
+              setConfirmState({
+                message: "Are you sure you want to keep changes?",
+                onConfirm: () => {
+                  handleSave();
+                  setConfirmState(null);
+                },
+              });
+            }}
+          >
+            Save Changes
+          </button>
           <button className="cancel-btn">Cancel</button>
         </div>
 
-        <button className="logout-btn" onClick={handleLogout}>
-          Log Out
+        <button
+          className="logout-btn"
+          onClick={() => {
+            setConfirmState({
+              message: "Are you sure you want to log out?",
+              onConfirm: () => {
+                handleLogout();
+                setConfirmState(null);
+              },
+            });
+          }}
+        >
+          Logout
         </button>
       </div>
+      {confirmState && (
+        <ConfirmModal
+          message={confirmState.message}
+          onConfirm={confirmState.onConfirm}
+          onCancel={() => setConfirmState(null)}
+        />
+      )}
     </div>
   );
 }

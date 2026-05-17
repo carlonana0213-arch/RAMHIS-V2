@@ -1,0 +1,79 @@
+/* confirmModal.css */
+
+/* Core Container */
+.confirm-modal {
+  background: #ffffff;
+  padding: 30px;
+  border-radius: 16px;
+  width: 360px;
+  text-align: center;
+  box-shadow:
+    0 15px 35px rgba(0, 0, 0, 0.1),
+    0 5px 15px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  animation: modalPop 0.25s ease-out;
+}
+
+/* Typography */
+.confirm-modal p {
+  margin: 0 0 25px 0;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #2d3748; /* Dark text matching system UI */
+  font-weight: 500;
+}
+
+/* Actions Layout */
+.confirm-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+/* Base Button Styles */
+.confirm-actions button {
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  min-width: 100px;
+}
+
+/* Danger Button (Confirm/Delete) */
+.confirm-actions button.danger {
+  background: #3f5fbe; /* Using brand blue for primary confirmation */
+  color: white;
+}
+
+.confirm-actions button.danger:hover {
+  background: #324a9a;
+  transform: translateY(-1px);
+}
+
+/* Ghost Button (Cancel) */
+.confirm-actions button.ghost {
+  background: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
+}
+
+.confirm-actions button.ghost:hover {
+  background: #e5e7eb;
+  color: #1f2937;
+}
+
+/* Animations */
+@keyframes modalPop {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
