@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import "../styles/doctor.css";
 
 import { getPatientQueue } from "../services/patientService";
+import ConfirmModal from "../components/ConfirmModal";
 
 import DoctorQueue from "./doctor/doctorQueue";
 import PatientCard from "./doctor/patientCard";
@@ -22,14 +23,13 @@ function Doctor() {
   const [queueFilter, setQueueFilter] = useState("all");
   const [showDoctorView, setShowDoctorView] = useState(false);
   const [queueIndex, setQueueIndex] = useState(0);
+  const [showReleaseConfirm, setShowReleaseConfirm] = useState(false);
   const loadQueue = async () => {
     try {
       const queue = await getPatientQueue();
 
-      // REMOVE RELEASED PATIENTS
       const activePatients = queue.filter((p) => p.status !== "released");
 
-      // ONLY STORE RAW PATIENTS
       setPatients(activePatients);
     } catch (err) {
       console.error(err);
@@ -105,15 +105,38 @@ function Doctor() {
   };
   const currentPatient = filteredPatients[queueIndex];
   const handleNextPatient = () => {
-    if (filteredPatients.length === 0) return;
+    if (!currentPatient) return;
 
-    setQueueIndex((prev) => {
-      if (prev >= filteredPatients.length - 1) {
-        return 0;
-      }
+    setShowReleaseConfirm(true);
+  };
+  const confirmReleaseAndNext = async () => {
+    try {
+      await import("../services/doctorService").then(
+        async ({ updatePatientStatus }) => {
+          await updatePatientStatus(currentPatient._id, {
+            status: "released",
+          });
+        },
+      );
 
-      return prev + 1;
-    });
+      await loadQueue();
+
+      setQueueIndex((prev) => {
+        const updatedLength = filteredPatients.length - 1;
+
+        if (updatedLength <= 0) return 0;
+
+        if (prev >= updatedLength) {
+          return 0;
+        }
+
+        return prev;
+      });
+
+      setShowReleaseConfirm(false);
+    } catch (err) {
+      console.error("Failed to release patient", err);
+    }
   };
   return (
     <div className="doctor-page">
@@ -148,6 +171,13 @@ function Doctor() {
           patient={selectedPatient}
           onClose={() => setShowDoctorView(false)}
           refreshQueue={loadQueue}
+        />
+      )}
+      {showReleaseConfirm && (
+        <ConfirmModal
+          message="Are you sure you want to proceed and release current patient? This will remove the patient from the list."
+          onConfirm={confirmReleaseAndNext}
+          onCancel={() => setShowReleaseConfirm(false)}
         />
       )}
     </div>

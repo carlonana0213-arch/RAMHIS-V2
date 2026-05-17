@@ -11,6 +11,11 @@ function DoctorQueue({
     beingSeen: "#38bdf8",
     forPharmacy: "#34d399",
   };
+  const statusLabels = {
+    waiting: "Waiting",
+    beingSeen: "Being Served",
+    forPharmacy: "For Pharmacy",
+  };
   return (
     <div className="doctor-queue-container">
       <div className="doctor-topbar">
@@ -89,7 +94,7 @@ function DoctorQueue({
                         background: statusColors[patient.status] || "#cbd5e1",
                       }}
                     >
-                      {patient.status}
+                      {statusLabels[patient.status] || patient.status}{" "}
                     </span>
                   </td>
 
