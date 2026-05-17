@@ -1,6 +1,3 @@
-// COMPLETE DROP-IN REPLACEMENT
-// src/pages/doctor/patientDoctorView.js
-
 import { useEffect, useMemo, useState } from "react";
 
 import "../../styles/patientDoctorView.css";
@@ -334,7 +331,25 @@ function PatientDoctorView({ patient, onClose, refreshQueue }) {
             </p>
           </div>
 
-          <button className="close-btn" onClick={onClose}>
+          <button
+            className="close-btn"
+            onClick={async () => {
+              try {
+                // ONLY revert if currently being seen
+                if (patient.status === "beingSeen") {
+                  await updatePatientStatus(patient._id, {
+                    status: "waiting",
+                  });
+
+                  refreshQueue();
+                }
+
+                onClose();
+              } catch (err) {
+                console.error("Failed to reset patient status", err);
+              }
+            }}
+          >
             ✕
           </button>
         </div>
@@ -542,6 +557,7 @@ function PatientDoctorView({ patient, onClose, refreshQueue }) {
 
                           {!item.isGiven ? (
                             <button
+                              className="give-med-btn"
                               onClick={() =>
                                 handleGiveMedicine(prescription._id, item._id)
                               }
@@ -692,7 +708,7 @@ ${m.dosage ? ` (${m.dosage})` : ""}
 
                       {prescriptionItems.length > 1 && (
                         <button
-                          className="remove-med-btn"
+                          className="add-med-btn"
                           onClick={() => {
                             const updated = prescriptionItems.filter(
                               (_, i) => i !== index,
@@ -726,7 +742,10 @@ ${m.dosage ? ` (${m.dosage})` : ""}
                       Add Medicine
                     </button>
 
-                    <button onClick={handleSavePrescription}>
+                    <button
+                      className="save-prescription-btn"
+                      onClick={handleSavePrescription}
+                    >
                       Save Prescription
                     </button>
                   </div>
@@ -736,9 +755,29 @@ ${m.dosage ? ` (${m.dosage})` : ""}
 
                 <div className="doctor-section">
                   <div className="referral-toggle">
-                    <button onClick={() => setShowReferral(!showReferral)}>
-                      Further Treatment
-                    </button>
+                    <label>Further Treatment?</label>
+
+                    <div className="referral-options">
+                      <label>
+                        <input
+                          type="radio"
+                          name="referral"
+                          checked={!showReferral}
+                          onChange={() => setShowReferral(false)}
+                        />
+                        No
+                      </label>
+
+                      <label>
+                        <input
+                          type="radio"
+                          name="referral"
+                          checked={showReferral}
+                          onChange={() => setShowReferral(true)}
+                        />
+                        Yes
+                      </label>
+                    </div>
                   </div>
 
                   {showReferral && (

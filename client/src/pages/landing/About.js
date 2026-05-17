@@ -18,7 +18,7 @@ const AboutSystem = () => {
           missions and improve patient care in remote areas.
         </p>
       </div>
-      {/* 🔥 FEATURE CARDS SECTION */}
+      {/* FEATURE CARDS SECTION */}
       <div className="features-section">
         <div className="features-grid">
           {/* CARD 1 */}

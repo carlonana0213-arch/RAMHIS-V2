@@ -11,7 +11,7 @@ const protect = require("./middleware/protect");
 const connectDB = require("./config/db");
 const pharmacyRoutes = require("./routes/pharmacyRoutes");
 const analyticsRoutes = require("./routes/analytics");
-
+const dashboardRoutes = require("./routes/dashboardRoutes");
 const allowedOrigins = ["http://localhost:3000"];
 
 connectDB();
@@ -20,17 +20,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      return callback(
-        new Error("CORS policy: This origin is not allowed"),
-        false,
-      );
-    },
-    methods: ["GET", "POST", "PATCH", "DELETE", "PUT"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    origin: true,
     credentials: true,
   }),
 );
@@ -87,11 +77,11 @@ app.use("/api/prescriptions", require("./routes/prescriptionRoutes"));
 app.use("/pharmacy", pharmacyRoutes);
 app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
-app.use(express.static(path.join(__dirname, "../client/build")));
-
-app.get("/{*any}", (req, res) => {
-  res.sendFile(path.join(__dirname, "../client/build/index.html"));
+app.get("/", (req, res) => {
+  res.send("RAMHIS API Running");
 });
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

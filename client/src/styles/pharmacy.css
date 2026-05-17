@@ -3,7 +3,7 @@ MAIN LAYOUT
 ================================ */
 
 .pharmacy-container {
-  max-width: 1100px;
+  max-width: 1500px;
   margin: 40px auto;
   display: flex;
   flex-direction: column;
@@ -152,20 +152,32 @@ TABLE
 
 /* LOW STOCK WARNING */
 
-.low-stock {
-  background: #ffe991 !important;
+.medicine-name-cell {
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  flex-wrap: wrap;
 }
 
-.low-stock td {
-  color: #833b00;
+.stock-pill {
+  padding: 4px 10px;
+
+  border-radius: 999px;
+
+  font-size: 12px;
+  font-weight: 700;
 }
 
-.no-stock {
-  background: #f58888 !important;
+.low-stock-pill {
+  background: #fef3c7;
+  color: #b45309;
 }
 
-.no-stock td {
-  color: #500202;
+.no-stock-pill {
+  background: #fee2e2;
+  color: #b91c1c;
 }
 
 /* INPUT INSIDE TABLE */
@@ -357,14 +369,14 @@ MODAL
 .medicine-modal {
   background: white;
 
-  width: 420px;
-  border-radius: 16px;
+  width: 700px;
+  max-width: 95vw;
 
-  padding: 24px;
+  border-radius: 24px;
 
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+  padding: 32px;
+
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
 
 .medicine-modal input {
@@ -635,4 +647,101 @@ MODAL
 .given-status {
   color: #059669;
   font-weight: 600;
+}
+
+.medicine-modal h3 {
+  margin-top: 0;
+  margin-bottom: 24px;
+
+  font-size: 1.5rem;
+  font-weight: 700;
+
+  color: #111827;
+}
+
+.medicine-form-grid {
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  font-weight: 700;
+
+  color: #374151;
+}
+
+.form-group input {
+  height: 48px;
+
+  padding: 0 14px;
+
+  border-radius: 12px;
+
+  border: 1px solid #d1d5db;
+
+  background: #f8fafc;
+
+  transition: 0.2s ease;
+}
+
+.form-group input:focus {
+  outline: none;
+
+  border-color: #3f5fbe;
+
+  background: white;
+
+  box-shadow: 0 0 0 4px rgba(63, 95, 190, 0.08);
+}
+
+.full-width {
+  grid-column: span 2;
+}
+
+.mark-given-btn {
+  border: none;
+
+  background: #3f5fbe;
+  color: white;
+
+  padding: 8px 14px;
+
+  border-radius: 10px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
+}
+
+.mark-given-btn:hover {
+  background: #2847a1;
+}
+
+.given-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 6px 12px;
+
+  border-radius: 999px;
+
+  background: #dcfce7;
+  color: #15803d;
+
+  font-size: 13px;
+  font-weight: 700;
 }

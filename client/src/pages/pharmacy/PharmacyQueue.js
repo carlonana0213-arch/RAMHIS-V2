@@ -6,6 +6,7 @@ import "../../styles/pharmacy.css";
 function PharmacyQueue() {
   const [prescriptions, setPrescriptions] = useState([]);
   const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("All");
   const loadPrescriptions = async () => {
     const data = await apiFetch(
       "http://localhost:5000/api/prescriptions/pending",
@@ -51,11 +52,21 @@ function PharmacyQueue() {
     .flatMap((p) => p.items)
     .filter((item) => item.isGiven).length;
 
-  const pendingItems = filteredPrescriptions.filter(
-    ({ item }) => !item.isGiven,
-  );
+  const sortedPrescriptions = [...filteredPrescriptions]
+    .filter(({ item }) => {
+      if (filter === "Pending") {
+        return !item.isGiven;
+      }
 
-  const givenItems = filteredPrescriptions.filter(({ item }) => item.isGiven);
+      if (filter === "Given") {
+        return item.isGiven;
+      }
+
+      return true;
+    })
+    .sort((a, b) => {
+      return Number(a.item.isGiven) - Number(b.item.isGiven);
+    });
   return (
     <div className="pharmacy-container">
       <div className="pharmacy-header">
@@ -94,6 +105,28 @@ function PharmacyQueue() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+        <div className="filter-group">
+          <button
+            className={filter === "All" ? "active" : ""}
+            onClick={() => setFilter("All")}
+          >
+            All
+          </button>
+
+          <button
+            className={filter === "Pending" ? "active" : ""}
+            onClick={() => setFilter("Pending")}
+          >
+            Pending
+          </button>
+
+          <button
+            className={filter === "Given" ? "active" : ""}
+            onClick={() => setFilter("Given")}
+          >
+            Given
+          </button>
+        </div>
       </div>
       <div className="pharmacy-section">
         {prescriptions.length === 0 && <p>No pending prescriptions</p>}
@@ -115,7 +148,7 @@ function PharmacyQueue() {
             </thead>
 
             <tbody>
-              {pendingItems.map(({ prescription: p, item }) => (
+              {sortedPrescriptions.map(({ prescription: p, item }) => (
                 <tr key={item._id}>
                   <td>{p.patient.generalInfo.name}</td>
 
@@ -134,55 +167,14 @@ function PharmacyQueue() {
                   <td>
                     {!item.isGiven ? (
                       <button
+                        className="mark-given-btn"
                         onClick={() => handleMarkAsGiven(p._id, item._id)}
                       >
                         Mark as Given
                       </button>
                     ) : (
-                      <span>✅ Given</span>
+                      <span className="given-pill">Given</span>
                     )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div className="pharmacy-section">
-        <h3 className="queue-section-title">Prescriptions Given Out</h3>
-
-        <div className="inventory-table">
-          <table>
-            <thead>
-              <tr>
-                <th>Patient</th>
-                <th>Medicine</th>
-                <th>Dosage</th>
-                <th>Quantity</th>
-                <th>Prescribed By</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {givenItems.map(({ prescription: p, item }) => (
-                <tr key={item._id}>
-                  <td>{p.patient.generalInfo.name}</td>
-
-                  <td>
-                    {item.medicine?.names?.join(", ") ||
-                      item.medicine?.name ||
-                      "Unknown Medicine"}
-                  </td>
-
-                  <td>{item.medicine?.dosage || "-"}</td>
-
-                  <td>{item.quantity}</td>
-
-                  <td>{p.doctor?.name || "Unknown Doctor"}</td>
-
-                  <td>
-                    <span className="given-status">✅ Given</span>
                   </td>
                 </tr>
               ))}

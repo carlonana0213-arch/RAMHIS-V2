@@ -17,11 +17,6 @@ const statusColors = {
   beingSeen: "#38bdf8",
 };
 
-const statusRowColors = {
-  waiting: "#fef9c3",
-  beingSeen: "#e0f2fe",
-};
-
 const PatientQueue = ({ onSelectPatient }) => {
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,6 +27,7 @@ const PatientQueue = ({ onSelectPatient }) => {
     const fetchQueue = async () => {
       try {
         const data = await apiFetch("http://localhost:5000/api/patients/queue");
+
         setPatients(data);
       } catch (err) {
         console.error("Error loading patient queue", err);
@@ -41,6 +37,13 @@ const PatientQueue = ({ onSelectPatient }) => {
     };
 
     fetchQueue();
+
+    const interval = setInterval(() => {
+      fetchQueue();
+    }, 3000);
+
+    // CLEANUP
+    return () => clearInterval(interval);
   }, []);
 
   if (loading) return <p>Loading patient queue...</p>;
@@ -109,15 +112,6 @@ const PatientQueue = ({ onSelectPatient }) => {
             <div
               key={patient._id}
               className="queue-row"
-              style={{
-                backgroundColor: patient.isPriority
-                  ? "#fee2e2"
-                  : statusRowColors[patient.status] || "white",
-
-                borderLeft: patient.isPriority
-                  ? "5px solid #dc2626"
-                  : "5px solid transparent",
-              }}
               onClick={() => openPatient(patient)}
             >
               <span className="queue-number">{index + 1}</span>

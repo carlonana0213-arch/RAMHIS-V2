@@ -72,7 +72,7 @@ const LoginPage = () => {
           <br />
           Remote Area Medical Health Information System
         </p>
-        <h2>Enter Your Credentials to Continue</h2>
+        <h2>Sign In</h2>
         <form className="auth-form" onSubmit={handleSubmit}>
           {errors.email && <p className="error">{errors.email}</p>}
           <input name="email" placeholder="Email" onChange={handleChange} />
@@ -88,7 +88,7 @@ const LoginPage = () => {
           />
 
           <button type="submit" className="primary-btn">
-            Sign in
+            Log In
           </button>
         </form>
       </div>

@@ -132,7 +132,7 @@ function PharmacyInventory() {
 
         {/* RIGHT */}
         <div className="inventory-stat-card danger">
-          <h4>No Stock Medicines</h4>
+          <h4>Out of Stock Medicines</h4>
 
           <div className="stat-value">{noStockCount}</div>
 
@@ -196,17 +196,22 @@ function PharmacyInventory() {
 
             <tbody>
               {filteredMedicines.map((m) => (
-                <tr
-                  key={m._id}
-                  className={
-                    m.quantity <= 0
-                      ? "no-stock"
-                      : m.quantity <= 50
-                        ? "low-stock"
-                        : ""
-                  }
-                >
-                  <td>{m.names?.join(", ")}</td>
+                <tr key={m._id}>
+                  <td>
+                    <div className="medicine-name-cell">
+                      <span>{m.names?.join(", ")}</span>
+
+                      {m.quantity <= 0 ? (
+                        <span className="stock-pill no-stock-pill">
+                          No Stock
+                        </span>
+                      ) : m.quantity <= 50 ? (
+                        <span className="stock-pill low-stock-pill">
+                          Low Stock
+                        </span>
+                      ) : null}
+                    </div>
+                  </td>
                   <td>{m.brand || "-"}</td>
 
                   <td>
@@ -266,33 +271,57 @@ function PharmacyInventory() {
           <div className="medicine-modal">
             <h3>Add Medicine</h3>
 
-            <input
-              placeholder="Medicine Names (comma separated)"
-              value={names}
-              onChange={(e) => setNames(e.target.value)}
-            />
-            <input
-              placeholder="Brand Name"
-              value={brand}
-              onChange={(e) => setBrand(e.target.value)}
-            />
+            <div className="medicine-form-grid">
+              <div className="form-group">
+                <label>Medicine Names</label>
 
-            <input
-              placeholder="Quantity"
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-            />
+                <input
+                  placeholder="Comma separated names"
+                  value={names}
+                  onChange={(e) => setNames(e.target.value)}
+                />
+              </div>
 
-            <input
-              placeholder="Dosage"
-              value={dosage}
-              onChange={(e) => setDosage(e.target.value)}
-            />
-            <input
-              type="date"
-              value={expiryDate}
-              onChange={(e) => setExpiryDate(e.target.value)}
-            />
+              <div className="form-group">
+                <label>Brand Name</label>
+
+                <input
+                  placeholder="Enter brand"
+                  value={brand}
+                  onChange={(e) => setBrand(e.target.value)}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Quantity</label>
+
+                <input
+                  placeholder="Enter quantity"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Dosage</label>
+
+                <input
+                  placeholder="e.g. 500mg"
+                  value={dosage}
+                  onChange={(e) => setDosage(e.target.value)}
+                />
+              </div>
+
+              <div className="form-group full-width">
+                <label>Expiry Date</label>
+
+                <input
+                  type="date"
+                  value={expiryDate}
+                  onChange={(e) => setExpiryDate(e.target.value)}
+                />
+              </div>
+            </div>
             <div className="modal-actions">
               <button
                 className="cancel-btn"

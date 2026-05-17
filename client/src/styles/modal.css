@@ -131,7 +131,11 @@
 .progress-step.active .circle {
   background: #3f5fbe;
   color: white;
-  transform: scale(1.1);
+  transform: scale(1.12);
+
+  box-shadow:
+    0 0 0 6px rgba(63, 95, 190, 0.12),
+    0 0 18px rgba(63, 95, 190, 0.35);
 }
 
 .progress-step.active .label {
@@ -143,9 +147,12 @@
 .progress-step.completed .circle {
   background: #3f5fbe;
   color: white;
+
+  box-shadow: 0 4px 10px rgba(63, 95, 190, 0.2);
 }
 
-.progress-step.completed::after {
+.progress-step.completed::after,
+.progress-step.active::after {
   content: "";
   position: absolute;
   top: 18px;
@@ -380,8 +387,8 @@ textarea {
 .consent-container {
   background: var(--white);
   width: 90%;
-  max-width: 550px;
-  padding: 2rem;
+  max-width: 720px;
+  padding: 2.5rem;
   border-radius: var(--radius); /* Gamit ang 12px/16px radius mo */
   box-shadow:
     0 20px 25px -5px rgba(0, 0, 0, 0.1),
@@ -416,8 +423,7 @@ textarea {
   background: var(--bg-subtle);
   padding: 1.5rem;
   border-radius: 10px;
-  max-height: 350px;
-  overflow-y: auto;
+
   border: 1px solid #e2e8f0;
   margin-bottom: 2rem;
 }

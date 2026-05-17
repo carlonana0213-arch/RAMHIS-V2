@@ -180,19 +180,28 @@ const AddPatientModal = ({ onClose }) => {
 
           <div className="modal-container">
             <div className="progress-container">
-              {steps.map((label, index) => (
-                <div
-                  key={label}
-                  className={`progress-step 
-${index < step ? "completed" : ""} 
-${index === step ? "active" : ""}`}
-                  onClick={() => setStep(index)}
-                  style={{ cursor: "pointer" }}
-                >
-                  <div className="circle">{index + 1}</div>
-                  <span className="label">{label}</span>
-                </div>
-              ))}
+              {steps.map((label, index) => {
+                const isCompleted = index < step;
+                const isActive = index === step;
+
+                return (
+                  <div
+                    key={label}
+                    className={`progress-step 
+          ${isCompleted ? "completed" : ""}
+          ${isActive ? "active" : ""}
+        `}
+                    onClick={() => setStep(index)}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <div className="circle">
+                      {isCompleted ? "✓" : index + 1}
+                    </div>
+
+                    <span className="label">{label}</span>
+                  </div>
+                );
+              })}
             </div>
             {/* STEP CONTENT */}
             {currentStep === "General" && (

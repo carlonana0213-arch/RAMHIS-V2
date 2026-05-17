@@ -47,20 +47,28 @@ const DepartmentStep = ({ form, setForm }) => {
           ))}
         </select>
       </div>
-      <div className="field-group priority-checkbox">
-        <label className="priority-label">
-          <input
-            type="checkbox"
-            checked={form.isPriority || false}
-            onChange={(e) =>
-              setForm((prev) => ({
-                ...prev,
-                isPriority: e.target.checked,
-              }))
-            }
-          />
-          Mark as Priority Patient
-        </label>
+      <div className="priority-toggle-card">
+        <div className="priority-toggle-content">
+          <div>
+            <h4>Priority Patient</h4>
+            <p>Mark this patient for urgent medical attention</p>
+          </div>
+
+          <label className="priority-switch">
+            <input
+              type="checkbox"
+              checked={form.isPriority || false}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  isPriority: e.target.checked,
+                }))
+              }
+            />
+
+            <span className="priority-slider"></span>
+          </label>
+        </div>
       </div>
     </div>
   );

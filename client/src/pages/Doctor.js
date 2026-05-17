@@ -21,77 +21,125 @@ function Doctor() {
   const [search, setSearch] = useState("");
   const [queueFilter, setQueueFilter] = useState("all");
   const [showDoctorView, setShowDoctorView] = useState(false);
-
+  const [queueIndex, setQueueIndex] = useState(0);
   const loadQueue = async () => {
     try {
       const queue = await getPatientQueue();
 
-      const filtered = queue.filter(
-        (p) => p.department === doctorDepartment && p.status !== "released",
-      );
+      // REMOVE RELEASED PATIENTS
+      const activePatients = queue.filter((p) => p.status !== "released");
 
-      setPatients(filtered);
-      setFilteredPatients(filtered);
+      // ONLY STORE RAW PATIENTS
+      setPatients(activePatients);
     } catch (err) {
       console.error(err);
     }
   };
 
   useEffect(() => {
-    loadQueue();
+    let isMounted = true;
+
+    const fetchData = async () => {
+      if (!isMounted) return;
+
+      await loadQueue();
+    };
+
+    fetchData();
+
+    const interval = setInterval(() => {
+      fetchData();
+    }, 3000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   useEffect(() => {
-    let filtered = patients.filter((p) =>
-      p.generalInfo?.name?.toLowerCase().includes(search.toLowerCase()),
-    );
+    let filtered = [...patients];
 
+    // ADMIN SEES EVERYTHING
+    if (storedUser?.role !== "admin") {
+      // NORMAL VIEW = OWN DEPARTMENT ONLY
+      if (search.trim() === "") {
+        filtered = filtered.filter((p) => p.department === doctorDepartment);
+      }
+    }
+
+    // SEARCH ALL PATIENTS
+    if (search.trim() !== "") {
+      filtered = filtered.filter((p) =>
+        p.generalInfo?.name?.toLowerCase().includes(search.toLowerCase()),
+      );
+    }
+
+    // PRIORITY FILTER
     if (queueFilter === "priority") {
       filtered = filtered.filter((p) => p.isPriority);
     }
 
-    filtered.sort((a, b) => {
-      if (a.isPriority && !b.isPriority) return -1;
-      if (!a.isPriority && b.isPriority) return 1;
-      return 0;
-    });
-
     setFilteredPatients(filtered);
-  }, [search, patients, queueFilter]);
+  }, [patients, search, queueFilter, doctorDepartment, storedUser?.role]);
 
-  const openDoctorView = (patient) => {
-    setSelectedPatient(patient);
-    setShowDoctorView(true);
+  const openDoctorView = async (patient) => {
+    try {
+      const { updatePatientStatus } = await import("../services/doctorService");
+
+      await updatePatientStatus(patient._id, {
+        status: "beingSeen",
+      });
+
+      await loadQueue();
+
+      setSelectedPatient({
+        ...patient,
+        status: "beingSeen",
+      });
+
+      setShowDoctorView(true);
+    } catch (err) {
+      console.error("Failed to update patient status", err);
+    }
   };
+  const currentPatient = filteredPatients[queueIndex];
+  const handleNextPatient = () => {
+    if (filteredPatients.length === 0) return;
 
+    setQueueIndex((prev) => {
+      if (prev >= filteredPatients.length - 1) {
+        return 0;
+      }
+
+      return prev + 1;
+    });
+  };
   return (
     <div className="doctor-page">
       <div className="doctor-header">
         <h1>Doctors Queue</h1>
       </div>
 
-      {/* TOP CARDS */}
+      <div className="doctor-main-layout">
+        {/* CURRENT PATIENT CARD */}
+        <PatientCard
+          patient={currentPatient}
+          onSelect={openDoctorView}
+          onNextPatient={handleNextPatient}
+        />
 
-      <div className="doctor-card-row">
-        {filteredPatients.slice(0, 4).map((patient) => (
-          <PatientCard
-            key={patient._id}
-            patient={patient}
-            onSelect={openDoctorView}
-          />
-        ))}
+        {/* TABLE */}
+
+        <DoctorQueue
+          patients={filteredPatients}
+          search={search}
+          setSearch={setSearch}
+          queueFilter={queueFilter}
+          setQueueFilter={setQueueFilter}
+          onOpenDoctorView={openDoctorView}
+        />
       </div>
-
-      {/* TABLE */}
-
-      <DoctorQueue
-        patients={filteredPatients}
-        search={search}
-        setSearch={setSearch}
-        queueFilter={queueFilter}
-        setQueueFilter={setQueueFilter}
-        onOpenDoctorView={openDoctorView}
-      />
 
       {/* MODAL */}
 
