@@ -94,18 +94,29 @@
 /* GRAPHS LAYOUT */
 .dashboard-graphs,
 .dashboard-bottom {
-  display: grid;
-  grid-template-columns: 1.6fr 1fr;
-  gap: 1.5rem;
+  display: block;
+  width: 100%;
   margin-bottom: 1.5rem;
 }
-
+.graph-card.large {
+  width: 100%;
+}
 /* Chart Responsive Wrapper */
 .recharts-responsive-container {
   font-family: inherit;
 }
 
 .graph-card {
+  background: var(--white);
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  border: 1px solid rgba(226, 232, 240, 0.5);
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+.pie-card {
   background: var(--white);
   padding: 1.5rem;
   border-radius: var(--radius);
@@ -294,4 +305,67 @@
   align-items: center;
 
   gap: 1rem;
+}
+
+.dashboard-middle-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.pie-card-content {
+  max-width: 500px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.pie-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pie-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #334155;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+}
+
+.summary-subtext {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.summary-subtext.positive {
+  color: #06a34d;
+}
+
+.summary-subtext.negative {
+  color: #06a34d;
+}
+.medicine-summary-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.low-stock-text {
+  color: #d97706;
+}
+
+.out-stock-text {
+  color: #dc2626;
 }

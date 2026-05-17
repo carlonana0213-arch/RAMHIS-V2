@@ -28,7 +28,7 @@ router.get(
 router.patch(
   "/:prescriptionId/:itemId",
   auth,
-  checkPermission("prescriptions"),
+  checkPermission("pharmacy"),
   controller.markAsGiven,
 );
 

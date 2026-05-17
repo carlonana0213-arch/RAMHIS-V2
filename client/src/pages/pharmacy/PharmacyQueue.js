@@ -2,11 +2,14 @@ import { useEffect, useState } from "react";
 import { FiClock, FiCheckCircle } from "react-icons/fi";
 import { apiFetch } from "../../services/api";
 import "../../styles/pharmacy.css";
-
+import ConfirmModal from "../../components/ConfirmModal";
+import AlertModal from "../../components/AlertModal";
 function PharmacyQueue() {
   const [prescriptions, setPrescriptions] = useState([]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
+  const [confirmState, setConfirmState] = useState(null);
+  const [alertMessage, setAlertMessage] = useState("");
   const loadPrescriptions = async () => {
     const data = await apiFetch(
       "http://localhost:5000/api/prescriptions/pending",
@@ -19,12 +22,25 @@ function PharmacyQueue() {
   }, []);
 
   const handleMarkAsGiven = async (prescriptionId, itemId) => {
-    await apiFetch(
-      `http://localhost:5000/api/prescriptions/${prescriptionId}/${itemId}`,
-      { method: "PATCH" },
-    );
+    try {
+      await apiFetch(
+        `http://localhost:5000/api/prescriptions/${prescriptionId}/${itemId}`,
+        { method: "PATCH" },
+      );
 
-    loadPrescriptions();
+      setAlertMessage("Prescription marked as given");
+
+      loadPrescriptions();
+    } catch (err) {
+      console.error("FULL ERROR:", err);
+
+      if (err.response) {
+        console.log("STATUS:", err.response.status);
+        console.log("DATA:", err.response.data);
+      }
+
+      setAlertMessage("Failed to mark prescription as given");
+    }
   };
   const filteredPrescriptions = prescriptions.flatMap((p) =>
     p.items
@@ -143,7 +159,8 @@ function PharmacyQueue() {
                 <th>Quantity</th>
 
                 <th>Prescribed By</th>
-                <th>Status</th>
+                <th>Stock Status</th>
+                <th>Action</th>
               </tr>
             </thead>
 
@@ -165,13 +182,38 @@ function PharmacyQueue() {
                   <td>{p.doctor?.name || "Unknown Doctor"}</td>
 
                   <td>
+                    {item.medicine?.quantity <= 0 ? (
+                      <span className="stock-pill out">Out of Stock</span>
+                    ) : item.medicine?.quantity <= 50 ? (
+                      <span className="stock-pill low">Low Stock</span>
+                    ) : (
+                      <span className="stock-pill ready">Ready</span>
+                    )}
+                  </td>
+
+                  <td>
                     {!item.isGiven ? (
-                      <button
-                        className="mark-given-btn"
-                        onClick={() => handleMarkAsGiven(p._id, item._id)}
-                      >
-                        Mark as Given
-                      </button>
+                      item.medicine?.quantity <= 0 ? (
+                        <button className="disabled-btn" disabled>
+                          Unavailable
+                        </button>
+                      ) : (
+                        <button
+                          className="mark-given-btn"
+                          onClick={() => {
+                            setConfirmState({
+                              message: "Mark this prescription as given?",
+                              onConfirm: async () => {
+                                await handleMarkAsGiven(p._id, item._id);
+
+                                setConfirmState(null);
+                              },
+                            });
+                          }}
+                        >
+                          Mark as Given
+                        </button>
+                      )
                     ) : (
                       <span className="given-pill">Given</span>
                     )}
@@ -182,6 +224,20 @@ function PharmacyQueue() {
           </table>
         </div>
       </div>
+      {confirmState && (
+        <ConfirmModal
+          message={confirmState.message}
+          onConfirm={confirmState.onConfirm}
+          onCancel={() => setConfirmState(null)}
+        />
+      )}
+
+      {alertMessage && (
+        <AlertModal
+          message={alertMessage}
+          onClose={() => setAlertMessage("")}
+        />
+      )}
     </div>
   );
 }

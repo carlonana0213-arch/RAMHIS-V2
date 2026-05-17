@@ -7,15 +7,20 @@ import {
   updateUserStatus,
 } from "../services/adminService";
 import { registerUser } from "../services/authService";
+import AlertModal from "../components/AlertModal";
 import AddUser from "./adminModal/addUser";
 import EditUser from "./adminModal/editUser";
 import UserDashboard from "./analytics/userDashboard";
 import "../styles/admin.css";
+import ConfirmModal from "../components/ConfirmModal";
 
 function UserManagement() {
   const [users, setUsers] = useState([]);
   const [tab, setTab] = useState("pending");
+  const [alertMessage, setAlertMessage] = useState("");
 
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [confirmMessage, setConfirmMessage] = useState("");
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
 
@@ -112,17 +117,27 @@ function UserManagement() {
       await approveUser(selectedUserId, adminPassword);
       setShowModal(false);
       setAdminPassword("");
+      setAlertMessage("User approved successfully");
       loadUsers();
     } catch (err) {
       console.error(err);
-      alert("Approval failed");
+      setAlertMessage("Approval failed");
     }
   };
 
   // 🔹 REJECT
   const handleReject = async (id) => {
-    await rejectUser(id);
-    loadUsers();
+    try {
+      await rejectUser(id);
+
+      setAlertMessage("User rejected successfully");
+
+      loadUsers();
+    } catch (err) {
+      console.error(err);
+
+      setAlertMessage("Failed to reject user");
+    }
   };
 
   // 🔹 UPDATE USER
@@ -142,20 +157,28 @@ function UserManagement() {
   const handleDeactivate = async (id) => {
     try {
       await updateUserStatus(id, "Deactivated");
+
+      setAlertMessage("User deactivated successfully");
+
       loadUsers();
     } catch (err) {
       console.error(err);
-      alert("Failed to deactivate user");
+
+      setAlertMessage("Failed to deactivate user");
     }
   };
 
   const handleReactivate = async (id) => {
     try {
       await updateUserStatus(id, "Approved");
+
+      setAlertMessage("User reactivated successfully");
+
       loadUsers();
     } catch (err) {
       console.error(err);
-      alert("Failed to deactivate user");
+
+      setAlertMessage("Failed to reactivate user");
     }
   };
 
@@ -303,7 +326,15 @@ function UserManagement() {
 
                     <button
                       className="reject-btn"
-                      onClick={() => handleReject(user._id)}
+                      onClick={() => {
+                        setConfirmMessage(
+                          "Are you sure you want to reject this user?",
+                        );
+
+                        setConfirmAction(() => async () => {
+                          await handleReject(user._id);
+                        });
+                      }}
                     >
                       Reject
                     </button>
@@ -314,7 +345,15 @@ function UserManagement() {
                 {tab === "active" && (
                   <button
                     className="deactivate-btn"
-                    onClick={() => handleDeactivate(user._id)}
+                    onClick={() => {
+                      setConfirmMessage(
+                        "Are you sure you want to deactivate this user?",
+                      );
+
+                      setConfirmAction(() => async () => {
+                        await handleDeactivate(user._id);
+                      });
+                    }}
                   >
                     Deactivate
                   </button>
@@ -324,7 +363,15 @@ function UserManagement() {
                 {tab === "deactivated" && (
                   <button
                     className="reactivate-btn"
-                    onClick={() => handleReactivate(user._id)}
+                    onClick={() => {
+                      setConfirmMessage(
+                        "Are you sure you want to reactivate this user?",
+                      );
+
+                      setConfirmAction(() => async () => {
+                        await handleReactivate(user._id);
+                      });
+                    }}
                   >
                     Reactivate
                   </button>
@@ -334,7 +381,21 @@ function UserManagement() {
           ))}
         </tbody>
       </table>
+      {confirmAction && (
+        <ConfirmModal
+          message={confirmMessage}
+          onConfirm={async () => {
+            await confirmAction();
 
+            setConfirmAction(null);
+            setConfirmMessage("");
+          }}
+          onCancel={() => {
+            setConfirmAction(null);
+            setConfirmMessage("");
+          }}
+        />
+      )}
       {/* EDIT MODAL */}
       {selectedUser && (
         <EditUser
@@ -367,6 +428,12 @@ function UserManagement() {
         <AddUser
           onClose={() => setShowCreateModal(false)}
           onSuccess={loadUsers}
+        />
+      )}
+      {alertMessage && (
+        <AlertModal
+          message={alertMessage}
+          onClose={() => setAlertMessage("")}
         />
       )}
     </div>

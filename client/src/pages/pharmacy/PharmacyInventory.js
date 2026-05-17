@@ -6,6 +6,8 @@ import {
   updateMedicine,
 } from "../../services/pharmacyService";
 import "../../styles/pharmacy.css";
+import ConfirmModal from "../../components/ConfirmModal";
+import AlertModal from "../../components/AlertModal";
 
 function PharmacyInventory() {
   const [medicines, setMedicines] = useState([]);
@@ -19,7 +21,8 @@ function PharmacyInventory() {
   const [filter, setFilter] = useState("All");
   const [editingId, setEditingId] = useState(null);
   const [editQuantity, setEditQuantity] = useState("");
-
+  const [confirmState, setConfirmState] = useState(null);
+  const [alertMessage, setAlertMessage] = useState("");
   const loadMedicines = async () => {
     const data = await getMedicines();
     setMedicines(data);
@@ -60,40 +63,54 @@ function PharmacyInventory() {
   useEffect(() => {
     loadMedicines();
   }, []);
-
   const handleAdd = async () => {
-    await addMedicine({
-      names: names
-        .split(",")
-        .map((n) => n.trim())
-        .filter(Boolean),
+    try {
+      await addMedicine({
+        names: names
+          .split(",")
+          .map((n) => n.trim())
+          .filter(Boolean),
 
-      brand,
+        brand,
 
-      quantity,
+        quantity,
 
-      dosage,
+        dosage,
 
-      expiryDate,
-    });
-    setNames("");
-    setBrand("");
-    setExpiryDate("");
-    setQuantity("");
-    setDosage("");
-    loadMedicines();
-  };
+        expiryDate,
+      });
 
-  const handleDelete = async (id) => {
-    await deleteMedicine(id);
-    loadMedicines();
+      setNames("");
+      setBrand("");
+      setExpiryDate("");
+      setQuantity("");
+      setDosage("");
+
+      setAlertMessage("Medicine added successfully");
+
+      loadMedicines();
+    } catch (err) {
+      console.error(err);
+
+      setAlertMessage("Failed to add medicine");
+    }
   };
 
   const handleUpdate = async (id) => {
-    await updateMedicine(id, { quantity: editQuantity });
-    setEditingId(null);
-    setEditQuantity("");
-    loadMedicines();
+    try {
+      await updateMedicine(id, { quantity: editQuantity });
+
+      setEditingId(null);
+      setEditQuantity("");
+
+      setAlertMessage("Medicine quantity updated successfully");
+
+      loadMedicines();
+    } catch (err) {
+      console.error(err);
+
+      setAlertMessage("Failed to update medicine quantity");
+    }
   };
 
   return (
@@ -236,7 +253,18 @@ function PharmacyInventory() {
                   <td>
                     {editingId === m._id ? (
                       <>
-                        <button onClick={() => handleUpdate(m._id)}>
+                        <button
+                          onClick={() => {
+                            setConfirmState({
+                              message: "Save updated medicine quantity?",
+                              onConfirm: async () => {
+                                await handleUpdate(m._id);
+
+                                setConfirmState(null);
+                              },
+                            });
+                          }}
+                        >
                           Save
                         </button>
                         <button onClick={() => setEditingId(null)}>
@@ -254,7 +282,7 @@ function PharmacyInventory() {
                           Edit
                         </button>
 
-                        <button onClick={() => handleDelete(m._id)}>
+                        <button onClick={() => deleteMedicine(m._id)}>
                           Delete
                         </button>
                       </>
@@ -332,9 +360,17 @@ function PharmacyInventory() {
 
               <button
                 className="save-btn"
-                onClick={async () => {
-                  await handleAdd();
-                  setShowModal(false);
+                onClick={() => {
+                  setConfirmState({
+                    message: "Are you sure you want to add this medicine?",
+                    onConfirm: async () => {
+                      await handleAdd();
+
+                      setShowModal(false);
+
+                      setConfirmState(null);
+                    },
+                  });
                 }}
               >
                 Save Medicine
@@ -342,6 +378,20 @@ function PharmacyInventory() {
             </div>
           </div>
         </div>
+      )}
+      {confirmState && (
+        <ConfirmModal
+          message={confirmState.message}
+          onConfirm={confirmState.onConfirm}
+          onCancel={() => setConfirmState(null)}
+        />
+      )}
+
+      {alertMessage && (
+        <AlertModal
+          message={alertMessage}
+          onClose={() => setAlertMessage("")}
+        />
       )}
     </div>
   );

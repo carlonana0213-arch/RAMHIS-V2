@@ -61,61 +61,114 @@ function AddUser({ onClose, onSuccess }) {
   };
 
   return (
-    <div className="modal-overlay">
-      {" "}
-      <div className="modal">
-        {" "}
-        <h3>Create User</h3>
-        {error && <p className="error">{error}</p>}
-        <input name="name" placeholder="Name" onChange={handleChange} />
-        <input name="email" placeholder="Email" onChange={handleChange} />
-        <select name="role" value={form.role} onChange={handleChange}>
-          <option value="Doctor">Doctor</option>
-          <option value="Volunteer">Volunteer</option>
-        </select>
-        {/* VOLUNTEER */}
-        {form.role === "Volunteer" && (
-          <input
-            name="volunteerType"
-            placeholder="Volunteer Type"
-            onChange={handleChange}
-          />
-        )}
-        {/* DOCTOR */}
-        {form.role === "Doctor" && (
-          <>
-            <input
-              name="specialization"
-              placeholder="Specialization"
-              onChange={handleChange}
-            />
+    <>
+      <div className="medicine-modal-overlay">
+        <div className="medicine-modal">
+          <h3>Create User</h3>
 
-            <input
-              name="licenseNumber"
-              placeholder="License Number"
-              onChange={handleChange}
-            />
+          {error && <p className="error">{error}</p>}
 
-            <input
-              name="proofOfLicense"
-              placeholder="Proof of License (link)"
-              onChange={handleChange}
-            />
+          <div className="medicine-form-grid">
+            <div className="form-group">
+              <label>Full Name</label>
 
-            <input
-              name="proofOfDoctorate"
-              placeholder="Proof of Doctorate (link)"
-              onChange={handleChange}
-            />
-          </>
-        )}
-        <div className="modal-actions">
-          <button className="createbtn" onClick={() => setShowConfirm(true)}>
-            Create
-          </button>
-          <button onClick={onClose}>Cancel</button>
+              <input
+                name="name"
+                placeholder="Enter full name"
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Email Address</label>
+
+              <input
+                name="email"
+                placeholder="Enter email"
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="form-group full-width">
+              <label>Role</label>
+
+              <select name="role" value={form.role} onChange={handleChange}>
+                <option value="Doctor">Doctor</option>
+                <option value="Volunteer">Volunteer</option>
+              </select>
+            </div>
+
+            {/* VOLUNTEER */}
+            {form.role === "Volunteer" && (
+              <div className="form-group full-width">
+                <label>Volunteer Type</label>
+
+                <input
+                  name="volunteerType"
+                  placeholder="Enter volunteer type"
+                  onChange={handleChange}
+                />
+              </div>
+            )}
+
+            {/* DOCTOR */}
+            {form.role === "Doctor" && (
+              <>
+                <div className="form-group">
+                  <label>Specialization</label>
+
+                  <input
+                    name="specialization"
+                    placeholder="Enter specialization"
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>License Number</label>
+
+                  <input
+                    name="licenseNumber"
+                    placeholder="Enter license number"
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Proof of License</label>
+
+                  <input
+                    name="proofOfLicense"
+                    placeholder="Paste proof link"
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Proof of Doctorate</label>
+
+                  <input
+                    name="proofOfDoctorate"
+                    placeholder="Paste proof link"
+                    onChange={handleChange}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="modal-actions">
+            <button className="cancel-btn" onClick={onClose}>
+              Cancel
+            </button>
+
+            <button className="save-btn" onClick={() => setShowConfirm(true)}>
+              Create User
+            </button>
+          </div>
         </div>
       </div>
+
       {showConfirm && (
         <ConfirmModal
           message="Are you sure you want to create this user?"
@@ -126,6 +179,7 @@ function AddUser({ onClose, onSuccess }) {
           onCancel={() => setShowConfirm(false)}
         />
       )}
+
       {alertMessage && (
         <AlertModal
           message={alertMessage}
@@ -136,7 +190,7 @@ function AddUser({ onClose, onSuccess }) {
           }}
         />
       )}
-    </div>
+    </>
   );
 }
 

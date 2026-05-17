@@ -9,7 +9,8 @@ import {
 } from "../../services/patientService";
 import "../../styles/registry.css";
 import "../../styles/registry-modern.css";
-
+import AlertModal from "../../components/AlertModal";
+import ConfirmModal from "../../components/ConfirmModal";
 const HISTORY_OPTIONS = [
   "Diabetes",
   "Hypertension",
@@ -67,6 +68,7 @@ function Registry({ patientIdFromQueue }) {
   const [search, setSearch] = useState("");
   const [results, setResults] = useState([]);
   const [confirmState, setConfirmState] = useState(null);
+  const [alertMessage, setAlertMessage] = useState("");
   const handleButtonGroupKey = (e, options, currentValue, setValue) => {
     const currentIndex = options.indexOf(currentValue);
 
@@ -237,12 +239,6 @@ function Registry({ patientIdFromQueue }) {
   const handleEdit = async () => {
     if (!patientId) return;
 
-    const confirmEdit = window.confirm(
-      "Are you sure you want to save changes to this patient?",
-    );
-
-    if (!confirmEdit) return;
-
     try {
       const payload = {
         generalInfo: {
@@ -266,11 +262,11 @@ function Registry({ patientIdFromQueue }) {
 
       const res = await updatePatient(patientId, payload);
       console.log("Update patient response:", res);
-      alert("Patient updated successfully");
+      setAlertMessage("Patient updated successfully");
       clearForm();
     } catch (err) {
       console.error("Error updating patient:", err);
-      alert("Failed to update patient. See console for details.");
+      setAlertMessage("Failed to update patient");
     }
   };
 
@@ -861,9 +857,18 @@ function Registry({ patientIdFromQueue }) {
               message:
                 "Are you sure you want to DELETE this patient? This cannot be undone.",
               onConfirm: async () => {
-                await deletePatient(patientId);
-                alert("Patient deleted successfully");
-                clearForm();
+                try {
+                  await deletePatient(patientId);
+
+                  setAlertMessage("Patient deleted successfully");
+
+                  clearForm();
+                } catch (err) {
+                  console.error(err);
+
+                  setAlertMessage("Failed to delete patient");
+                }
+
                 setConfirmState(null);
               },
             });
@@ -882,28 +887,14 @@ function Registry({ patientIdFromQueue }) {
           onCancel={() => setConfirmState(null)}
         />
       )}
+      {alertMessage && (
+        <AlertModal
+          message={alertMessage}
+          onClose={() => setAlertMessage("")}
+        />
+      )}
     </form>
   );
 }
-
-const ConfirmModal = ({ message, onConfirm, onCancel }) => {
-  return (
-    <div className="modal-overlay">
-      <div className="confirm-modal">
-        <p>{message}</p>
-
-        <div className="confirm-actions">
-          <button className="ghost" onClick={onCancel}>
-            Cancel
-          </button>
-
-          <button className="danger" onClick={onConfirm}>
-            Confirm
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 export default Registry;
