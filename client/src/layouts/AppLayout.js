@@ -6,8 +6,10 @@ import "../styles/layout.css";
 
 function AppLayout({ children }) {
   const [collapsed, setCollapsed] = useState(() => {
-    return localStorage.getItem("sidebarCollapsed") === "true";
-  });
+  const saved = localStorage.getItem("sidebarCollapsed");
+
+  return saved !== null ? saved === "true" : true;
+});
 
   const toggleSidebar = () => {
     const newState = !collapsed;

@@ -2,19 +2,34 @@ const permissions = require("../config/permissions");
 
 module.exports = function checkPermission(moduleName) {
   return (req, res, next) => {
-    const userRole = req.user.role;
+    if (!req.user) {
+      return res.status(401).json({
+        ok: false,
+        message: "Not authenticated.",
+      });
+    }
+
+    const userRole = String(req.user.role || "")
+      .toLowerCase()
+      .trim();
 
     const allowedRoles = permissions[moduleName];
 
     if (!allowedRoles) {
       return res.status(500).json({
-        msg: "Permission configuration missing",
+        ok: false,
+        message: `Permission configuration missing for ${moduleName}.`,
       });
     }
 
-    if (!allowedRoles.includes(userRole)) {
+    const normalizedAllowedRoles = allowedRoles.map((role) =>
+      String(role).toLowerCase().trim()
+    );
+
+    if (!normalizedAllowedRoles.includes(userRole)) {
       return res.status(403).json({
-        msg: "Access denied",
+        ok: false,
+        message: "Access denied.",
       });
     }
 

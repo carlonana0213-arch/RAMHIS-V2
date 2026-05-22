@@ -1,10 +1,36 @@
 const permissions = {
-  registry: ["Volunteer", "Doctor", "Admin"],
-  pharmacy: ["Volunteer", "Doctor", "Admin"],
-  queue: ["Volunteer", "Doctor", "Admin"],
-  doctorSheet: ["Doctor", "Admin"],
-  prescriptions: ["Doctor", "Volunteer", "Admin"],
-  analytics: ["Admin"],
+  registry: [
+    "volunteer",
+    "doctor",
+    "admin",
+  ],
+
+  pharmacy: [
+    "volunteer",
+    "doctor",
+    "admin",
+  ],
+
+  queue: [
+    "volunteer",
+    "doctor",
+    "admin",
+  ],
+
+  doctorSheet: [
+    "doctor",
+    "admin",
+  ],
+
+  prescriptions: [
+    "doctor",
+    "volunteer",
+    "admin",
+  ],
+
+  analytics: [
+    "admin",
+  ],
 };
 
 module.exports = permissions;

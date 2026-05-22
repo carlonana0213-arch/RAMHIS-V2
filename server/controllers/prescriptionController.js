@@ -4,6 +4,7 @@ const Medicine = require("../models/Medicine");
 exports.createPrescription = async (req, res) => {
   try {
     const { patient, doctor, items } = req.body;
+
     const prescription = await Prescription.create({
       patient,
       doctor,
@@ -11,9 +12,11 @@ exports.createPrescription = async (req, res) => {
       status: "Pending",
     });
 
-    res.status(201).json(prescription);
+    return res.status(201).json(prescription);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    return res.status(500).json({
+      message: err.message,
+    });
   }
 };
 
@@ -24,9 +27,9 @@ exports.getPendingPrescriptions = async (req, res) => {
       .populate("doctor")
       .populate("items.medicine");
 
-    res.json(prescriptions);
+    return res.json(prescriptions);
   } catch (err) {
-    res.status(500).json({
+    return res.status(500).json({
       message: err.message,
     });
   }
@@ -37,11 +40,26 @@ exports.markAsGiven = async (req, res) => {
     const { prescriptionId, itemId } = req.params;
 
     const prescription = await Prescription.findById(prescriptionId);
+
+    if (!prescription) {
+      return res.status(404).json({
+        message: "Prescription not found",
+      });
+    }
+
     const item = prescription.items.id(itemId);
 
-    if (!item) return res.status(404).json({ message: "Item not found" });
+    if (!item) {
+      return res.status(404).json({
+        message: "Item not found",
+      });
+    }
 
-    if (item.isGiven) return res.status(400).json({ message: "Already given" });
+    if (item.isGiven) {
+      return res.status(400).json({
+        message: "Already given",
+      });
+    }
 
     const medicine = await Medicine.findById(item.medicine);
 
@@ -57,21 +75,27 @@ exports.markAsGiven = async (req, res) => {
       });
     }
 
-    // deduct stock
     medicine.quantity -= item.quantity;
     await medicine.save();
 
     item.isGiven = true;
 
-    // check if all given
     const allGiven = prescription.items.every((i) => i.isGiven);
-    if (allGiven) prescription.status = "Completed";
+
+    if (allGiven) {
+      prescription.status = "Completed";
+    }
 
     await prescription.save();
 
-    res.json({ message: "Medicine given" });
+    return res.json({
+      message: "Medicine given",
+      prescription,
+    });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    return res.status(500).json({
+      message: err.message,
+    });
   }
 };
 
@@ -84,8 +108,10 @@ exports.getPrescriptionsByPatient = async (req, res) => {
       .populate("items.medicine")
       .populate("patient");
 
-    res.json(prescriptions);
+    return res.json(prescriptions);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    return res.status(500).json({
+      message: err.message,
+    });
   }
 };

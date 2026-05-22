@@ -1,6 +1,6 @@
 import { apiFetch } from "./api";
 
-const API_URL = "http://localhost:5000/pharmacy";
+const API_URL = "http://localhost:5000/api/pharmacy";  // ← add /api
 
 export const getMedicines = async () => {
   return apiFetch(API_URL);

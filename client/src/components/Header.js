@@ -4,6 +4,8 @@ import ConfirmModal from "../components/ConfirmModal";
 import "../styles/header.css";
 import ramlogo from "../resources/ramhislogo.png";
 import { hasAccess } from "../utils/hasAccess";
+
+
 import {
   FaChartLine,
   FaSignOutAlt,
@@ -11,14 +13,13 @@ import {
   FaClipboardList,
   FaUserMd,
   FaPills,
-  FaUsers,
-  FaUserCircle,
   FaClock,
   FaBoxes,
 } from "react-icons/fa";
 import { MdOutlineAnalytics } from "react-icons/md";
 
 import { HiMenu } from "react-icons/hi";
+import { FaCalendarAlt } from "react-icons/fa";
 
 function Header({ collapsed, toggleSidebar }) {
   const [openPharmacy, setOpenPharmacy] = useState(false);
@@ -27,12 +28,11 @@ function Header({ collapsed, toggleSidebar }) {
     localStorage.removeItem("token");
     navigate("/");
   };
-  const [open, setOpen] = useState(false);
   const [confirmState, setConfirmState] = useState(null);
   const navigate = useNavigate();
 
   return (
-    <aside className="app-sidebar">
+    <aside className={`app-sidebar ${collapsed ? "collapsed" : ""}`}>
       <div className="sidebar-top">
         <button className="toggle-btn" onClick={toggleSidebar}>
           <HiMenu size={22} />
@@ -185,6 +185,17 @@ function Header({ collapsed, toggleSidebar }) {
           </NavLink>
         )}
 */}
+<NavLink
+  to="/event"
+  className={({ isActive }) =>
+    isActive ? "nav-link active" : "nav-link"
+  }
+>
+  <span className="nav-item">
+    <FaCalendarAlt className="nav-icon" />
+    {!collapsed && " Event"}
+  </span>
+</NavLink>
 
         <div
           className="logout-section"

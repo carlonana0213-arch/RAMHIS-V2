@@ -84,12 +84,19 @@ exports.deletePatient = async (req, res) => {
 exports.getPatientQueue = async (req, res) => {
   try {
     const patients = await Patient.find({
-      status: { $ne: "released" },
-    });
+      $or: [
+        { status: { $exists: false } },
+        { status: { $nin: ["released", "Released", "completed", "Completed"] } },
+      ],
+    }).sort({ createdAt: -1 });
 
     res.json(patients);
   } catch (err) {
-    res.status(500).json({ msg: "Server error" });
+    res.status(500).json({
+      ok: false,
+      msg: "Server error",
+      message: err.message,
+    });
   }
 };
 

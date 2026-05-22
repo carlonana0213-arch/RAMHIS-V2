@@ -1,0 +1,218 @@
+.event-page {
+  padding: 28px;
+  background: #f5f7fb;
+  min-height: 100vh;
+}
+
+.event-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.event-header h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #1f2937;
+  margin: 0;
+}
+
+.event-header p {
+  margin: 6px 0 0;
+  color: #6b7280;
+}
+
+.create-btn {
+  background: #3949ab;
+  color: white;
+  border: none;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.event-card,
+.participants-card {
+  background: white;
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  margin-bottom: 24px;
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  margin-bottom: 18px;
+  color: #1f2937;
+}
+
+.event-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.event-table th {
+  text-align: left;
+  background: #f3f4f6;
+  color: #374151;
+  padding: 14px;
+  font-size: 14px;
+}
+
+.event-table td {
+  padding: 14px;
+  border-bottom: 1px solid #e5e7eb;
+  color: #374151;
+}
+
+.status-badge {
+  color: white;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.action-buttons button {
+  border: none;
+  background: #eef2ff;
+  color: #3949ab;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.participants-card h2 {
+  margin: 0 0 16px;
+  color: #1f2937;
+}
+
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.tab {
+  border: none;
+  background: #f3f4f6;
+  color: #374151;
+  padding: 10px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.tab.active {
+  background: #3949ab;
+  color: white;
+}
+
+.participants-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.participant-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.participant-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar {
+  width: 42px;
+  height: 42px;
+  background: #3949ab;
+  color: white;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+
+.participant-left h4 {
+  margin: 0;
+  color: #111827;
+}
+
+.participant-left p {
+  margin: 4px 0 0;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.participant-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.participant-status {
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.participant-status.Pending {
+  background: #f59e0b;
+}
+
+.participant-status.Approved {
+  background: #16a34a;
+}
+
+.participant-status.Rejected {
+  background: #dc2626;
+}
+
+.approve-btn,
+.reject-btn,
+.remove-btn,
+.restore-btn {
+  border: none;
+  padding: 8px 12px;
+  border-radius: 10px;
+  color: white;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.approve-btn {
+  background: #16a34a;
+}
+
+.reject-btn {
+  background: #dc2626;
+}
+
+.remove-btn {
+  background: #6b7280;
+}
+
+.restore-btn {
+  background: #3949ab;
+}

@@ -3,10 +3,8 @@ import {
   getAllUsers,
   approveUser,
   rejectUser,
-  updateUser,
   updateUserStatus,
 } from "../services/adminService";
-import { registerUser } from "../services/authService";
 import AlertModal from "../components/AlertModal";
 import AddUser from "./adminModal/addUser";
 import EditUser from "./adminModal/editUser";
@@ -29,23 +27,19 @@ function UserManagement() {
   const [selectedUserId, setSelectedUserId] = useState(null);
 
   const [selectedUser, setSelectedUser] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editUser, setEditUser] = useState(null);
-
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newUser, setNewUser] = useState({
-    name: "",
-    email: "",
-    password: "",
-    role: "Doctor",
-    specialization: "",
-    licenseNumber: "",
-  });
 
   const loadUsers = async () => {
     try {
       const data = await getAllUsers();
-      setUsers(Array.isArray(data) ? data : []);
+
+      const list = Array.isArray(data)
+        ? data
+        : Array.isArray(data.users)
+        ? data.users
+        : [];
+
+      setUsers(list);
     } catch (err) {
       console.error(err);
       setUsers([]);
@@ -58,55 +52,37 @@ function UserManagement() {
 
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
+      const status = String(user.verificationStatus || user.status || "")
+        .toLowerCase()
+        .trim();
+
+      const role = String(user.role || user.account_type || "")
+        .toLowerCase()
+        .trim();
+
+      const name = String(user.name || user.full_name || "").toLowerCase();
+      const email = String(user.email || "").toLowerCase();
+      const query = search.toLowerCase();
+
       let matchesTab = false;
 
       if (tab === "pending") {
-        matchesTab = user.verificationStatus === "Pending";
+        matchesTab = status === "pending";
       } else if (tab === "active") {
-        matchesTab = user.verificationStatus === "Approved";
+        matchesTab = status === "approved" || status === "active";
       } else if (tab === "deactivated") {
-        matchesTab = user.verificationStatus === "Deactivated";
+        matchesTab = status === "deactivated";
       }
 
-      const matchesFilter = filter === "All" || user.role === filter;
+      const matchesFilter =
+        filter === "All" || role === filter.toLowerCase();
 
-      const matchesSearch =
-        user.name?.toLowerCase().includes(search.toLowerCase()) ||
-        user.email?.toLowerCase().includes(search.toLowerCase());
+      const matchesSearch = name.includes(query) || email.includes(query);
 
       return matchesTab && matchesFilter && matchesSearch;
     });
   }, [users, tab, filter, search]);
 
-  // 🔹 CREATE USER
-  const handleCreateUser = async () => {
-    try {
-      const payload = {
-        name: newUser.name,
-        email: newUser.email,
-        password: newUser.password,
-        role: newUser.role,
-      };
-
-      if (newUser.role === "Doctor") {
-        payload.doctorInfo = {
-          specialization: newUser.specialization,
-          licenseNumber: newUser.licenseNumber,
-        };
-      }
-
-      await registerUser(payload);
-
-      alert("User created successfully");
-      setShowCreateModal(false);
-      loadUsers();
-    } catch (err) {
-      console.error(err);
-      alert("Failed to create user");
-    }
-  };
-
-  // 🔹 APPROVE
   const handleApproveClick = (id) => {
     setSelectedUserId(id);
     setShowModal(true);
@@ -125,45 +101,24 @@ function UserManagement() {
     }
   };
 
-  // 🔹 REJECT
   const handleReject = async (id) => {
     try {
       await rejectUser(id);
-
       setAlertMessage("User rejected successfully");
-
       loadUsers();
     } catch (err) {
       console.error(err);
-
       setAlertMessage("Failed to reject user");
     }
   };
 
-  // 🔹 UPDATE USER
-  const handleUpdateUser = async () => {
-    try {
-      await updateUser(editUser);
-      alert("User updated");
-      setIsEditing(false);
-      loadUsers();
-    } catch (err) {
-      console.error(err);
-      alert("Update failed");
-    }
-  };
-
-  // 🔹 DEACTIVATE
   const handleDeactivate = async (id) => {
     try {
       await updateUserStatus(id, "Deactivated");
-
       setAlertMessage("User deactivated successfully");
-
       loadUsers();
     } catch (err) {
       console.error(err);
-
       setAlertMessage("Failed to deactivate user");
     }
   };
@@ -171,13 +126,10 @@ function UserManagement() {
   const handleReactivate = async (id) => {
     try {
       await updateUserStatus(id, "Approved");
-
       setAlertMessage("User reactivated successfully");
-
       loadUsers();
     } catch (err) {
       console.error(err);
-
       setAlertMessage("Failed to reactivate user");
     }
   };
@@ -187,9 +139,9 @@ function UserManagement() {
       <div className="users-header">
         <h2>Account Management</h2>
       </div>
+
       <UserDashboard users={users} />
 
-      {/* TOP BAR */}
       <div className="topbar">
         <input
           className="search-input"
@@ -198,7 +150,6 @@ function UserManagement() {
           onChange={(e) => setSearch(e.target.value)}
         />
 
-        {/* STATUS */}
         <div className="filter-group">
           <button
             className={tab === "active" ? "active" : ""}
@@ -206,12 +157,14 @@ function UserManagement() {
           >
             Active
           </button>
+
           <button
             className={tab === "pending" ? "active" : ""}
             onClick={() => setTab("pending")}
           >
             Pending
           </button>
+
           <button
             className={tab === "deactivated" ? "active" : ""}
             onClick={() => setTab("deactivated")}
@@ -220,7 +173,6 @@ function UserManagement() {
           </button>
         </div>
 
-        {/* ROLE */}
         <div className="filter-group">
           <button
             className={filter === "All" ? "active" : ""}
@@ -228,12 +180,14 @@ function UserManagement() {
           >
             All
           </button>
+
           <button
             className={filter === "Doctor" ? "active" : ""}
             onClick={() => setFilter("Doctor")}
           >
             Doctors
           </button>
+
           <button
             className={filter === "Volunteer" ? "active" : ""}
             onClick={() => setFilter("Volunteer")}
@@ -244,7 +198,6 @@ function UserManagement() {
 
         <button
           className="add-user-btn"
-          className="add-user-btn"
           onClick={() => setShowCreateModal(true)}
         >
           + Add User
@@ -253,7 +206,6 @@ function UserManagement() {
 
       <h2>{tab === "pending" ? "Pending Users" : "Active Users"}</h2>
 
-      {/* TABLE */}
       <table className="admin-table">
         <thead>
           <tr>
@@ -268,125 +220,127 @@ function UserManagement() {
         </thead>
 
         <tbody>
-          {filteredUsers.map((user) => (
-            <tr
-              key={user._id}
-              onClick={() => {
-                setSelectedUser(user);
-                setEditUser(user);
-                setIsEditing(false);
-              }}
-            >
-              <td>{user.name}</td>
-              <td>{user.role}</td>
-              <td>{user.verificationStatus}</td>
-              <td>
-                {user.createdAt
-                  ? new Date(user.createdAt).toLocaleDateString()
-                  : "N/A"}
-              </td>
-              <td>
-                {user.role === "Doctor" && user.doctorInfo?.proofOfLicense ? (
-                  <a
-                    href={user.doctorInfo.proofOfLicense}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    View
-                  </a>
-                ) : (
-                  "-"
-                )}
-              </td>
+          {filteredUsers.map((user) => {
+            const role = String(user.role || "").toLowerCase();
+            const createdDate = user.createdAt || user.created_at;
 
-              <td>
-                {user.role === "Doctor" && user.doctorInfo?.proofOfDoctorate ? (
-                  <a
-                    href={user.doctorInfo.proofOfDoctorate}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    View
-                  </a>
-                ) : (
-                  "-"
-                )}
-              </td>
+            return (
+              <tr
+                key={user._id}
+                onClick={() => {
+                  setSelectedUser(user);
+                }}
+              >
+                <td>{user.name || user.full_name || "-"}</td>
+                <td>{user.role || "-"}</td>
+                <td>{user.verificationStatus || user.status || "-"}</td>
 
-              <td onClick={(e) => e.stopPropagation()}>
-                {/* PENDING */}
-                {tab === "pending" && (
-                  <>
-                    <button
-                      className="approve-btn"
-                      onClick={() => handleApproveClick(user._id)}
+                <td>
+                  {createdDate
+                    ? new Date(createdDate).toLocaleDateString()
+                    : "N/A"}
+                </td>
+
+                <td>
+                  {role === "doctor" && user.doctorInfo?.proofOfLicense ? (
+                    <a
+                      href={user.doctorInfo.proofOfLicense}
+                      target="_blank"
+                      rel="noreferrer"
                     >
-                      Approve
-                    </button>
+                      View
+                    </a>
+                  ) : (
+                    "-"
+                  )}
+                </td>
 
+                <td>
+                  {role === "doctor" && user.doctorInfo?.proofOfDoctorate ? (
+                    <a
+                      href={user.doctorInfo.proofOfDoctorate}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      View
+                    </a>
+                  ) : (
+                    "-"
+                  )}
+                </td>
+
+                <td onClick={(e) => e.stopPropagation()}>
+                  {tab === "pending" && (
+                    <>
+                      <button
+                        className="approve-btn"
+                        onClick={() => handleApproveClick(user._id)}
+                      >
+                        Approve
+                      </button>
+
+                      <button
+                        className="reject-btn"
+                        onClick={() => {
+                          setConfirmMessage(
+                            "Are you sure you want to reject this user?"
+                          );
+
+                          setConfirmAction(() => async () => {
+                            await handleReject(user._id);
+                          });
+                        }}
+                      >
+                        Reject
+                      </button>
+                    </>
+                  )}
+
+                  {tab === "active" && (
                     <button
-                      className="reject-btn"
+                      className="deactivate-btn"
                       onClick={() => {
                         setConfirmMessage(
-                          "Are you sure you want to reject this user?",
+                          "Are you sure you want to deactivate this user?"
                         );
 
                         setConfirmAction(() => async () => {
-                          await handleReject(user._id);
+                          await handleDeactivate(user._id);
                         });
                       }}
                     >
-                      Reject
+                      Deactivate
                     </button>
-                  </>
-                )}
+                  )}
 
-                {/* ACTIVE */}
-                {tab === "active" && (
-                  <button
-                    className="deactivate-btn"
-                    onClick={() => {
-                      setConfirmMessage(
-                        "Are you sure you want to deactivate this user?",
-                      );
+                  {tab === "deactivated" && (
+                    <button
+                      className="reactivate-btn"
+                      onClick={() => {
+                        setConfirmMessage(
+                          "Are you sure you want to reactivate this user?"
+                        );
 
-                      setConfirmAction(() => async () => {
-                        await handleDeactivate(user._id);
-                      });
-                    }}
-                  >
-                    Deactivate
-                  </button>
-                )}
-
-                {/* DEACTIVATED */}
-                {tab === "deactivated" && (
-                  <button
-                    className="reactivate-btn"
-                    onClick={() => {
-                      setConfirmMessage(
-                        "Are you sure you want to reactivate this user?",
-                      );
-
-                      setConfirmAction(() => async () => {
-                        await handleReactivate(user._id);
-                      });
-                    }}
-                  >
-                    Reactivate
-                  </button>
-                )}
-              </td>
-            </tr>
-          ))}
+                        setConfirmAction(() => async () => {
+                          await handleReactivate(user._id);
+                        });
+                      }}
+                    >
+                      Reactivate
+                    </button>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
+
       {confirmAction && (
         <ConfirmModal
           message={confirmMessage}
           onConfirm={async () => {
             await confirmAction();
-
             setConfirmAction(null);
             setConfirmMessage("");
           }}
@@ -396,7 +350,7 @@ function UserManagement() {
           }}
         />
       )}
-      {/* EDIT MODAL */}
+
       {selectedUser && (
         <EditUser
           user={selectedUser}
@@ -405,7 +359,6 @@ function UserManagement() {
         />
       )}
 
-      {/* APPROVE MODAL */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal">
@@ -423,13 +376,13 @@ function UserManagement() {
         </div>
       )}
 
-      {/* CREATE MODAL */}
       {showCreateModal && (
         <AddUser
           onClose={() => setShowCreateModal(false)}
           onSuccess={loadUsers}
         />
       )}
+
       {alertMessage && (
         <AlertModal
           message={alertMessage}
