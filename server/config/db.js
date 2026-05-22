@@ -2,13 +2,21 @@ const mongoose = require("mongoose");
 
 const connectDB = async () => {
   try {
-    const uri =
-      "mongodb+srv://carlonana0213_db_user:LikhaNU2026@cluster0.jucnt4q.mongodb.net/?appName=Cluster0";
+    const conn = await mongoose.connect(process.env.MONGO_URI, {
+      dbName: process.env.DB_NAME,
+    });
 
-    await mongoose.connect(uri);
+    console.log(
+      "Connected to DB:",
+      mongoose.connection.db.databaseName
+    );
 
-    console.log("MongoDB connected securely");
-    console.log("Connected to DB:", mongoose.connection.name);
+    // or:
+    console.log(
+      "Connected to DB:",
+      conn.connection.db.databaseName
+    );
+
   } catch (error) {
     console.error("DB connection error:", error.message);
     process.exit(1);

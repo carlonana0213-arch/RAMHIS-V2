@@ -2,7 +2,6 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Register from "./pages/register";
 import Registry from "./pages/patients/Registry";
 import DoctorSheet from "./pages/DoctorSheet.js";
-import Pharmacy from "./pages/Pharmacy.js";
 import PatientQueue from "./pages/patients/PatientQueue.js";
 import Account from "./pages/Account.js";
 import AppLayout from "./layouts/AppLayout";
@@ -15,6 +14,7 @@ import PharmacyInventory from "./pages/pharmacy/PharmacyInventory";
 import LandingPage from "./pages/Landing";
 import Dashboard from "./pages/Dashboard.js";
 import Doctor from "./pages/Doctor.js";
+import EventManagement from "./pages/EventManagement";
 
 function App() {
   return (
@@ -139,6 +139,16 @@ function App() {
             </ProtectedRoute>
           }
         />
+          <Route
+  path="/event"
+  element={
+    <ProtectedRoute>
+      <AppLayout>
+        <EventManagement />
+      </AppLayout>
+    </ProtectedRoute>
+  }
+/>
       </Routes>
     </Router>
   );

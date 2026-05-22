@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import ConfirmModal from "../components/ConfirmModal";
 import "../styles/header.css";
 import ramlogo from "../resources/ramhislogo.png";
+import { FaCalendarAlt } from "react-icons/fa";
 import { hasAccess } from "../utils/hasAccess";
 import {
   FaChartLine,
@@ -185,6 +186,18 @@ function Header({ collapsed, toggleSidebar }) {
           </NavLink>
         )}
 */}
+
+<NavLink
+  to="/event"
+  className={({ isActive }) =>
+    isActive ? "nav-link active" : "nav-link"
+  }
+>
+  <span className="nav-item">
+    <FaCalendarAlt className="nav-icon" />
+    {!collapsed && " Event"}
+  </span>
+</NavLink>
 
         <div
           className="logout-section"
