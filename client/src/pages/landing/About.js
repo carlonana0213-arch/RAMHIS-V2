@@ -2,17 +2,15 @@ import ramhislogo from "../../resources/ramhislogo.png";
 import hr from "../../resources/hr.png";
 import anl from "../../resources/anl.png";
 import ol from "../../resources/ol.png";
+import mock from "../../resources/mockup.png";
+import mbbg from "../../resources/mobilebg.png";
 
 const AboutSystem = () => {
   return (
     <div className="hero-center">
       {/* HERO SECTION */}
       <div className="hero-banner">
-        <img
-          src={ramhislogo}
-          className="hero-image-small"
-          alt="RAMHIS Logo"
-        />
+        <img src={ramhislogo} className="hero-image-small" alt="RAMHIS Logo" />
 
         <h1 className="hero-title-main">RAMHIS</h1>
 
@@ -25,9 +23,12 @@ const AboutSystem = () => {
       {/* ABOUT MODERN SECTION */}
       <div className="about-modern-section">
         {/* MOBILE APP SECTION */}
-        <div className="about-modern-top">
+        <div
+          className="about-modern-top"
+          style={{ "--mobile-bg": `url(${mbbg})` }}
+        >
           <div className="about-modern-image-card">
-            <img src={ol} alt="Mobile App Feature" />
+            <img src={mock} alt="Mobile App Feature" />
           </div>
 
           <div className="about-modern-text">
