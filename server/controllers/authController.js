@@ -110,14 +110,14 @@ const normalizedRole =
       message: "Registration successful. Await admin approval.",
     });
   } catch (error) {
-    console.error(error);
+  console.error("REGISTER ERROR:", error);
 
-    return res.status(500).json({
-      ok: false,
-      msg: "Server error",
-      message: "Server error",
-    });
-  }
+  return res.status(500).json({
+    ok: false,
+    msg: error.message,
+    message: error.message,
+  });
+}
 };
 
 exports.login = async (req, res) => {
