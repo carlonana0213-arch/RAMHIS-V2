@@ -1,5 +1,17 @@
 const Event = require("../models/Event");
 
+let io = null;
+
+exports.initEventController = (socketIo) => {
+  io = socketIo;
+};
+
+const emitEventsUpdated = (eventId = null) => {
+  if (io) {
+    io.emit("events_updated", { eventId });
+  }
+};
+
 // GET /api/events
 exports.getAllEvents = async (req, res) => {
   try {
@@ -9,13 +21,13 @@ exports.getAllEvents = async (req, res) => {
       .sort({ date: 1, createdAt: -1 });
 
     res.status(200).json({
-      success: true,
+      ok: true,
       count: events.length,
-      events,
+      data: events,
     });
   } catch (error) {
     res.status(500).json({
-      success: false,
+      ok: false,
       message: "Failed to fetch events",
       error: error.message,
     });
@@ -31,18 +43,18 @@ exports.getEventById = async (req, res) => {
 
     if (!event) {
       return res.status(404).json({
-        success: false,
+        ok: false,
         message: "Event not found",
       });
     }
 
     res.status(200).json({
-      success: true,
-      event,
+      ok: true,
+      data: event,
     });
   } catch (error) {
     res.status(500).json({
-      success: false,
+      ok: false,
       message: "Failed to fetch event",
       error: error.message,
     });
@@ -66,7 +78,7 @@ exports.createEvent = async (req, res) => {
 
     if (!title || !location || !date || !type) {
       return res.status(400).json({
-        success: false,
+        ok: false,
         message: "Title, location, date, and type are required",
       });
     }
@@ -85,14 +97,16 @@ exports.createEvent = async (req, res) => {
       participants: [],
     });
 
+    emitEventsUpdated(event._id);
+
     res.status(201).json({
-      success: true,
+      ok: true,
       message: "Event created successfully",
-      event,
+      data: event,
     });
   } catch (error) {
     res.status(500).json({
-      success: false,
+      ok: false,
       message: "Failed to create event",
       error: error.message,
     });
@@ -111,19 +125,21 @@ exports.updateEvent = async (req, res) => {
 
     if (!event) {
       return res.status(404).json({
-        success: false,
+        ok: false,
         message: "Event not found",
       });
     }
 
+    emitEventsUpdated(event._id);
+
     res.status(200).json({
-      success: true,
+      ok: true,
       message: "Event updated successfully",
-      event,
+      data: event,
     });
   } catch (error) {
     res.status(500).json({
-      success: false,
+      ok: false,
       message: "Failed to update event",
       error: error.message,
     });
@@ -137,18 +153,21 @@ exports.deleteEvent = async (req, res) => {
 
     if (!event) {
       return res.status(404).json({
-        success: false,
+        ok: false,
         message: "Event not found",
       });
     }
 
+    emitEventsUpdated(event._id);
+
     res.status(200).json({
-      success: true,
+      ok: true,
       message: "Event deleted successfully",
+      data: event,
     });
   } catch (error) {
     res.status(500).json({
-      success: false,
+      ok: false,
       message: "Failed to delete event",
       error: error.message,
     });
@@ -164,8 +183,22 @@ exports.joinEvent = async (req, res) => {
 
     if (!event) {
       return res.status(404).json({
-        success: false,
+        ok: false,
         message: "Event not found",
+      });
+    }
+
+    if (event.registrationOpen === false) {
+      return res.status(400).json({
+        ok: false,
+        message: "Registration is closed for this event.",
+      });
+    }
+
+    if (event.status === "Completed" || event.status === "Cancelled") {
+      return res.status(400).json({
+        ok: false,
+        message: "This event is no longer accepting participants.",
       });
     }
 
@@ -175,7 +208,7 @@ exports.joinEvent = async (req, res) => {
 
     if (alreadyJoined) {
       return res.status(400).json({
-        success: false,
+        ok: false,
         message: "You already joined/applied for this event",
       });
     }
@@ -188,15 +221,53 @@ exports.joinEvent = async (req, res) => {
 
     await event.save();
 
+    emitEventsUpdated(event._id);
+
     res.status(200).json({
-      success: true,
+      ok: true,
       message: "Join request submitted successfully",
-      event,
+      data: event,
     });
   } catch (error) {
     res.status(500).json({
-      success: false,
+      ok: false,
       message: "Failed to join event",
+      error: error.message,
+    });
+  }
+};
+
+// POST /api/events/:id/leave
+exports.leaveEvent = async (req, res) => {
+  try {
+    const userId = req.user?._id || req.user?.id;
+
+    const event = await Event.findById(req.params.id);
+
+    if (!event) {
+      return res.status(404).json({
+        ok: false,
+        message: "Event not found",
+      });
+    }
+
+    event.participants = event.participants.filter(
+      (participant) => participant.userId.toString() !== userId.toString()
+    );
+
+    await event.save();
+
+    emitEventsUpdated(event._id);
+
+    res.status(200).json({
+      ok: true,
+      message: "Request cancelled.",
+      data: event,
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      message: "Failed to cancel request",
       error: error.message,
     });
   }
@@ -210,7 +281,7 @@ exports.updateParticipantStatus = async (req, res) => {
 
     if (!["Pending", "Approved", "Rejected"].includes(status)) {
       return res.status(400).json({
-        success: false,
+        ok: false,
         message: "Invalid participant status",
       });
     }
@@ -219,7 +290,7 @@ exports.updateParticipantStatus = async (req, res) => {
 
     if (!event) {
       return res.status(404).json({
-        success: false,
+        ok: false,
         message: "Event not found",
       });
     }
@@ -230,7 +301,7 @@ exports.updateParticipantStatus = async (req, res) => {
 
     if (!participant) {
       return res.status(404).json({
-        success: false,
+        ok: false,
         message: "Participant not found",
       });
     }
@@ -243,14 +314,16 @@ exports.updateParticipantStatus = async (req, res) => {
       .populate("createdBy", "name email role")
       .populate("participants.userId", "name email role");
 
+    emitEventsUpdated(eventId);
+
     res.status(200).json({
-      success: true,
+      ok: true,
       message: `Participant marked as ${status}`,
-      event: updatedEvent,
+      data: updatedEvent,
     });
   } catch (error) {
     res.status(500).json({
-      success: false,
+      ok: false,
       message: "Failed to update participant status",
       error: error.message,
     });

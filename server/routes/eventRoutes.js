@@ -8,22 +8,24 @@ const {
   updateEvent,
   deleteEvent,
   joinEvent,
+  leaveEvent,
   updateParticipantStatus,
 } = require("../controllers/eventController");
 
 const protect = require("../middleware/protect");
 
-// Public / authenticated event viewing
-router.get("/", protect, getAllEvents);
-router.get("/:id", protect, getEventById);
+// Public event viewing
+router.get("/", getAllEvents);
+router.get("/:id", getEventById);
 
 // Admin event management
 router.post("/", protect, createEvent);
 router.put("/:id", protect, updateEvent);
 router.delete("/:id", protect, deleteEvent);
 
-// Mobile user join event
+// Mobile user join / leave event
 router.post("/:id/join", protect, joinEvent);
+router.post("/:id/leave", protect, leaveEvent);
 
 // Admin participant approval/rejection
 router.patch(
