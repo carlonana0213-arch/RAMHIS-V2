@@ -1,7 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const { register, login } = require("../controllers/authController");
-const auth = require("../middleware/authMiddleware");
+const {
+  register,
+  login,
+  forgotPassword,
+  resetPassword,
+} = require("../controllers/authController");const auth = require("../middleware/authMiddleware");
 const authorize = require("../middleware/roleMiddleware");
 const { updateMe } = require("../controllers/authController");
 const { getMe } = require("../controllers/authController");
@@ -17,6 +21,15 @@ router.put("/me", auth, updateMe);
 router.post("/register", register);
 router.post("/signup", register);
 router.post("/login", login);
+router.post(
+  "/forgot-password",
+  forgotPassword,
+);
+
+router.post(
+  "/reset-password",
+  resetPassword,
+);
 router.get("/me", auth, getMe);
 router.post("/change-password", auth, async (req, res) => {
   try {

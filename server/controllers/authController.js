@@ -1,6 +1,7 @@
 const User = require("../models/user");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 
 exports.register = async (req, res) => {
   const {
@@ -157,5 +158,107 @@ exports.getMe = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ msg: "Server error" });
+  }
+};
+
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({
+      email,
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        ok: false,
+        message: "User not found",
+      });
+    }
+
+    const resetToken =
+      crypto.randomBytes(32).toString(
+        "hex",
+      );
+
+    user.resetPasswordToken =
+      resetToken;
+
+    user.resetPasswordExpire =
+      Date.now() + 1000 * 60 * 30;
+
+    await user.save();
+
+    res.json({
+      ok: true,
+      message: "Reset token generated",
+      resetToken,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      ok: false,
+      message: "Server error",
+    });
+  }
+};
+
+exports.resetPassword = async (
+  req,
+  res,
+) => {
+  try {
+    const { token, password } =
+      req.body;
+
+    const user =
+      await User.findOne({
+        resetPasswordToken: token,
+        resetPasswordExpire: {
+          $gt: Date.now(),
+        },
+      });
+
+    if (!user) {
+      return res.status(400).json({
+        ok: false,
+        message:
+          "Invalid or expired token",
+      });
+    }
+
+    const salt =
+      await bcrypt.genSalt(10);
+
+    user.password =
+      await bcrypt.hash(
+        password,
+        salt,
+      );
+
+    user.resetPasswordToken =
+      undefined;
+
+    user.resetPasswordExpire =
+      undefined;
+
+    user.mustChangePassword =
+      false;
+
+    await user.save();
+
+    res.json({
+      ok: true,
+      message:
+        "Password reset successful",
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      ok: false,
+      message: "Server error",
+    });
   }
 };
