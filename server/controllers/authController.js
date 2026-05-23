@@ -206,18 +206,39 @@ await transporter.sendMail({
   to: user.email,
   subject: "RAMHIS Password Reset",
   html: `
-    <h3>Password Reset Request</h3>
+  <div style="font-family: Arial;">
 
-    <p>You requested to reset your RAMHIS password.</p>
+    <h2>RAMHIS Password Reset</h2>
 
-    <p>Tap the link below to reset your password:</p>
+    <p>
+      You requested to reset your RAMHIS password.
+    </p>
 
-    <a href="${resetLink}">
+    <p>
+      Click the button below to reset your password:
+    </p>
+
+    <a
+      href="${resetLink}"
+      style="
+        display:inline-block;
+        padding:12px 20px;
+        background:#4F46E5;
+        color:white;
+        text-decoration:none;
+        border-radius:8px;
+        font-weight:bold;
+      "
+    >
       Reset Password
     </a>
 
-    <p>This link expires in 30 minutes.</p>
-  `,
+    <p style="margin-top:20px;">
+      This link expires in 30 minutes.
+    </p>
+
+  </div>
+`,
 });
 
 res.json({
