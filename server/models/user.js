@@ -53,6 +53,13 @@ const UserSchema = new mongoose.Schema({
   tempPassword: {
     type: String,
   },
+  resetPasswordToken: {
+  type: String,
+},
+
+resetPasswordExpire: {
+  type: Date,
+},
   volunteerType: {
     type: String,
   },
