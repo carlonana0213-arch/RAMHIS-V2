@@ -30,6 +30,14 @@ router.post(
   "/reset-password",
   resetPassword,
 );
+
+router.get("/reset-password", (req, res) => {
+  const { token } = req.query;
+
+  return res.redirect(
+    `ramhis://reset-password?token=${token}`
+  );
+});
 router.get("/me", auth, getMe);
 router.post("/change-password", auth, async (req, res) => {
   try {

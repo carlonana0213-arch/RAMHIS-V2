@@ -200,7 +200,7 @@ exports.forgotPassword = async (req, res) => {
     await user.save();
 
 const resetLink =
-  `ramhis://reset-password?token=${resetToken}`;
+  `https://ramhis-v2-1.onrender.com/reset-password?token=${resetToken}`;
 
 await transporter.sendMail({
   to: user.email,
