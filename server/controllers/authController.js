@@ -47,15 +47,24 @@ const normalizedRole =
   const normalizedVolunteerType =
     volunteerType || organization || skills || "";
 
-  const normalizedDoctorInfo =
-    doctorInfo ||
-   (normalizedRole.toLowerCase() === "doctor"
+  const uploadedFileName =
+  req.file?.filename ||
+  req.file?.originalname ||
+  "";
+
+const normalizedDoctorInfo =
+  doctorInfo ||
+  (
+    normalizedRole.toLowerCase() === "doctor"
       ? {
           specialization: specialty || "",
           licenseNumber: prc_license_number || "",
           hospitalClinic: hospital_clinic || "",
+          proofOfLicense: uploadedFileName || "Submitted via mobile",
+          proofOfDoctorate: uploadedFileName || "Submitted via mobile",
         }
-      : undefined);
+      : undefined
+  );
 
   const normalizedAcceptedTerms =
     accepted_terms === true || accepted_terms === "true";
