@@ -14,68 +14,57 @@ const transporter = nodemailer.createTransport({
 
 
 exports.register = async (req, res) => {
- const {
-  name,
-  full_name,
-  email,
-  password,
-  role,
-  account_type,
-  volunteerType,
-  doctorInfo,
-  contact_number,
-  birthdate,
-  accepted_terms,
+  const {
+    name,
+    full_name,
+    email,
+    password,
+    role,
+    account_type,
+    volunteerType,
+    doctorInfo,
+    contact_number,
+    birthdate,
+    accepted_terms,
 
-  organization,
-  skills,
+    organization,
+    skills,
 
-  prc_license_number,
-  specialty,
-  hospital_clinic,
-} = req.body;
+    prc_license_number,
+    specialty,
+    hospital_clinic,
+  } = req.body;
 
-// Normalize mobile/web fields
-const normalizedName =
-  name || full_name;
+  // Normalize mobile/web fields
+  const normalizedName = name || full_name;
 
-const normalizedRole =
-  (role || account_type || "user")
-    .toLowerCase();
+  const normalizedRole = (role || account_type || "user").toLowerCase();
 
-const normalizedVolunteerType =
-  volunteerType ||
-  organization ||
-  skills ||
-  "";
+  const normalizedVolunteerType =
+    volunteerType || organization || skills || "";
 
-const normalizedDoctorInfo =
-  doctorInfo ||
-  (
-    normalizedRole === "doctor"
+  const normalizedDoctorInfo =
+    doctorInfo ||
+    (normalizedRole === "doctor"
       ? {
-          specialization:
-            specialty || "",
-
-          licenseNumber:
-            prc_license_number || "",
-
-          hospitalClinic:
-            hospital_clinic || "",
+          specialization: specialty || "",
+          licenseNumber: prc_license_number || "",
+          hospitalClinic: hospital_clinic || "",
         }
-      : undefined
-  );
+      : undefined);
 
-const normalizedAcceptedTerms =
-  accepted_terms === true ||
-  accepted_terms === "true";
-
+  const normalizedAcceptedTerms =
+    accepted_terms === true || accepted_terms === "true";
 
   try {
     let user = await User.findOne({ email });
 
     if (user) {
-      return res.status(400).json({ msg: "User already exists" });
+      return res.status(400).json({
+        ok: false,
+        msg: "User already exists",
+        message: "User already exists",
+      });
     }
 
     const generateTempPassword = () => {
@@ -84,36 +73,46 @@ const normalizedAcceptedTerms =
 
     const tempPassword = password || generateTempPassword();
 
-const salt = await bcrypt.genSalt(10);
-const hashedPassword = await bcrypt.hash(tempPassword, salt);
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(tempPassword, salt);
 
     user = new User({
-      name: name || full_name,
-full_name: full_name || name,
-email,
-password: hashedPassword,
-role: role || account_type,
-account_type: account_type || role,
-volunteerType,
-doctorInfo,
-contact_number,
-birthdate,
-accepted_terms,
-tempPassword: password ? undefined : tempPassword,
-mustChangePassword: password ? false : true,//  FORCE CHANGE
+      name: normalizedName,
+      full_name: normalizedName,
+
+      email,
+      password: hashedPassword,
+
+      role: normalizedRole,
+      account_type: normalizedRole,
+
+      volunteerType: normalizedVolunteerType,
+      doctorInfo: normalizedDoctorInfo,
+
+      contact_number,
+      birthdate,
+      accepted_terms: normalizedAcceptedTerms,
+
+      tempPassword: password ? undefined : tempPassword,
+      mustChangePassword: password ? false : true,
     });
 
     await user.save();
 
-    res.json({
-  ok: true,
-  userId: user._id,
-  msg: "Registration successful. Await admin approval.",
-  message: "Registration successful. Await admin approval.",
-});
+    return res.json({
+      ok: true,
+      userId: user._id,
+      msg: "Registration successful. Await admin approval.",
+      message: "Registration successful. Await admin approval.",
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ msg: "Server error" });
+
+    return res.status(500).json({
+      ok: false,
+      msg: "Server error",
+      message: "Server error",
+    });
   }
 };
 
