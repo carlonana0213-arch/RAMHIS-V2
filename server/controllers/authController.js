@@ -14,7 +14,7 @@ const transporter = nodemailer.createTransport({
 
 
 exports.register = async (req, res) => {
-  const {
+ const {
   name,
   full_name,
   email,
@@ -26,7 +26,49 @@ exports.register = async (req, res) => {
   contact_number,
   birthdate,
   accepted_terms,
+
+  organization,
+  skills,
+
+  prc_license_number,
+  specialty,
+  hospital_clinic,
 } = req.body;
+
+// Normalize mobile/web fields
+const normalizedName =
+  name || full_name;
+
+const normalizedRole =
+  (role || account_type || "user")
+    .toLowerCase();
+
+const normalizedVolunteerType =
+  volunteerType ||
+  organization ||
+  skills ||
+  "";
+
+const normalizedDoctorInfo =
+  doctorInfo ||
+  (
+    normalizedRole === "doctor"
+      ? {
+          specialization:
+            specialty || "",
+
+          licenseNumber:
+            prc_license_number || "",
+
+          hospitalClinic:
+            hospital_clinic || "",
+        }
+      : undefined
+  );
+
+const normalizedAcceptedTerms =
+  accepted_terms === true ||
+  accepted_terms === "true";
 
 
   try {
@@ -65,6 +107,7 @@ mustChangePassword: password ? false : true,//  FORCE CHANGE
 
     res.json({
   ok: true,
+  userId: user._id,
   msg: "Registration successful. Await admin approval.",
   message: "Registration successful. Await admin approval.",
 });
