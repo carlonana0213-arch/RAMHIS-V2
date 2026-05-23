@@ -2,6 +2,16 @@ const User = require("../models/user");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+const nodemailer = require("nodemailer");
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
 
 exports.register = async (req, res) => {
   const {
@@ -189,11 +199,32 @@ exports.forgotPassword = async (req, res) => {
 
     await user.save();
 
-    res.json({
-      ok: true,
-      message: "Reset token generated",
-      resetToken,
-    });
+const resetLink =
+  `ramhis://reset-password?token=${resetToken}`;
+
+await transporter.sendMail({
+  to: user.email,
+  subject: "RAMHIS Password Reset",
+  html: `
+    <h3>Password Reset Request</h3>
+
+    <p>You requested to reset your RAMHIS password.</p>
+
+    <p>Tap the link below to reset your password:</p>
+
+    <a href="${resetLink}">
+      Reset Password
+    </a>
+
+    <p>This link expires in 30 minutes.</p>
+  `,
+});
+
+res.json({
+  ok: true,
+  message:
+    "Password reset link sent to your email.",
+});
   } catch (error) {
     console.error(error);
 
