@@ -10,6 +10,11 @@ const authorize = require("../middleware/roleMiddleware");
 const { updateMe } = require("../controllers/authController");
 const { getMe } = require("../controllers/authController");
 const bcrypt = require("bcryptjs");
+const multer = require("multer");
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+});
 
 router.get("/someProtectedRoute", auth, (req, res) => {
   res.json({
@@ -18,8 +23,16 @@ router.get("/someProtectedRoute", auth, (req, res) => {
   });
 });
 router.put("/me", auth, updateMe);
-router.post("/register", register);
-router.post("/signup", register);
+router.post(
+  "/register",
+  upload.single("licenseFile"),
+  register,
+);
+router.post(
+  "/signup",
+  upload.single("licenseFile"),
+  register,
+);
 router.post("/login", login);
 router.post(
   "/forgot-password",
