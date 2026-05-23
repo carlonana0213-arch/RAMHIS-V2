@@ -25,12 +25,13 @@ router.get("/someProtectedRoute", auth, (req, res) => {
 router.put("/me", auth, updateMe);
 router.post(
   "/register",
-  upload.single("licenseFile"),
+  upload.single("license_file"),
   register,
 );
+
 router.post(
   "/signup",
-  upload.single("licenseFile"),
+  upload.single("license_file"),
   register,
 );
 router.post("/login", login);
