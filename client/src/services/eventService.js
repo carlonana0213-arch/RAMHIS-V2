@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api/events";
+const API_URL =
+  "https://ramhis-v2-1.onrender.com/api/events";
 
 // Token helper
 // Token helper

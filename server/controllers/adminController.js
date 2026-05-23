@@ -20,10 +20,13 @@ exports.getPendingUsers = async (req, res) => {
       "-password",
     );
 
-    res.json(users);
-  } catch (err) {
-    res.status(500).json({ msg: "Server error" });
-  }
+res.json({
+  ok: true,
+  data: users,
+});
+} catch (err) {
+  res.status(500).json({ msg: "Server error" });
+}
 };
 
 exports.approveUser = async (req, res) => {
@@ -69,7 +72,11 @@ exports.rejectUser = async (req, res) => {
 exports.getAllUsers = async (req, res) => {
   try {
     const users = await User.find().select("-password");
-    res.json(users);
+
+    res.json({
+      ok: true,
+      data: users,
+    });
   } catch (err) {
     res.status(500).json({ msg: "Server error" });
   }
@@ -85,7 +92,10 @@ exports.updateUser = async (req, res) => {
       new: true,
     });
 
-    res.json(user);
+res.json({
+  ok: true,
+  data: users,
+});
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Update failed", error: err.message });
@@ -96,14 +106,28 @@ exports.updateUserStatus = async (req, res) => {
   try {
     const { verificationStatus } = req.body;
 
+    if (
+  !["Pending", "Approved", "Rejected", "Deactivated"].includes(
+    verificationStatus
+  )
+) {
+  return res.status(400).json({
+    ok: false,
+    message: "Invalid verification status",
+  });
+}
+
     const user = await User.findByIdAndUpdate(
       req.params.id,
       { verificationStatus },
       { new: true },
     );
 
-    res.json(user);
-  } catch (err) {
+res.json({
+  ok: true,
+  data: user,
+});  
+} catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
@@ -117,8 +141,7 @@ exports.resetUserPassword = async (req, res) => {
 
     user.password = hashed;
     user.tempPassword = tempPassword;
-    user.mustChangePassword = false;
-
+    user.mustChangePassword = true;
     await user.save();
 
     // SEND EMAIL AGAIN
@@ -132,8 +155,12 @@ exports.resetUserPassword = async (req, res) => {
       `,
     });
 
-    res.json({ msg: "Password reset successful" });
-  } catch (err) {
-    res.status(500).json({ msg: "Reset failed" });
-  }
+    res.json({
+  ok: true,
+  msg: "Password reset successful",
+  message: "Password reset successful",
+});
+} catch (err) {
+  res.status(500).json({ msg: "Reset failed" });
+}
 };

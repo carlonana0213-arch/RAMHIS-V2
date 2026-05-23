@@ -45,7 +45,13 @@ function UserManagement() {
   const loadUsers = async () => {
     try {
       const data = await getAllUsers();
-      setUsers(Array.isArray(data) ? data : []);
+      setUsers(
+  Array.isArray(data?.data)
+    ? data.data
+    : Array.isArray(data)
+      ? data
+      : [],
+);
     } catch (err) {
       console.error(err);
       setUsers([]);
@@ -102,7 +108,7 @@ function UserManagement() {
       loadUsers();
     } catch (err) {
       console.error(err);
-      alert("Failed to create user");
+      alert(err.message || "Failed to create user");
     }
   };
 

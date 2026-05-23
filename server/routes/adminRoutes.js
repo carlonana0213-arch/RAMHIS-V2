@@ -20,6 +20,8 @@ router.patch("/reject/:id", auth, authorize("Admin"), rejectUser);
 router.get("/users", auth, authorize("Admin"), getAllUsers);
 router.put("/users/:id", auth, authorize("Admin"), updateUser);
 router.patch("/:id/status", auth, authorize("Admin"), updateUserStatus);
+router.get("/", auth, authorize("Admin"), getAllUsers);
+router.put("/:id", auth, authorize("Admin"), updateUser);
 router.patch(
   "/reset-password/:id",
   auth,

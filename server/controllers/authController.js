@@ -3,7 +3,20 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 exports.register = async (req, res) => {
-  const { name, email, password, role, volunteerType, doctorInfo } = req.body;
+  const {
+  name,
+  full_name,
+  email,
+  password,
+  role,
+  account_type,
+  volunteerType,
+  doctorInfo,
+  contact_number,
+  birthdate,
+  accepted_terms,
+} = req.body;
+
 
   try {
     let user = await User.findOne({ email });
@@ -16,25 +29,34 @@ exports.register = async (req, res) => {
       return Math.random().toString(36).slice(-8);
     };
 
-    const tempPassword = generateTempPassword();
+    const tempPassword = password || generateTempPassword();
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(tempPassword, salt);
+const salt = await bcrypt.genSalt(10);
+const hashedPassword = await bcrypt.hash(tempPassword, salt);
 
     user = new User({
-      name,
-      email,
-      password: hashedPassword,
-      role,
-      volunteerType,
-      doctorInfo,
-      tempPassword, //  STORE TEMP PASSWORD
-      mustChangePassword: true, //  FORCE CHANGE
+      name: name || full_name,
+full_name: full_name || name,
+email,
+password: hashedPassword,
+role: role || account_type,
+account_type: account_type || role,
+volunteerType,
+doctorInfo,
+contact_number,
+birthdate,
+accepted_terms,
+tempPassword: password ? undefined : tempPassword,
+mustChangePassword: password ? false : true,//  FORCE CHANGE
     });
 
     await user.save();
 
-    res.json({ msg: "Registration successful. Await admin approval." });
+    res.json({
+  ok: true,
+  msg: "Registration successful. Await admin approval.",
+  message: "Registration successful. Await admin approval.",
+});
   } catch (error) {
     console.error(error);
     res.status(500).json({ msg: "Server error" });
@@ -79,16 +101,24 @@ exports.login = async (req, res) => {
     );
 
     res.json({
-      msg: "Login successful",
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        role: user.role,
-        doctorInfo: user.doctorInfo,
-      },
-      mustChangePassword: user.mustChangePassword,
-    });
+  ok: true,
+  msg: "Login successful",
+  message: "Login successful",
+  token,
+  accessToken: token,
+  user: {
+    id: user._id,
+    name: user.name || user.full_name,
+    full_name: user.full_name || user.name,
+    email: user.email,
+    role: user.role || user.account_type,
+    account_type: user.account_type || user.role,
+    verificationStatus: user.verificationStatus,
+    doctorInfo: user.doctorInfo,
+  },
+  mustChangePassword: user.mustChangePassword,
+});
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ msg: "Server error" });

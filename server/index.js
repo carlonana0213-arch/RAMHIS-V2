@@ -2,6 +2,8 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
+const http = require("http");
+const { Server } = require("socket.io");
 
 const connectDB = require("./config/db");
 const pharmacyRoutes = require("./routes/pharmacyRoutes");
@@ -11,10 +13,20 @@ const predictiveAnalyticsRoutes = require("./routes/predictiveAnalyticsRoutes");
 const eventRoutes = require("./routes/eventRoutes");
 
 const allowedOrigins = ["http://localhost:3000"];
+const {
+  initEventController,
+} = require("./controllers/eventController");
 
 connectDB();
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+  },
+});
 
 app.disable("x-powered-by");
 
@@ -36,6 +48,8 @@ app.get("/", (_req, res) => {
 
 app.use(express.json({ limit: "10kb" }));
 
+initEventController(io);
+
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/patients", require("./routes/patientRoutes"));
 app.use("/api/events", require("./routes/eventRoutes"));
@@ -52,5 +66,16 @@ app.get("/", (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
+io.on("connection", (socket) => {
+  console.log("🔌 Client connected:", socket.id);
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  socket.on("disconnect", () => {
+    console.log("❌ Client disconnected:", socket.id);
+  });
+});
+
+
+server.listen(PORT, () =>
+  console.log(`🚀 Server running with Socket.IO on port ${PORT}`)
+);

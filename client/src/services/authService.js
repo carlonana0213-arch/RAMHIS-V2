@@ -3,11 +3,23 @@ const API_URL = "http://localhost:5000/api/auth";
 export const registerUser = async (data) => {
   const res = await fetch(`${API_URL}/register`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify(data),
   });
 
-  return res.json();
+  const result = await res.json();
+
+  if (!res.ok) {
+    throw new Error(
+      result.message ||
+      result.msg ||
+      "Registration failed"
+    );
+  }
+
+  return result;
 };
 
 export const loginUser = async (data) => {

@@ -15,6 +15,7 @@ router.get("/someProtectedRoute", auth, (req, res) => {
 });
 router.put("/me", auth, updateMe);
 router.post("/register", register);
+router.post("/signup", register);
 router.post("/login", login);
 router.get("/me", auth, getMe);
 router.post("/change-password", auth, async (req, res) => {
@@ -39,3 +40,7 @@ router.post("/change-password", auth, async (req, res) => {
 });
 
 module.exports = router;
+
+
+
+
