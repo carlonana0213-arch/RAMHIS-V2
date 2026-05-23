@@ -9,6 +9,8 @@ const auth = require("../middleware/authMiddleware");
 const checkPermission = require("../middleware/permissionMiddleware");
 const { referPatient } = require("../controllers/referralController");
 const Patient = require("../models/Patient");
+const { getLocations } = require("../controllers/patientController");
+router.get("/locations", getLocations);
 
 router.patch("/:id/referral", referPatient);
 

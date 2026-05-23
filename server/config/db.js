@@ -6,17 +6,10 @@ const connectDB = async () => {
       dbName: process.env.DB_NAME,
     });
 
-    console.log(
-      "Connected to DB:",
-      mongoose.connection.db.databaseName
-    );
+    console.log("Connected to DB:", mongoose.connection.db.databaseName);
 
     // or:
-    console.log(
-      "Connected to DB:",
-      conn.connection.db.databaseName
-    );
-
+    console.log("Connected to DB:", conn.connection.db.databaseName);
   } catch (error) {
     console.error("DB connection error:", error.message);
     process.exit(1);

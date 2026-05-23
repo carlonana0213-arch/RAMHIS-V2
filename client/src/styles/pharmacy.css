@@ -778,3 +778,46 @@ MODAL
   cursor: not-allowed;
   font-weight: 600;
 }
+
+/* =========================
+   PAGINATION
+========================= */
+
+.pharmacy-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 18px 8px 0;
+  margin-top: 14px;
+
+  border-top: 1px solid #e5e7eb;
+}
+
+.pharmacy-page-btn {
+  border: none;
+  background: #3f5fbe;
+  color: white;
+
+  padding: 10px 16px;
+  border-radius: 10px;
+
+  font-weight: 600;
+  cursor: pointer;
+
+  transition: 0.2s ease;
+}
+
+.pharmacy-page-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.pharmacy-page-btn:disabled {
+  background: #d1d5db;
+  cursor: not-allowed;
+}
+
+.pharmacy-pagination-text {
+  font-weight: 600;
+  color: #64748b;
+}

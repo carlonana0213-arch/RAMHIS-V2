@@ -360,3 +360,46 @@
 .next-patient-btn:hover {
   opacity: 0.9;
 }
+
+/* =========================
+   PAGINATION
+========================= */
+
+.doctor-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 16px 20px;
+
+  border-top: 1px solid #e2e8f0;
+  background: white;
+}
+
+.doctor-page-btn {
+  border: none;
+  background: var(--primary-blue);
+  color: white;
+
+  padding: 10px 16px;
+  border-radius: 10px;
+
+  font-weight: 600;
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+}
+
+.doctor-page-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.doctor-page-btn:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.doctor-pagination-text {
+  font-weight: 600;
+  color: var(--text-light);
+}

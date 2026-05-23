@@ -165,3 +165,22 @@ exports.deleteDoctorRecord = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+exports.getLocations = async (req, res) => {
+  try {
+    const locations = await Patient.distinct("location");
+
+    // remove empty values
+    const cleanedLocations = locations.filter(
+      (location) => location && location.trim() !== "",
+    );
+
+    res.json(cleanedLocations);
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: "Failed to fetch locations",
+    });
+  }
+};

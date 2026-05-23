@@ -140,9 +140,11 @@ exports.getPatientTrends = async (req, res) => {
     // PATIENTS
     // =========================
     patients.forEach((patient) => {
-      if (!patient.createdAt) return;
+      if (!patient.missionDate) return;
 
-      const date = new Date(patient.createdAt);
+      const date = new Date(patient.missionDate);
+
+      if (isNaN(date)) return;
 
       const month = months[date.getMonth()];
 

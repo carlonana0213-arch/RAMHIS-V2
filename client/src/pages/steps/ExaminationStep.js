@@ -45,87 +45,117 @@ const ExaminationStep = ({ form, setForm }) => {
 
   return (
     <div className="step-wrapper">
-      <div className="step-container">
+      <div className="card">
         <h3>Examination</h3>
 
-        {/* BP */}
-        <div className="bp-group">
-          <input
-            placeholder="Systolic"
-            value={exam.bp?.split("/")[0] || ""}
-            onChange={(e) => {
-              const sys = e.target.value;
-              const dia = exam.bp?.split("/")[1] || "";
-              handleChange("bp", `${sys}/${dia}`);
-            }}
-            onKeyDown={handleEnterKey}
-          />
-          <span>/</span>
-          <input
-            placeholder="Diastolic"
-            value={exam.bp?.split("/")[1] || ""}
-            onChange={(e) => {
-              const dia = e.target.value;
-              const sys = exam.bp?.split("/")[0] || "";
-              handleChange("bp", `${sys}/${dia}`);
-            }}
-            onKeyDown={handleEnterKey}
-          />
+        <div className="form-grid">
+          {/* Blood Pressure */}
+          <div className="field-group full">
+            <label>Blood Pressure</label>
+
+            <div className="bp-group">
+              <input
+                placeholder="Systolic"
+                value={exam.bp?.split("/")[0] || ""}
+                onChange={(e) => {
+                  const sys = e.target.value;
+                  const dia = exam.bp?.split("/")[1] || "";
+
+                  handleChange("bp", `${sys}/${dia}`);
+                }}
+                onKeyDown={handleEnterKey}
+              />
+
+              <span>/</span>
+
+              <input
+                placeholder="Diastolic"
+                value={exam.bp?.split("/")[1] || ""}
+                onChange={(e) => {
+                  const dia = e.target.value;
+                  const sys = exam.bp?.split("/")[0] || "";
+
+                  handleChange("bp", `${sys}/${dia}`);
+                }}
+                onKeyDown={handleEnterKey}
+              />
+            </div>
+          </div>
+
+          {/* Temperature */}
+          <div className="field-group">
+            <label>Temperature</label>
+
+            <input
+              placeholder="Temperature"
+              value={exam.temp || ""}
+              onChange={(e) => handleChange("temp", e.target.value)}
+              onKeyDown={handleEnterKey}
+            />
+          </div>
+
+          {/* Height */}
+          <div className="field-group">
+            <label>Height</label>
+
+            <input
+              placeholder="Height (cm)"
+              value={exam.height || ""}
+              onChange={(e) => {
+                const height = e.target.value;
+
+                const bmi = computeBMI(height, exam.weight);
+
+                setForm((prev) => ({
+                  ...prev,
+                  examination: {
+                    ...prev.examination,
+                    height,
+                    bmi,
+                  },
+                }));
+              }}
+              onKeyDown={handleEnterKey}
+            />
+          </div>
+
+          {/* Weight */}
+          <div className="field-group">
+            <label>Weight</label>
+
+            <input
+              placeholder="Weight (kg)"
+              value={exam.weight || ""}
+              onChange={(e) => {
+                const weight = e.target.value;
+
+                const bmi = computeBMI(exam.height, weight);
+
+                setForm((prev) => ({
+                  ...prev,
+                  examination: {
+                    ...prev.examination,
+                    weight,
+                    bmi,
+                  },
+                }));
+              }}
+              onKeyDown={handleEnterKey}
+            />
+          </div>
+
+          {/* BMI */}
+          <div className="field-group">
+            <label>BMI</label>
+
+            <input
+              placeholder="BMI"
+              value={exam.bmi || ""}
+              onChange={(e) => handleChange("bmi", e.target.value)}
+              onKeyDown={handleEnterKey}
+            />
+          </div>
         </div>
-
-        {/* TEMP */}
-        <input
-          placeholder="Temperature"
-          value={exam.temp || ""}
-          onChange={(e) => handleChange("temp", e.target.value)}
-          onKeyDown={handleEnterKey}
-        />
-
-        {/* HEIGHT */}
-        <input
-          placeholder="Height (cm)"
-          value={exam.height || ""}
-          onChange={(e) => {
-            const height = e.target.value;
-            const bmi = computeBMI(height, exam.weight);
-            setForm((prev) => ({
-              ...prev,
-              examination: {
-                ...prev.examination,
-                height,
-                bmi,
-              },
-            }));
-          }}
-          onKeyDown={handleEnterKey}
-        />
-
-        {/* WEIGHT */}
-        <input
-          placeholder="Weight (kg)"
-          value={exam.weight || ""}
-          onChange={(e) => {
-            const weight = e.target.value;
-            const bmi = computeBMI(exam.height, weight);
-            setForm((prev) => ({
-              ...prev,
-              examination: {
-                ...prev.examination,
-                weight,
-                bmi,
-              },
-            }));
-          }}
-          onKeyDown={handleEnterKey}
-        />
-
-        {/* BMI */}
-        <input
-          placeholder="BMI"
-          value={exam.bmi || ""}
-          onChange={(e) => handleChange("bmi", e.target.value)}
-          onKeyDown={handleEnterKey}
-        />
       </div>
     </div>
   );

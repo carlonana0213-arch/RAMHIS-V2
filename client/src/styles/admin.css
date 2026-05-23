@@ -461,3 +461,31 @@ td
 .icon-box.total {
   background: #2563eb;
 }
+
+.analytics-page {
+  padding: 24px;
+}
+
+.analytics-filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.analytics-card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+}

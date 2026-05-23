@@ -220,3 +220,42 @@
 .priority-switch input:checked + .priority-slider::before {
   transform: translateX(24px);
 }
+
+.queue-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.queue-page-btn {
+  border: none;
+  background: #3f5fbe;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.queue-page-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.queue-page-btn:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.queue-pagination-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+}
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+}

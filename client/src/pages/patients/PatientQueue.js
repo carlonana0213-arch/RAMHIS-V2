@@ -15,14 +15,20 @@ const departments = [
 const statusColors = {
   waiting: "#facc15",
   beingSeen: "#38bdf8",
+  forPharmacy: "#34d399",
 };
-
+const statusLabels = {
+  waiting: "Waiting",
+  beingSeen: "Being Served",
+  forPharmacy: "For Pharmacy",
+};
 const PatientQueue = ({ onSelectPatient }) => {
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("All");
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 15;
   useEffect(() => {
     const fetchQueue = async () => {
       try {
@@ -46,6 +52,10 @@ const PatientQueue = ({ onSelectPatient }) => {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, departmentFilter]);
+
   if (loading) return <p>Loading patient queue...</p>;
 
   const activePatients = patients.filter((p) => p.status !== "released");
@@ -62,7 +72,16 @@ const PatientQueue = ({ onSelectPatient }) => {
       if (!a.isPriority && b.isPriority) return 1;
       return 0;
     });
+  const totalPatients = filteredPatients.length;
 
+  const totalPages = Math.ceil(totalPatients / ITEMS_PER_PAGE);
+
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+
+  const displayedPatients = filteredPatients.slice(startIndex, endIndex);
+
+  const displayedCount = Math.min(endIndex, totalPatients);
   const openPatient = (patient) => {
     onSelectPatient(patient);
   };
@@ -108,13 +127,13 @@ const PatientQueue = ({ onSelectPatient }) => {
         {filteredPatients.length === 0 ? (
           <div className="queue-empty">No patients in this department</div>
         ) : (
-          filteredPatients.map((patient, index) => (
+          displayedPatients.map((patient, index) => (
             <div
               key={patient._id}
               className="queue-row"
               onClick={() => openPatient(patient)}
             >
-              <span className="queue-number">{index + 1}</span>
+              <span className="queue-number">{startIndex + index + 1}</span>
 
               <span className="queue-patient-name">
                 {patient.generalInfo.name}
@@ -136,12 +155,35 @@ const PatientQueue = ({ onSelectPatient }) => {
                 className="status-badge"
                 style={{ background: statusColors[patient.status] }}
               >
-                {patient.status}
+                {statusLabels[patient.status] || patient.status}{" "}
               </span>
             </div>
           ))
         )}
       </div>
+      {totalPatients > 0 && (
+        <div className="queue-pagination">
+          <button
+            className="queue-page-btn"
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((prev) => prev - 1)}
+          >
+            Previous
+          </button>
+
+          <span className="queue-pagination-text">
+            {displayedCount} of {totalPatients}
+          </span>
+
+          <button
+            className="queue-page-btn"
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage((prev) => prev + 1)}
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 };

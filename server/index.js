@@ -7,6 +7,10 @@ const connectDB = require("./config/db");
 const pharmacyRoutes = require("./routes/pharmacyRoutes");
 const analyticsRoutes = require("./routes/analytics");
 const dashboardRoutes = require("./routes/dashboardRoutes");
+const predictiveAnalyticsRoutes = require("./routes/predictiveAnalyticsRoutes");
+const eventRoutes = require("./routes/eventRoutes");
+
+const allowedOrigins = ["http://localhost:3000"];
 
 connectDB();
 
@@ -20,7 +24,7 @@ app.use(
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
-  })
+  }),
 );
 
 app.get("/", (_req, res) => {
@@ -40,6 +44,8 @@ app.use("/pharmacy", pharmacyRoutes);
 app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/events", eventRoutes);
+app.use("/api/predictive-analytics", predictiveAnalyticsRoutes);
 
 app.get("/", (req, res) => {
   res.send("RAMHIS API Running");

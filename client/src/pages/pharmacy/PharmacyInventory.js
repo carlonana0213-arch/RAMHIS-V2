@@ -23,6 +23,8 @@ function PharmacyInventory() {
   const [editQuantity, setEditQuantity] = useState("");
   const [confirmState, setConfirmState] = useState(null);
   const [alertMessage, setAlertMessage] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 15;
   const loadMedicines = async () => {
     const data = await getMedicines();
     setMedicines(data);
@@ -60,9 +62,24 @@ function PharmacyInventory() {
 
     return matchesSearch && matchesFilter;
   });
+  const totalMedicinesFiltered = filteredMedicines.length;
+
+  const totalPages = Math.ceil(totalMedicinesFiltered / ITEMS_PER_PAGE);
+
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+
+  const displayedMedicines = filteredMedicines.slice(startIndex, endIndex);
+
+  const displayedCount = Math.min(endIndex, totalMedicinesFiltered);
   useEffect(() => {
     loadMedicines();
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filter]);
   const handleAdd = async () => {
     try {
       await addMedicine({
@@ -110,6 +127,28 @@ function PharmacyInventory() {
       console.error(err);
 
       setAlertMessage("Failed to update medicine quantity");
+    }
+  };
+  const handleDelete = async (id) => {
+    try {
+      await deleteMedicine(id);
+
+      setAlertMessage("Medicine deleted successfully");
+
+      await loadMedicines();
+
+      // pagination safety
+      setCurrentPage((prev) => {
+        const newTotal = totalMedicinesFiltered - 1;
+
+        const maxPage = Math.max(1, Math.ceil(newTotal / ITEMS_PER_PAGE));
+
+        return Math.min(prev, maxPage);
+      });
+    } catch (err) {
+      console.error(err);
+
+      setAlertMessage("Failed to delete medicine");
     }
   };
 
@@ -212,7 +251,7 @@ function PharmacyInventory() {
             </thead>
 
             <tbody>
-              {filteredMedicines.map((m) => (
+              {displayedMedicines.map((m) => (
                 <tr key={m._id}>
                   <td>
                     <div className="medicine-name-cell">
@@ -282,7 +321,19 @@ function PharmacyInventory() {
                           Edit
                         </button>
 
-                        <button onClick={() => deleteMedicine(m._id)}>
+                        <button
+                          onClick={() => {
+                            setConfirmState({
+                              message:
+                                "Are you sure you want to delete this medicine?",
+                              onConfirm: async () => {
+                                await handleDelete(m._id);
+
+                                setConfirmState(null);
+                              },
+                            });
+                          }}
+                        >
                           Delete
                         </button>
                       </>
@@ -292,6 +343,29 @@ function PharmacyInventory() {
               ))}
             </tbody>
           </table>
+          {totalMedicinesFiltered > 0 && (
+            <div className="pharmacy-pagination">
+              <button
+                className="pharmacy-page-btn"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((prev) => prev - 1)}
+              >
+                Previous
+              </button>
+
+              <span className="pharmacy-pagination-text">
+                {displayedCount} of {totalMedicinesFiltered}
+              </span>
+
+              <button
+                className="pharmacy-page-btn"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((prev) => prev + 1)}
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
       </div>
       {showModal && (

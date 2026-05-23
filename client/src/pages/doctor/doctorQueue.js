@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 function DoctorQueue({
   patients,
   search,
@@ -6,6 +7,8 @@ function DoctorQueue({
   queueFilter,
   setQueueFilter,
 }) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 15;
   const statusColors = {
     waiting: "#facc15",
     beingSeen: "#38bdf8",
@@ -16,6 +19,20 @@ function DoctorQueue({
     beingSeen: "Being Served",
     forPharmacy: "For Pharmacy",
   };
+  const totalPatients = patients.length;
+
+  const totalPages = Math.ceil(totalPatients / ITEMS_PER_PAGE);
+
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+
+  const displayedPatients = patients.slice(startIndex, endIndex);
+
+  const displayedCount = Math.min(endIndex, totalPatients);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, queueFilter]);
   return (
     <div className="doctor-queue-container">
       <div className="doctor-topbar">
@@ -64,7 +81,7 @@ function DoctorQueue({
                 </td>
               </tr>
             ) : (
-              patients.map((patient) => (
+              displayedPatients.map((patient) => (
                 <tr
                   key={patient._id}
                   className={patient.isPriority ? "priority-row" : ""}
@@ -111,6 +128,29 @@ function DoctorQueue({
             )}
           </tbody>
         </table>
+        {totalPatients > 0 && (
+          <div className="doctor-pagination">
+            <button
+              className="doctor-page-btn"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((prev) => prev - 1)}
+            >
+              Previous
+            </button>
+
+            <span className="doctor-pagination-text">
+              {displayedCount} of {totalPatients}
+            </span>
+
+            <button
+              className="doctor-page-btn"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((prev) => prev + 1)}
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
