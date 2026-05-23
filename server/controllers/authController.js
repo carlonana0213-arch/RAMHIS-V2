@@ -38,14 +38,18 @@ exports.register = async (req, res) => {
   // Normalize mobile/web fields
   const normalizedName = name || full_name;
 
-  const normalizedRole = (role || account_type || "user").toLowerCase();
+  const rawRole = role || account_type || "User";
+
+const normalizedRole =
+  rawRole.charAt(0).toUpperCase() +
+  rawRole.slice(1).toLowerCase();
 
   const normalizedVolunteerType =
     volunteerType || organization || skills || "";
 
   const normalizedDoctorInfo =
     doctorInfo ||
-    (normalizedRole === "doctor"
+   (normalizedRole.toLowerCase() === "doctor"
       ? {
           specialization: specialty || "",
           licenseNumber: prc_license_number || "",
