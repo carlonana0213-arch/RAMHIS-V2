@@ -1,7 +1,7 @@
 // controllers/chatController.js
 const ChatThread = require("../models/ChatThread");
 const ChatMessage = require("../models/ChatMessage");
-const User = require("../models/User");
+const User = require("../models/user");
 
 const getUserId = (req) => {
   return req.user?._id || req.user?.id || req.userId;
