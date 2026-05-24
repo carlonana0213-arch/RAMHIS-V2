@@ -72,7 +72,7 @@ const PORT = process.env.PORT || 5000;
 io.on("connection", (socket) => {
   console.log("🔌 Client connected:", socket.id);
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
   socket.on("disconnect", () => {
     console.log("❌ Client disconnected:", socket.id);
   });
