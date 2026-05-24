@@ -11,6 +11,7 @@ const analyticsRoutes = require("./routes/analytics");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const predictiveAnalyticsRoutes = require("./routes/predictiveAnalyticsRoutes");
 const eventRoutes = require("./routes/eventRoutes");
+const chatRoutes = require("./routes/chatRoutes");
 
 const allowedOrigins = ["http://localhost:3000"];
 const {
@@ -60,6 +61,8 @@ app.use("/api/analytics", analyticsRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/predictive-analytics", predictiveAnalyticsRoutes);
+app.use("/api/chat", chatRoutes);
+app.use("/api/users", require("./routes/userRoutes"));
 
 app.get("/", (req, res) => {
   res.send("RAMHIS API Running");
