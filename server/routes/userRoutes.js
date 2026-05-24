@@ -13,17 +13,10 @@ router.get("/approved", authMiddleware, async (req, res) => {
     }
 
     const users = await User.find({
-      $and: [
-        {
-          $or: [
-            { full_name: { $regex: q, $options: "i" } },
-            { name: { $regex: q, $options: "i" } },
-            { email: { $regex: q, $options: "i" } },
-          ],
-        },
-        {
-          verificationStatus: "Approved",
-        },
+      $or: [
+        { full_name: { $regex: q, $options: "i" } },
+        { name: { $regex: q, $options: "i" } },
+        { email: { $regex: q, $options: "i" } },
       ],
     })
       .select("full_name name email role account_type verificationStatus")
