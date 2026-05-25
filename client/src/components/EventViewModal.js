@@ -308,28 +308,34 @@ if (
 
             {filteredParticipants.map(
               (participant) => {
-                const name =
-                  participant?.name ||
-                  participant?.user?.name ||
-                  "Unknown";
+               const userId =
+  participant?.userId?._id ||
+  participant?.userId ||
+  participant?.user?._id ||
+  participant?.user ||
+  participant?._id;
 
-                const role =
-                  participant
-                    ?.account_type ||
-                  participant?.role ||
-                  participant?.user
-                    ?.account_type ||
-                  "Volunteer";
+const name =
+  participant?.userId?.name ||
+  participant?.user?.name ||
+  participant?.name ||
+  "Unknown";
 
-                const status =
-                  participant?.status ||
-                  "Pending";
+const role =
+  participant?.userId?.role ||
+  participant?.userId?.account_type ||
+  participant?.user?.role ||
+  participant?.user?.account_type ||
+  participant?.role ||
+  participant?.account_type ||
+  "Volunteer";
 
+const status =
+  participant?.status ||
+  "Pending";
                 return (
                   <div
-                    key={
-                      participant?._id
-                    }
+                   key={userId || participant?._id}
                     style={{
                       display: "flex",
                       alignItems:
@@ -411,32 +417,26 @@ if (
                         <button
                           onClick={() =>
                             onParticipantAction(
-                              event._id,
-                              participant
-                                .userId ||
-                                participant
-                                  ?._id,
-                              "Approved"
-                            )
+  event._id,
+  userId,
+  "Approved"
+)
                           }
                         >
                           Approve
                         </button>
 
-                        <button
-                          onClick={() =>
-                            onParticipantAction(
-                              event._id,
-                              participant
-                                .userId ||
-                                participant
-                                  ?._id,
-                              "Rejected"
-                            )
-                          }
-                        >
-                          Reject
-                        </button>
+                       <button
+  onClick={() =>
+    onParticipantAction(
+      event._id,
+      userId,
+      "Rejected"
+    )
+  }
+>
+  Reject
+</button>
                       </>
                     )}
 
@@ -446,10 +446,7 @@ if (
                         onClick={() =>
                           onParticipantAction(
                             event._id,
-                            participant
-                              .userId ||
-                              participant
-                                ?._id,
+                            userId,
                             "Removed"
                           )
                         }
@@ -464,10 +461,7 @@ if (
                         onClick={() =>
                           onParticipantAction(
                             event._id,
-                            participant
-                              .userId ||
-                              participant
-                                ?._id,
+                            userId,
                             "Pending"
                           )
                         }
