@@ -36,6 +36,20 @@ const eventSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    latitude: {
+  type: Number,
+  default: null,
+},
+
+longitude: {
+  type: Number,
+  default: null,
+},
+googleMapsUrl: {
+  type: String,
+  trim: true,
+  default: "",
+},
     date: {
       type: Date,
       required: true,

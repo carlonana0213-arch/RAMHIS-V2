@@ -68,6 +68,9 @@ exports.createEvent = async (req, res) => {
       title,
       description,
       location,
+      latitude,
+      longitude,
+      googleMapsUrl,
       date,
       startTime,
       endTime,
@@ -84,18 +87,35 @@ exports.createEvent = async (req, res) => {
     }
 
     const event = await Event.create({
-      title,
-      description,
-      location,
-      date,
-      startTime,
-      endTime,
-      type,
-      status,
-      imageUrl,
-      createdBy: req.user?._id || req.user?.id,
-      participants: [],
-    });
+  title,
+  description,
+  location,
+
+  latitude:
+    req.body.latitude !== null &&
+    req.body.latitude !== undefined &&
+    req.body.latitude !== ""
+      ? Number(req.body.latitude)
+      : null,
+
+  longitude:
+    req.body.longitude !== null &&
+    req.body.longitude !== undefined &&
+    req.body.longitude !== ""
+      ? Number(req.body.longitude)
+      : null,
+
+  googleMapsUrl: req.body.googleMapsUrl || "",
+
+  date,
+  startTime,
+  endTime,
+  type,
+  status,
+  imageUrl,
+  createdBy: req.user?._id || req.user?.id,
+  participants: [],
+});
 
     emitEventsUpdated(event._id);
 

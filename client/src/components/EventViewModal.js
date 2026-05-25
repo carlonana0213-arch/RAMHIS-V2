@@ -93,66 +93,39 @@ export default function EventViewModal({
 
     const marker = new maplibregl.Marker();
 
-    async function geocodeLocation() {
-      try {
-        const location =
-          event?.location || "";
+    console.log("EVENT DATA:", event);
+console.log("LAT:", event?.latitude);
+console.log("LON:", event?.longitude);
 
-        if (!location.trim()) {
-          setMapWarning(
-            "Map unavailable"
-          );
-          return;
-        }
+    const lon = Number(event?.longitude);
+const lat = Number(event?.latitude);
 
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-            location
-          )}&format=json&limit=1`
-        );
+if (
+  Number.isFinite(lat) &&
+  Number.isFinite(lon)
+) {
+  map.current.flyTo({
+    center: [lon, lat],
+    zoom: 14,
+  });
 
-        const data =
-          await response.json();
+  marker
+    .setLngLat([lon, lat])
+    .setPopup(
+      new maplibregl.Popup({
+        offset: 25,
+      }).setText(
+        event?.location || "Event Location"
+      )
+    )
+    .addTo(map.current);
+} else {
+  setMapWarning(
+    "No coordinates available"
+  );
+}
 
-        if (!data?.length) {
-          setMapWarning(
-            `Could not locate: ${location}`
-          );
-
-          return;
-        }
-
-        const lon = parseFloat(
-          data[0].lon
-        );
-
-        const lat = parseFloat(
-          data[0].lat
-        );
-
-        map.current.flyTo({
-          center: [lon, lat],
-          zoom: 14,
-        });
-
-        marker
-          .setLngLat([lon, lat])
-          .setPopup(
-            new maplibregl.Popup({
-              offset: 25,
-            }).setText(location)
-          )
-          .addTo(map.current);
-      } catch (err) {
-        console.error(err);
-
-        setMapWarning(
-          `Could not locate: ${event?.location}`
-        );
-      }
-    }
-
-    geocodeLocation();
+    
 
     return () => {
       if (map.current) {
