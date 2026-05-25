@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { FaCalendarAlt, FaEdit, FaTrash, FaUsers, FaEye } from "react-icons/fa";
-
+import { FaCalendarAlt, FaUsers, FaEye } from "react-icons/fa";
 import {
   getAllEvents,
   deleteEvent,
+  updateEvent,
   updateParticipantStatus,
 } from "../services/eventService";
 
@@ -22,6 +22,7 @@ const [showViewModal, setShowViewModal] =
   useState(false);
   const [activeTab, setActiveTab] = useState("All");
   const [showModal, setShowModal] = useState(false);
+  const [editEvent, setEditEvent] = useState(null);
 
   const fetchEvents = async () => {
     try {
@@ -49,32 +50,6 @@ const [showViewModal, setShowViewModal] =
     }
   };
 
-  const handleParticipantStatus = async (eventId, userId, status) => {
-    try {
-      await updateParticipantStatus(eventId, userId, status);
-
-      fetchEvents();
-
-      const updated = events.find((e) => e._id === eventId);
-
-      setSelectedEvent(updated);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const filteredParticipants = () => {
-    if (!selectedEvent) return [];
-
-    if (activeTab === "All") {
-      return selectedEvent.participants || [];
-    }
-
-    return (
-      selectedEvent.participants?.filter((p) => p.status === activeTab) || []
-    );
-  };
-
   const statusColor = (status) => {
     switch (status) {
       case "Upcoming":
@@ -94,6 +69,76 @@ const [showViewModal, setShowViewModal] =
     }
   };
 
+  const handleParticipantStatus = async (eventId, userId, status) => {
+  try {
+    const response = await updateParticipantStatus(
+      eventId,
+      userId,
+      status
+    );
+
+    await fetchEvents();
+
+    if (response?.data) {
+      setSelectedEvent(response.data);
+    }
+  } catch (error) {
+    console.error(
+      "Update participant status error:",
+      error.response?.data || error.message
+    );
+
+    alert(
+      error.response?.data?.message ||
+        "Failed to update participant status"
+    );
+  }
+};
+
+
+const handleEditEvent = (event) => {
+  setEditEvent(event);
+  setShowViewModal(false);
+  setShowModal(true);
+};
+
+const handleStatusChange = async (event) => {
+  const statusOrder = [
+    "Upcoming",
+    "Ongoing",
+    "Completed",
+    "Cancelled",
+  ];
+
+  const currentIndex = statusOrder.indexOf(event.status);
+
+  const nextStatus =
+    statusOrder[(currentIndex + 1) % statusOrder.length];
+
+  try {
+    const response = await updateEvent(event._id, {
+      status: nextStatus,
+    });
+
+    await fetchEvents();
+
+    if (response?.data) {
+      setSelectedEvent(response.data);
+    }
+  } catch (error) {
+    console.error(
+      "Update status error:",
+      error.response?.data || error.message
+    );
+
+    alert(
+      error.response?.data?.message ||
+        "Failed to update event status"
+    );
+  }
+};
+
+
   return (
     <div className="event-page">
       {/* HEADER */}
@@ -106,9 +151,15 @@ const [showViewModal, setShowViewModal] =
           <p>Create and manage community health events</p>
         </div>
 
-        <button className="create-btn" onClick={() => setShowModal(true)}>
-          + Create New Event
-        </button>
+        <button
+  className="create-btn"
+  onClick={() => {
+    setEditEvent(null);
+    setShowModal(true);
+  }}
+>
+  + Create New Event
+</button>
       </div>
 
       {/* EVENTS TABLE */}
@@ -153,25 +204,16 @@ const [showViewModal, setShowViewModal] =
                 </td>
 
                 <td>{event.participants?.length || 0}</td>
-
-                <td className="action-buttons">
-                  <button
-  onClick={() => {
-    setSelectedEvent(event);
-    setShowViewModal(true);
-  }}
->
-  <FaEye />
-</button>
-
-                  <button>
-                    <FaEdit />
-                  </button>
-
-                  <button onClick={() => handleDelete(event._id)}>
-                    <FaTrash />
-                  </button>
-                </td>
+<td className="action-buttons">
+  <button
+    onClick={() => {
+      setSelectedEvent(event);
+      setShowViewModal(true);
+    }}
+  >
+    <FaEye />
+  </button>
+</td>
               </tr>
             ))}
           </tbody>
@@ -192,13 +234,19 @@ const [showViewModal, setShowViewModal] =
       }
       onDelete={handleDelete}
       onRefresh={fetchEvents}
+      onEdit={handleEditEvent}
+onStatusChange={handleStatusChange}
       activeTab={activeTab}
       setActiveTab={setActiveTab}
     />
   )}
   {showModal && (
   <EventModal
-    onClose={() => setShowModal(false)}
+    event={editEvent}
+    onClose={() => {
+      setShowModal(false);
+      setEditEvent(null);
+    }}
     refreshEvents={fetchEvents}
   />
 )}

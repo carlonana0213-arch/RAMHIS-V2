@@ -21,6 +21,8 @@ export default function EventViewModal({
   onParticipantAction,
   onDelete,
   onRefresh,
+  onEdit,
+  onStatusChange,
   activeTab,
   setActiveTab,
 }) {
@@ -59,20 +61,32 @@ export default function EventViewModal({
   }, [participants, activeTab]);
 
   const statusColor = (status) => {
-    switch (status) {
-      case "Approved":
-        return "#22C55E";
+  switch (status) {
+    case "Approved":
+      return "#22C55E";
 
-      case "Rejected":
-        return "#EF4444";
+    case "Rejected":
+      return "#EF4444";
 
-      case "Pending":
-        return "#F59E0B";
+    case "Pending":
+      return "#F59E0B";
 
-      default:
-        return "#64748B";
-    }
-  };
+    case "Upcoming":
+      return "#3949AB";
+
+    case "Ongoing":
+      return "#2E7D32";
+
+    case "Completed":
+      return "#757575";
+
+    case "Cancelled":
+      return "#D32F2F";
+
+    default:
+      return "#64748B";
+  }
+};
 
   useEffect(() => {
     if (!mapContainer.current) return;
@@ -133,7 +147,12 @@ if (
         map.current = null;
       }
     };
-  }, [event?.location]);
+}, [
+  event?._id,
+  event?.latitude,
+  event?.longitude,
+  event?.location,
+]);
 
   const handleOverlayClick = (e) => {
     if (
@@ -447,7 +466,7 @@ const status =
                           onParticipantAction(
                             event._id,
                             userId,
-                            "Removed"
+                            "Rejected"
                           )
                         }
                       >
@@ -511,9 +530,11 @@ const status =
               marginTop: 12,
             }}
           >
-            <button>
-              Edit
-            </button>
+            <button
+  onClick={() => onEdit?.(event)}
+>
+  Edit
+</button>
 
             <button
               onClick={
@@ -533,22 +554,25 @@ const status =
               Delete
             </button>
 
-            <span
-              style={{
-                background:
-                  statusColor(
-                    event?.status
-                  ),
-                color: "#fff",
-                padding:
-                  "6px 12px",
-                borderRadius: 999,
-                fontSize: 12,
-                fontWeight: 700,
-              }}
-            >
-              {event?.status}
-            </span>
+            <button
+  onClick={() => onStatusChange?.(event)}
+  style={{
+    background:
+      statusColor(
+        event?.status
+      ),
+    color: "#fff",
+    padding:
+      "6px 12px",
+    borderRadius: 999,
+    fontSize: 12,
+    fontWeight: 700,
+    border: "none",
+    cursor: "pointer",
+  }}
+>
+  {event?.status || "Upcoming"}
+</button>
           </div>
         </div>
       </div>
