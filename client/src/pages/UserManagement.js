@@ -63,26 +63,45 @@ function UserManagement() {
   }, []);
 
   const filteredUsers = useMemo(() => {
-    return users.filter((user) => {
-      let matchesTab = false;
+  return users.filter((user) => {
+    let matchesTab = false;
 
-      if (tab === "pending") {
-        matchesTab = user.verificationStatus === "Pending";
-      } else if (tab === "active") {
-        matchesTab = user.verificationStatus === "Approved";
-      } else if (tab === "deactivated") {
-        matchesTab = user.verificationStatus === "Deactivated";
-      }
+    // PENDING
+    if (tab === "pending") {
+      matchesTab =
+        user.verificationStatus === "Pending" ||
+        user.status === "pending";
+    }
 
-      const matchesFilter = filter === "All" || user.role === filter;
+    // ACTIVE
+    else if (tab === "active") {
+      matchesTab =
+        user.verificationStatus === "Approved" ||
+        user.status === "active";
+    }
 
-      const matchesSearch =
-        user.name?.toLowerCase().includes(search.toLowerCase()) ||
-        user.email?.toLowerCase().includes(search.toLowerCase());
+    // DEACTIVATED
+    else if (tab === "deactivated") {
+      matchesTab =
+        user.verificationStatus === "Deactivated" ||
+        user.verificationStatus === "Rejected" ||
+        user.status === "deactivated";
+    }
 
-      return matchesTab && matchesFilter && matchesSearch;
-    });
-  }, [users, tab, filter, search]);
+    const matchesFilter =
+      filter === "All" || user.role === filter;
+
+    const matchesSearch =
+      user.name?.toLowerCase().includes(search.toLowerCase()) ||
+      user.email?.toLowerCase().includes(search.toLowerCase());
+
+    return (
+      matchesTab &&
+      matchesFilter &&
+      matchesSearch
+    );
+  });
+}, [users, tab, filter, search]);
 
   // 🔹 CREATE USER
   const handleCreateUser = async () => {
@@ -250,14 +269,19 @@ function UserManagement() {
 
         <button
           className="add-user-btn"
-          className="add-user-btn"
           onClick={() => setShowCreateModal(true)}
         >
           + Add User
         </button>
       </div>
 
-      <h2>{tab === "pending" ? "Pending Users" : "Active Users"}</h2>
+      <h2>
+  {tab === "pending"
+    ? "Pending Users"
+    : tab === "deactivated"
+      ? "Deactivated Users"
+      : "Active Users"}
+</h2>
 
       {/* TABLE */}
       <table className="admin-table">
