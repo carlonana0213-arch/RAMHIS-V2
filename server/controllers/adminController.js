@@ -95,32 +95,101 @@ exports.rejectUser = async (req, res) => {
   }
 };
 
+exports.getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find().select("-password");
+
+    res.json({
+      ok: true,
+      data: users,
+    });
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      ok: false,
+      msg: "Server error",
+    });
+  }
+};
+
+exports.updateUser = async (req, res) => {
+  try {
+    const updates = { ...req.body };
+
+    delete updates.createdAt;
+
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      updates,
+      { new: true }
+    );
+
+    res.json({
+      ok: true,
+      data: user,
+    });
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      ok: false,
+      message: "Update failed",
+      error: err.message,
+    });
+  }
+};
+
 exports.updateUserStatus = async (req, res) => {
   try {
     const { verificationStatus } = req.body;
 
     if (
-  !["Pending", "Approved", "Rejected", "Deactivated"].includes(
-    verificationStatus
-  )
-) {
-  return res.status(400).json({
-    ok: false,
-    message: "Invalid verification status",
-  });
-}
+      !["Pending", "Approved", "Rejected", "Deactivated"].includes(
+        verificationStatus
+      )
+    ) {
+      return res.status(400).json({
+        ok: false,
+        message: "Invalid verification status",
+      });
+    }
+
+    let status = "pending";
+    let is_verified = false;
+    let isActive = false;
+
+    if (verificationStatus === "Approved") {
+      status = "active";
+      is_verified = true;
+      isActive = true;
+    }
+
+    if (
+      verificationStatus === "Rejected" ||
+      verificationStatus === "Deactivated"
+    ) {
+      status = "deactivated";
+      is_verified = false;
+      isActive = false;
+    }
 
     const user = await User.findByIdAndUpdate(
       req.params.id,
-      { verificationStatus },
-      { new: true },
+      {
+        verificationStatus,
+        status,
+        is_verified,
+        isActive,
+      },
+      { new: true }
     );
 
-res.json({
-  ok: true,
-  data: user,
-});  
-} catch (err) {
+    res.json({
+      ok: true,
+      data: user,
+    });
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
