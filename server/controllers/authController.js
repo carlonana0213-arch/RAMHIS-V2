@@ -145,11 +145,15 @@ exports.login = async (req, res) => {
       });
     }
 
-    if (user.verificationStatus === "Deactivated") {
-      return res.status(403).json({
-        msg: "Your account is deactivated, please contact administrator",
-      });
-    }
+    if (
+  user.verificationStatus === "Rejected" ||
+  user.verificationStatus === "Deactivated" ||
+  user.status === "deactivated"
+) {
+  return res.status(403).json({
+    msg: "Your account is deactivated, please contact administrator",
+  });
+}
 
     const isMatch = await bcrypt.compare(password, user.password);
 
