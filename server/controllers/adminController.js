@@ -32,10 +32,15 @@ res.json({
 exports.approveUser = async (req, res) => {
   try {
     const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { verificationStatus: "Approved" },
-      { new: true },
-    );
+  req.params.id,
+  {
+    verificationStatus: "Approved",
+    status: "active",
+    is_verified: true,
+    isActive: true,
+  },
+  { new: true },
+);
 
     await transporter.sendMail({
       to: user.email,
@@ -59,46 +64,34 @@ exports.rejectUser = async (req, res) => {
   try {
     const user = await User.findByIdAndUpdate(
       req.params.id,
-      { verificationStatus: "Rejected" },
+      {
+        verificationStatus: "Rejected",
+        status: "deactivated",
+        is_verified: false,
+        isActive: false,
+      },
       { new: true },
     );
 
-    res.json({ msg: "User rejected", user });
-  } catch (err) {
-    res.status(500).json({ msg: "Server error" });
-  }
-};
-
-exports.getAllUsers = async (req, res) => {
-  try {
-    const users = await User.find().select("-password");
+    if (!user) {
+      return res.status(404).json({
+        ok: false,
+        msg: "User not found",
+      });
+    }
 
     res.json({
       ok: true,
-      data: users,
+      msg: "User rejected and moved to deactivated list",
+      user,
     });
-  } catch (err) {
-    res.status(500).json({ msg: "Server error" });
-  }
-};
-
-exports.updateUser = async (req, res) => {
-  try {
-    const updates = { ...req.body };
-
-    delete updates.createdAt;
-
-    const user = await User.findByIdAndUpdate(req.params.id, updates, {
-      new: true,
-    });
-
-res.json({
-  ok: true,
-  data: users,
-});
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Update failed", error: err.message });
+
+    res.status(500).json({
+      ok: false,
+      msg: "Server error",
+    });
   }
 };
 
