@@ -14,15 +14,10 @@ import {
 
 const Analytics = () => {
   const [locations, setLocations] = useState([]);
-
   const [selectedLocation, setSelectedLocation] = useState("");
-
   const [nextMissionDate, setNextMissionDate] = useState("");
-
   const [missionDays, setMissionDays] = useState(1);
-
   const [analytics, setAnalytics] = useState(null);
-
   const [loading, setLoading] = useState(false);
 
   // =========================
@@ -36,7 +31,7 @@ const Analytics = () => {
   const fetchLocations = async () => {
     try {
       const res = await axios.get(
-        "http://localhost:5000/api/patients/locations",
+        "http://localhost:5000/api/patients/locations"
       );
 
       setLocations(res.data);
@@ -105,7 +100,6 @@ const Analytics = () => {
     if (!analytics) return [];
 
     const insights = [];
-
     const predictedPatients = analytics?.predictedPatients || 0;
 
     if (predictedPatients > 100) {
@@ -117,7 +111,7 @@ const Analytics = () => {
       40
     ) {
       insights.push(
-        "Forecast variability is high due to limited historical data",
+        "Forecast variability is high due to limited historical data"
       );
     }
 
@@ -133,15 +127,13 @@ const Analytics = () => {
   return (
     <div className="predictive-analytics-page">
       {/* HEADER */}
-
-      <div className="analytics-header">
+      <div className="analytics-header-card">
         <h1>Predictive Analytics</h1>
 
         <p>Forecast mission needs based on historical patient records</p>
       </div>
 
       {/* FILTERS */}
-
       <div className="analytics-filters">
         <select
           value={selectedLocation}
@@ -176,11 +168,9 @@ const Analytics = () => {
       </div>
 
       {/* RESULTS */}
-
       {analytics && (
         <div className="analytics-results">
           {/* SUMMARY */}
-
           <div className="summary-grid">
             <div className="summary-card">
               <h3>Forecasted Patients</h3>
@@ -212,6 +202,8 @@ const Analytics = () => {
               <p>{analytics?.predictedMedicineItems || 0}</p>
             </div>
           </div>
+
+          {/* DEPARTMENT FORECAST */}
           <div className="analytics-card">
             <h2>Department Forecast</h2>
 
@@ -237,8 +229,8 @@ const Analytics = () => {
               </tbody>
             </table>
           </div>
-          {/* FORECAST TREND */}
 
+          {/* FORECAST TREND */}
           <div className="analytics-card">
             <h2>Forecast Trend</h2>
 
@@ -272,7 +264,6 @@ const Analytics = () => {
           </div>
 
           {/* TOP DIAGNOSES */}
-
           <div className="analytics-card">
             <h2>Top Diagnoses</h2>
 
@@ -292,14 +283,13 @@ const Analytics = () => {
 
                       <td>{count}</td>
                     </tr>
-                  ),
+                  )
                 )}
               </tbody>
             </table>
           </div>
 
           {/* MEDICINE FORECAST */}
-
           <div className="analytics-card">
             <h2>Medicine Forecast</h2>
 
@@ -327,7 +317,6 @@ const Analytics = () => {
           </div>
 
           {/* RECOMMENDATIONS */}
-
           <div className="analytics-card">
             <h2>Recommendations</h2>
 
@@ -343,7 +332,6 @@ const Analytics = () => {
           </div>
 
           {/* SMART INSIGHTS */}
-
           <div className="analytics-card">
             <h2>Smart Insights</h2>
 
@@ -364,5 +352,3 @@ const Analytics = () => {
 };
 
 export default Analytics;
-
- 

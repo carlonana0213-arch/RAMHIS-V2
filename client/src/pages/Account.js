@@ -7,6 +7,12 @@ import ConfirmModal from "../components/ConfirmModal";
 function Account() {
   const [formData, setFormData] = useState(null);
 
+  const [passwordData, setPasswordData] = useState({
+    password: "",
+    confirmPassword: "",
+  });
+
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [confirmState, setConfirmState] = useState(null);
@@ -35,8 +41,6 @@ function Account() {
           role: user.role || "",
           age: user.age || "",
           birthday: user.birthday ? user.birthday.split("T")[0] : "",
-          password: "",
-          confirmPassword: "",
         });
       } catch (err) {
         console.error("Failed to load account:", err);
@@ -53,7 +57,7 @@ function Account() {
     window.location.href = "/";
   };
 
-  if (!formData) return <p>Loading account...</p>;
+  if (!formData) return <p className="account-loading">Loading account...</p>;
 
   const handleChange = (field, value) => {
     setFormData({
@@ -62,25 +66,27 @@ function Account() {
     });
   };
 
+  const handlePasswordChange = (field, value) => {
+    setPasswordData({
+      ...passwordData,
+      [field]: value,
+    });
+  };
+
   const handleSave = async () => {
     try {
-      const dataToSend = { ...formData };
+      const dataToSend = {
+        name: formData.name,
+        email: formData.email,
+        age: formData.age,
+        birthday: formData.birthday,
+      };
 
       Object.keys(dataToSend).forEach((key) => {
         if (dataToSend[key] === "") {
           delete dataToSend[key];
         }
       });
-
-      if (
-        dataToSend.password &&
-        dataToSend.password !== dataToSend.confirmPassword
-      ) {
-        alert("Passwords do not match");
-        return;
-      }
-
-      delete dataToSend.confirmPassword;
 
       const updated = await updateUser(dataToSend);
 
@@ -92,107 +98,132 @@ function Account() {
     }
   };
 
+  const handlePasswordSave = async () => {
+    try {
+      if (!passwordData.password || !passwordData.confirmPassword) {
+        alert("Please fill in both password fields.");
+        return;
+      }
+
+      if (passwordData.password !== passwordData.confirmPassword) {
+        alert("Passwords do not match.");
+        return;
+      }
+
+      await updateUser({
+        password: passwordData.password,
+      });
+
+      setPasswordData({
+        password: "",
+        confirmPassword: "",
+      });
+
+      setShowPassword(false);
+      setShowConfirmPassword(false);
+      setShowPasswordModal(false);
+
+      alert("Password updated successfully");
+    } catch (err) {
+      console.error("Password update error:", err);
+    }
+  };
+
   return (
-    <div className="account-container">
-      <h2>Account Settings</h2>
-
-      {/* PROFILE SECTION */}
-      <div className="account-card profile-card">
-        <div className="profile-left">
-          <div className="avatar">
-            {formData.name ? formData.name.charAt(0).toUpperCase() : "U"}
-          </div>
-        </div>
-
-        <div className="profile-actions">
-          <button className="upload-btn">Upload</button>
-          <button className="remove-btn">Remove</button>
-        </div>
+    <div className="account-page">
+      <div className="account-header">
+        <h1>Profile & Account</h1>
+        <p>View your personal information and account details</p>
       </div>
 
-      {/* FORM SECTION */}
-      <div className="account-card form-card">
-        <div className="form-grid">
-          {/* NAME */}
-          <div className="form-group">
-            <label>Name</label>
-            <input
-              value={formData.name}
-              onChange={(e) => handleChange("name", e.target.value)}
-            />
+      <div className="account-layout">
+        {/* LEFT COLUMN */}
+        <div className="account-left-column">
+          <div className="account-card account-profile-card">
+            <div className="account-avatar">
+              {formData.name ? formData.name.charAt(0).toUpperCase() : "U"}
+            </div>
+
+            <h2>{formData.name || "User"}</h2>
+            <p>{formData.role || "User"}</p>
           </div>
 
-          {/* EMAIL */}
-          <div className="form-group">
-            <label>Email</label>
-            <input
-              value={formData.email}
-              onChange={(e) => handleChange("email", e.target.value)}
-            />
+          <div className="account-card password-reset-card">
+            <h3>Password Reset</h3>
+
+            <button
+              type="button"
+              className="change-password-btn"
+              onClick={() => setShowPasswordModal(true)}
+            >
+              Change Password
+            </button>
           </div>
+        </div>
 
-          {/* ROLE */}
-          <div className="form-group">
-            <label>Role</label>
-            <input value={formData.role} disabled />
-          </div>
+        {/* RIGHT COLUMN */}
+        <div className="account-right-column">
+          <div className="account-card account-info-card">
+            <h3>Personal Information</h3>
 
-          {/* AGE */}
-          <div className="form-group">
-            <label>Age</label>
-            <input
-              value={formData.age}
-              onChange={(e) => handleChange("age", e.target.value)}
-            />
-          </div>
+            <div className="info-list">
+              <div className="info-row">
+                <span>Name</span>
 
-          {/* BIRTHDAY */}
-          <div className="form-group">
-            <label>Birthday</label>
-            <input
-              type="date"
-              value={formData.birthday}
-              onChange={(e) => handleChange("birthday", e.target.value)}
-            />
-          </div>
+                <input
+                  value={formData.name}
+                  onChange={(e) => handleChange("name", e.target.value)}
+                />
+              </div>
 
-          {/* PASSWORD */}
-          <div className="form-group full">
-            <label>New Password</label>
-            <div className="password-field">
-              <input
-                type={showPassword ? "text" : "password"}
-                value={formData.password}
-                onChange={(e) => handleChange("password", e.target.value)}
-              />
+              <div className="info-row">
+                <span>Email Address</span>
 
-              <span
-                className="eye-icon"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? <FaEyeSlash /> : <FaEye />}
-              </span>
+                <input
+                  value={formData.email}
+                  onChange={(e) => handleChange("email", e.target.value)}
+                />
+              </div>
+
+              <div className="info-row">
+                <span>Role</span>
+
+                <input value={formData.role} disabled />
+              </div>
             </div>
           </div>
 
-          {/* CONFIRM PASSWORD */}
-          <div className="form-group full">
-            <label>Confirm Password</label>
-            <div className="password-field">
-              <input
-                type={showConfirmPassword ? "text" : "password"}
-                value={formData.confirmPassword}
-                onChange={(e) =>
-                  handleChange("confirmPassword", e.target.value)
-                }
-              />
+          <div className="account-card account-info-card">
+            <h3>Account Details</h3>
 
-              <span
-                className="eye-icon"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              >
-                {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
-              </span>
+            <div className="info-list">
+              <div className="info-row">
+                <span>Age</span>
+
+                <input
+                  value={formData.age}
+                  onChange={(e) => handleChange("age", e.target.value)}
+                />
+              </div>
+
+              <div className="info-row">
+                <span>Birthday</span>
+
+                <input
+                  type="date"
+                  value={formData.birthday}
+                  onChange={(e) => handleChange("birthday", e.target.value)}
+                />
+              </div>
+
+              <div className="account-note">
+                <strong>Account managed by administrator</strong>
+
+                <p>
+                  Your account details are managed by the system administrator.
+                  Update only the necessary information.
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -202,9 +233,10 @@ function Account() {
       <div className="account-footer">
         <div className="left-actions">
           <button
+            className="save-btn"
             onClick={() => {
               setConfirmState({
-                message: "Are you sure you want to keep changes?",
+                message: "Are you sure you want to save these changes?",
                 onConfirm: () => {
                   handleSave();
                   setConfirmState(null);
@@ -214,6 +246,7 @@ function Account() {
           >
             Save Changes
           </button>
+
           <button className="cancel-btn">Cancel</button>
         </div>
 
@@ -232,6 +265,85 @@ function Account() {
           Logout
         </button>
       </div>
+
+      {/* PASSWORD MODAL */}
+      {showPasswordModal && (
+        <div className="password-modal-overlay">
+          <div className="password-modal">
+            <h2>Change Password</h2>
+
+            <p>
+              Enter your new password below. Make sure both password fields
+              match before saving.
+            </p>
+
+            <div className="password-modal-field">
+              <label>New Password</label>
+
+              <div className="password-field">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={passwordData.password}
+                  onChange={(e) =>
+                    handlePasswordChange("password", e.target.value)
+                  }
+                />
+
+                <span
+                  className="eye-icon"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </span>
+              </div>
+            </div>
+
+            <div className="password-modal-field">
+              <label>Confirm Password</label>
+
+              <div className="password-field">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={passwordData.confirmPassword}
+                  onChange={(e) =>
+                    handlePasswordChange("confirmPassword", e.target.value)
+                  }
+                />
+
+                <span
+                  className="eye-icon"
+                  onClick={() =>
+                    setShowConfirmPassword(!showConfirmPassword)
+                  }
+                >
+                  {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                </span>
+              </div>
+            </div>
+
+            <div className="password-modal-actions">
+              <button
+                className="cancel-btn"
+                onClick={() => {
+                  setPasswordData({
+                    password: "",
+                    confirmPassword: "",
+                  });
+
+                  setShowPasswordModal(false);
+                }}
+              >
+                Cancel
+              </button>
+
+              <button className="save-btn" onClick={handlePasswordSave}>
+                Save Password
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {confirmState && (
         <ConfirmModal
           message={confirmState.message}

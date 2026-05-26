@@ -1,73 +1,368 @@
+/* ===== PREDICTIVE ANALYTICS PAGE ===== */
+
 .predictive-analytics-page {
-  padding: 24px;
-  background: #f5f7fb;
+  width: 100%;
   min-height: 100vh;
+
+  padding: 40px 48px;
+
+  background: #f4f7fb;
+
+  font-family: "Inter", "Segoe UI", sans-serif;
 }
 
-.analytics-header {
-  margin-bottom: 24px;
+/* ===== HEADER ===== */
+/* Works for both old and new class names */
+
+.analytics-header,
+.analytics-header-card {
+  width: 100%;
+
+  background: #ffffff;
+
+  border-left: 6px solid #4169e1;
+  border-radius: 16px;
+
+  padding: 32px 36px;
+
+  margin-bottom: 28px;
+
+  box-shadow:
+    0 8px 20px rgba(15, 23, 42, 0.06),
+    0 2px 6px rgba(15, 23, 42, 0.04);
 }
 
-.analytics-header h1 {
-  font-size: 32px;
-  font-weight: 700;
+.analytics-header h1,
+.analytics-header-card h1 {
+  margin: 0;
+
+  color: #111827;
+
+  font-size: 2rem;
+  font-weight: 800;
 }
+
+.analytics-header p,
+.analytics-header-card p {
+  margin: 10px 0 0;
+
+  color: #64748b;
+
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* ===== FILTERS ===== */
 
 .analytics-filters {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 24px;
+  width: 100%;
+
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+
+  gap: 14px;
+
+  align-items: center;
+
+  background: #ffffff;
+
+  padding: 24px;
+
+  border-radius: 18px;
+
+  margin-bottom: 28px;
+
+  box-shadow:
+    0 10px 25px rgba(15, 23, 42, 0.06),
+    0 4px 10px rgba(15, 23, 42, 0.04);
 }
 
 .analytics-filters select,
 .analytics-filters input {
-  padding: 12px;
-  border-radius: 10px;
-  border: 1px solid #ccc;
+  width: 100%;
+
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+
+  padding: 14px 16px;
+
+  font-size: 0.95rem;
+
+  outline: none;
+
+  background: #ffffff;
+  color: #111827;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.analytics-filters select:focus,
+.analytics-filters input:focus {
+  border-color: #4169e1;
+
+  box-shadow: 0 0 0 3px rgba(65, 105, 225, 0.12);
 }
 
 .analytics-filters button {
-  padding: 12px 18px;
+  background: #4169e1;
+  color: white;
+
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
+
+  padding: 14px 22px;
+
+  font-size: 0.95rem;
+  font-weight: 700;
+
   cursor: pointer;
+
+  white-space: nowrap;
+
+  box-shadow: 0 8px 18px rgba(65, 105, 225, 0.25);
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
 }
+
+.analytics-filters button:hover {
+  background: #3457c5;
+
+  transform: translateY(-2px);
+
+  box-shadow: 0 12px 24px rgba(65, 105, 225, 0.32);
+}
+
+/* ===== RESULTS WRAPPER ===== */
+
+.analytics-results {
+  display: flex;
+  flex-direction: column;
+
+  gap: 26px;
+}
+
+/* ===== SUMMARY CARDS ===== */
 
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(4, 1fr);
+
+  gap: 20px;
 }
 
 .summary-card {
-  background: white;
+  background: #ffffff;
+
+  border-radius: 18px;
+
   padding: 24px;
-  border-radius: 14px;
+
+  border: 1px solid #e5e7eb;
+
+  box-shadow:
+    0 8px 20px rgba(15, 23, 42, 0.06),
+    0 2px 6px rgba(15, 23, 42, 0.04);
 }
 
 .summary-card h3 {
-  margin-bottom: 12px;
+  margin: 0 0 12px;
+
+  color: #64748b;
+
+  font-size: 0.9rem;
+  font-weight: 700;
+
+  text-transform: uppercase;
 }
 
+.summary-card p {
+  margin: 0;
+
+  color: #4169e1;
+
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.summary-card span {
+  display: block;
+
+  margin-top: 8px;
+
+  color: #64748b;
+
+  font-size: 0.9rem;
+}
+
+/* ===== ANALYTICS CARDS ===== */
+
 .analytics-card {
-  background: white;
-  padding: 24px;
-  border-radius: 14px;
-  margin-bottom: 24px;
+  width: 100%;
+
+  background: #ffffff;
+
+  border-radius: 18px;
+
+  padding: 26px;
+
+  border: 1px solid #e5e7eb;
+
+  box-shadow:
+    0 10px 25px rgba(15, 23, 42, 0.06),
+    0 4px 10px rgba(15, 23, 42, 0.04);
 }
 
 .analytics-card h2 {
-  margin-bottom: 16px;
+  margin: 0 0 22px;
+
+  color: #111827;
+
+  font-size: 1.35rem;
+  font-weight: 800;
 }
 
-table {
+.analytics-card p {
+  color: #64748b;
+
+  font-size: 0.95rem;
+  line-height: 1.6;
+
+  margin: 0;
+}
+
+/* ===== TABLES ===== */
+
+.analytics-card table {
   width: 100%;
+
   border-collapse: collapse;
+
+  overflow: hidden;
 }
 
-th,
-td {
-  padding: 14px;
-  border-bottom: 1px solid #eee;
+.analytics-card thead {
+  background: #f1f3f7;
+}
+
+.analytics-card th {
+  padding: 16px;
+
+  text-align: left;
+
+  color: #111827;
+
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.analytics-card td {
+  padding: 16px;
+
+  color: #1f2937;
+
+  font-size: 0.95rem;
+  line-height: 1.4;
+
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.analytics-card tbody tr:hover {
+  background: #f8fafc;
+}
+
+.analytics-card tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* ===== LISTS ===== */
+
+.analytics-card ul {
+  margin: 0;
+
+  padding-left: 22px;
+
+  color: #1f2937;
+}
+
+.analytics-card li {
+  margin-bottom: 10px;
+
+  color: #334155;
+
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.analytics-card li:last-child {
+  margin-bottom: 0;
+}
+
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 1200px) {
+  .summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .analytics-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .analytics-filters button {
+    grid-column: span 2;
+    width: 100%;
+  }
+}
+
+@media (max-width: 900px) {
+  .predictive-analytics-page {
+    padding: 32px 24px;
+  }
+
+  .analytics-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .analytics-filters button {
+    grid-column: span 1;
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .analytics-card {
+    overflow-x: auto;
+  }
+
+  .analytics-card table {
+    min-width: 650px;
+  }
+}
+
+@media (max-width: 600px) {
+  .predictive-analytics-page {
+    padding: 24px 16px;
+  }
+
+  .analytics-header,
+  .analytics-header-card {
+    padding: 24px;
+  }
+
+  .analytics-header h1,
+  .analytics-header-card h1 {
+    font-size: 1.6rem;
+  }
+
+  .analytics-card,
+  .analytics-filters,
+  .summary-card {
+    padding: 20px;
+  }
 }

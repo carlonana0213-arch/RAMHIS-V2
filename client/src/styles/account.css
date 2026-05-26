@@ -1,157 +1,202 @@
-/* =========================
-   GLOBAL FIX (IMPORTANT)
-========================= */
 * {
   box-sizing: border-box;
 }
 
-/* =========================
-   CONTAINER
-========================= */
-.account-container {
-  max-width: 900px;
-  margin: 30px auto;
+.account-page {
+  max-width: 1180px;
+  margin: 40px auto;
+  padding: 0 24px;
 }
 
-/* =========================
-   CARD STYLE
-========================= */
+.account-loading {
+  padding: 40px;
+  text-align: center;
+  color: #475569;
+}
+
+.account-header {
+  margin-bottom: 24px;
+}
+
+.account-header h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #111827;
+  margin: 0;
+}
+
+.account-header p {
+  margin-top: 6px;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.account-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 22px;
+  align-items: flex-start;
+}
+
+.account-left-column,
+.account-right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
 .account-card {
   background: #ffffff;
-  border-radius: 14px;
-  padding: 20px;
-  margin-bottom: 18px;
   border: 1px solid #e5e7eb;
-  overflow: hidden; /* prevents overflow issues */
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
 }
 
-/* =========================
-   PROFILE SECTION
-========================= */
-.profile-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.account-profile-card {
+  text-align: center;
 }
 
-.avatar {
-  width: 50px;
-  height: 50px;
+.account-avatar {
+  width: 92px;
+  height: 92px;
   border-radius: 50%;
-  background: #0f172a;
+  background: #3f51b5;
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
+  margin: 0 auto 18px;
+  font-size: 2rem;
+  font-weight: 800;
 }
 
-.profile-actions button {
-  margin-left: 10px;
-  padding: 8px 14px;
-  border-radius: 8px;
-  border: 1px solid #d1d5db;
+.account-profile-card h2 {
+  font-size: 1.25rem;
+  color: #111827;
+  margin: 0;
+}
+
+.account-profile-card p {
+  color: #3f51b5;
+  font-weight: 700;
+  margin: 6px 0 0;
+}
+
+.account-status-card h3,
+.password-reset-card h3,
+.account-info-card h3 {
+  font-size: 1rem;
+  color: #111827;
+  margin: 0 0 16px;
+  font-weight: 700;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 16px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.status-badge.active {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.status-badge.inactive {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.change-password-btn {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
   background: white;
+  color: #334155;
+  font-weight: 700;
   cursor: pointer;
+  transition: 0.2s ease;
 }
 
-.upload-btn {
-  border-color: #2563eb;
-  color: #2563eb;
-}
-
-.upload-btn:hover {
+.change-password-btn:hover {
   background: #eff6ff;
+  color: #2563eb;
+  border-color: #2563eb;
 }
 
-.remove-btn:hover {
-  background: #f9fafb;
+.account-info-card {
+  padding: 26px;
 }
 
-/* =========================
-   FORM GRID (FIXED)
-========================= */
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr)); /* 🔥 key fix */
-  gap: 18px;
-}
-
-/* Prevent grid overflow */
-.form-group {
+.info-list {
   display: flex;
   flex-direction: column;
-  min-width: 0; /* 🔥 key fix */
+  gap: 14px;
 }
 
-.form-group.full {
-  grid-column: span 2;
+.info-row {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  align-items: center;
+  gap: 20px;
+  padding: 2px 0;
 }
 
-/* Label */
-.form-group label {
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 6px;
-  color: #374151;
+.info-row span {
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
-/* Input */
-.form-group input {
+.info-row input {
   width: 100%;
-  max-width: 100%;
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: 1px solid #d1d5db;
-  background: #f9fafb;
-  transition: 0.2s;
-}
-
-/* Focus */
-.form-group input:focus {
+  border: none;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 12px 4px;
+  font-size: 0.95rem;
+  color: #111827;
+  background: transparent;
   outline: none;
-  border-color: #2563eb;
-  background: white;
 }
 
-/* Disabled */
-.form-group input:disabled {
-  background: #e5e7eb;
-  color: #6b7280;
+.info-row input:focus {
+  border-bottom-color: #2563eb;
 }
 
-/* =========================
-   PASSWORD FIELD (FIXED)
-========================= */
-.password-field {
-  position: relative;
-  width: 100%;
+.info-row input:disabled {
+  color: #64748b;
+  cursor: not-allowed;
 }
 
-.password-field input {
-  width: 100%;
-  max-width: 100%;
-  padding-right: 42px;
+.account-note {
+  margin-top: 10px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 16px;
 }
 
-/* Eye icon */
-.eye-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  cursor: pointer;
-  color: #6b7280;
+.account-note strong {
+  color: #334155;
+  font-size: 0.9rem;
 }
 
-.eye-icon:hover {
-  color: #2563eb;
+.account-note p {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 0.85rem;
+  line-height: 1.5;
 }
 
-/* =========================
-   FOOTER ACTIONS
-========================= */
 .account-footer {
+  margin-top: 22px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -162,34 +207,39 @@
   gap: 10px;
 }
 
-.account-footer button {
-  padding: 10px 16px;
-  border-radius: 8px;
+.account-footer button,
+.password-modal-actions button {
+  padding: 11px 18px;
+  border-radius: 10px;
   border: none;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
+  transition: 0.2s ease;
 }
 
-/* Save */
-.account-footer button:first-child {
+.save-btn {
   background: #2563eb;
   color: white;
+
+  border: 1px solid #2563eb;
 }
 
-.account-footer button:first-child:hover {
+.save-btn:hover {
   background: #1d4ed8;
+  color: white;
+
+  border-color: #1d4ed8;
 }
 
-/* Cancel */
 .cancel-btn {
-  background: #f3f4f6;
+  background: #f1f5f9;
+  color: #334155;
 }
 
 .cancel-btn:hover {
-  background: #e5e7eb;
+  background: #e2e8f0;
 }
 
-/* Delete */
 .logout-btn {
   background: #dc2626;
   color: white;
@@ -199,21 +249,135 @@
   background: #b91c1c;
 }
 
-/* =========================
-   RESPONSIVE
-========================= */
-@media (max-width: 768px) {
-  .form-grid {
+/* PASSWORD MODAL */
+
+.password-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  padding: 20px;
+}
+
+.password-modal {
+  width: 100%;
+  max-width: 480px;
+  background: white;
+  border-radius: 20px;
+  padding: 28px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.2);
+}
+
+.password-modal h2 {
+  color: #111827;
+  font-size: 1.5rem;
+  margin: 0 0 8px;
+}
+
+.password-modal p {
+  color: #64748b;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0 0 20px;
+}
+
+.password-modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.password-modal-field label {
+  color: #334155;
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+.password-field {
+  position: relative;
+  width: 100%;
+}
+
+.password-field input {
+  width: 100%;
+  height: 48px;
+  padding: 13px 48px 13px 14px;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  outline: none;
+  font-size: 0.95rem;
+  background: #f8fafc;
+}
+
+.password-field input:focus {
+  border-color: #2563eb;
+  background: white;
+}
+
+.eye-icon {
+  position: absolute;
+  right: 16px;
+  top: 0;
+  bottom: 0;
+  width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.eye-icon svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
+.eye-icon:hover {
+  color: #2563eb;
+}
+
+.password-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 900px) {
+  .account-layout {
     grid-template-columns: 1fr;
   }
 
-  .form-group.full {
-    grid-column: span 1;
+  .info-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
   }
 
   .account-footer {
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
     align-items: stretch;
+  }
+
+  .left-actions {
+    flex-direction: column;
+  }
+
+  .account-footer button {
+    width: 100%;
+  }
+
+  .password-modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .password-modal-actions button {
+    width: 100%;
   }
 }

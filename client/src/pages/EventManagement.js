@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { FaCalendarAlt, FaUsers, FaEye } from "react-icons/fa";
+import { FaUsers, FaEye } from "react-icons/fa";
+
 import {
   getAllEvents,
   deleteEvent,
@@ -8,18 +9,14 @@ import {
 } from "../services/eventService";
 
 import EventModal from "../components/EventModal";
+import EventViewModal from "../components/EventViewModal";
 
 import "../styles/EventManagement.css";
 
-import EventViewModal from "../components/EventViewModal";
-
 const EventManagement = () => {
   const [events, setEvents] = useState([]);
-  const [selectedEvent, setSelectedEvent] =
-  useState(null);
-
-const [showViewModal, setShowViewModal] =
-  useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [activeTab, setActiveTab] = useState("All");
   const [showModal, setShowModal] = useState(false);
   const [editEvent, setEditEvent] = useState(null);
@@ -54,112 +51,89 @@ const [showViewModal, setShowViewModal] =
     switch (status) {
       case "Upcoming":
         return "#3949AB";
-
       case "Ongoing":
         return "#2E7D32";
-
       case "Completed":
         return "#757575";
-
       case "Cancelled":
         return "#D32F2F";
-
       default:
         return "#999";
     }
   };
 
   const handleParticipantStatus = async (eventId, userId, status) => {
-  try {
-    const response = await updateParticipantStatus(
-      eventId,
-      userId,
-      status
-    );
+    try {
+      const response = await updateParticipantStatus(eventId, userId, status);
 
-    await fetchEvents();
+      await fetchEvents();
 
-    if (response?.data) {
-      setSelectedEvent(response.data);
+      if (response?.data) {
+        setSelectedEvent(response.data);
+      }
+    } catch (error) {
+      console.error(
+        "Update participant status error:",
+        error.response?.data || error.message
+      );
+
+      alert(
+        error.response?.data?.message || "Failed to update participant status"
+      );
     }
-  } catch (error) {
-    console.error(
-      "Update participant status error:",
-      error.response?.data || error.message
-    );
+  };
 
-    alert(
-      error.response?.data?.message ||
-        "Failed to update participant status"
-    );
-  }
-};
+  const handleEditEvent = (event) => {
+    setEditEvent(event);
+    setShowViewModal(false);
+    setShowModal(true);
+  };
 
+  const handleStatusChange = async (event) => {
+    const statusOrder = ["Upcoming", "Ongoing", "Completed", "Cancelled"];
 
-const handleEditEvent = (event) => {
-  setEditEvent(event);
-  setShowViewModal(false);
-  setShowModal(true);
-};
+    const currentIndex = statusOrder.indexOf(event.status);
 
-const handleStatusChange = async (event) => {
-  const statusOrder = [
-    "Upcoming",
-    "Ongoing",
-    "Completed",
-    "Cancelled",
-  ];
+    const nextStatus = statusOrder[(currentIndex + 1) % statusOrder.length];
 
-  const currentIndex = statusOrder.indexOf(event.status);
+    try {
+      const response = await updateEvent(event._id, {
+        status: nextStatus,
+      });
 
-  const nextStatus =
-    statusOrder[(currentIndex + 1) % statusOrder.length];
+      await fetchEvents();
 
-  try {
-    const response = await updateEvent(event._id, {
-      status: nextStatus,
-    });
+      if (response?.data) {
+        setSelectedEvent(response.data);
+      }
+    } catch (error) {
+      console.error(
+        "Update status error:",
+        error.response?.data || error.message
+      );
 
-    await fetchEvents();
-
-    if (response?.data) {
-      setSelectedEvent(response.data);
+      alert(error.response?.data?.message || "Failed to update event status");
     }
-  } catch (error) {
-    console.error(
-      "Update status error:",
-      error.response?.data || error.message
-    );
-
-    alert(
-      error.response?.data?.message ||
-        "Failed to update event status"
-    );
-  }
-};
-
+  };
 
   return (
     <div className="event-page">
       {/* HEADER */}
-      <div className="event-header">
-        <div>
-          <h1>
-            <FaCalendarAlt /> Event Management
-          </h1>
-
+      <div className="event-header-row">
+        <div className="page-header-card">
+          <h1>Event Management</h1>
           <p>Create and manage community health events</p>
         </div>
 
         <button
-  className="create-btn"
-  onClick={() => {
-    setEditEvent(null);
-    setShowModal(true);
-  }}
->
-  + Create New Event
-</button>
+          className="create-btn"
+          onClick={() => {
+            setEditEvent(null);
+            setShowModal(true);
+          }}
+        >
+          + Create New Event
+        </button>
       </div>
 
       {/* EVENTS TABLE */}
@@ -204,52 +178,50 @@ const handleStatusChange = async (event) => {
                 </td>
 
                 <td>{event.participants?.length || 0}</td>
-<td className="action-buttons">
-  <button
-    onClick={() => {
-      setSelectedEvent(event);
-      setShowViewModal(true);
-    }}
-  >
-    <FaEye />
-  </button>
-</td>
+
+                <td className="action-buttons">
+                  <button
+                    onClick={() => {
+                      setSelectedEvent(event);
+                      setShowViewModal(true);
+                    }}
+                  >
+                    <FaEye />
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
+      {showViewModal && selectedEvent && (
+        <EventViewModal
+          event={selectedEvent}
+          onClose={() => {
+            setShowViewModal(false);
+            setSelectedEvent(null);
+          }}
+          onParticipantAction={handleParticipantStatus}
+          onDelete={handleDelete}
+          onRefresh={fetchEvents}
+          onEdit={handleEditEvent}
+          onStatusChange={handleStatusChange}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+        />
+      )}
 
-      {showViewModal &&
-  selectedEvent && (
-    <EventViewModal
-      event={selectedEvent}
-      onClose={() => {
-        setShowViewModal(false);
-        setSelectedEvent(null);
-      }}
-      onParticipantAction={
-        handleParticipantStatus
-      }
-      onDelete={handleDelete}
-      onRefresh={fetchEvents}
-      onEdit={handleEditEvent}
-onStatusChange={handleStatusChange}
-      activeTab={activeTab}
-      setActiveTab={setActiveTab}
-    />
-  )}
-  {showModal && (
-  <EventModal
-    event={editEvent}
-    onClose={() => {
-      setShowModal(false);
-      setEditEvent(null);
-    }}
-    refreshEvents={fetchEvents}
-  />
-)}
+      {showModal && (
+        <EventModal
+          event={editEvent}
+          onClose={() => {
+            setShowModal(false);
+            setEditEvent(null);
+          }}
+          refreshEvents={fetchEvents}
+        />
+      )}
     </div>
   );
 };
