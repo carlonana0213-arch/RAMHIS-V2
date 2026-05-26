@@ -297,7 +297,15 @@ exports.sendFileMessage = async (req, res) => {
 
     const fileUrl = `${req.protocol}://${req.get("host")}/${normalizedPath}`;
 
-    const isImage = req.file.mimetype?.startsWith("image/");
+    const originalName = (req.file.originalname || "").toLowerCase();
+
+const isImage =
+  req.file.mimetype?.startsWith("image/") ||
+  originalName.endsWith(".jpg") ||
+  originalName.endsWith(".jpeg") ||
+  originalName.endsWith(".png") ||
+  originalName.endsWith(".gif") ||
+  originalName.endsWith(".webp");
 
     const newMessage = await ChatMessage.create({
       thread: threadId,
