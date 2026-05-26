@@ -177,15 +177,84 @@ exports.login = async (req, res) => {
   token,
   accessToken: token,
   user: {
-    id: user._id,
-    name: user.name || user.full_name,
-    full_name: user.full_name || user.name,
-    email: user.email,
-    role: user.role || user.account_type,
-    account_type: user.account_type || user.role,
-    verificationStatus: user.verificationStatus,
-    doctorInfo: user.doctorInfo,
-  },
+  id: user._id,
+  _id: user._id,
+
+  name: user.name || user.full_name,
+  full_name: user.full_name || user.name,
+
+  email: user.email,
+
+  role: user.role || user.account_type,
+  account_type: user.account_type || user.role,
+
+  verificationStatus: user.verificationStatus,
+  doctorInfo: user.doctorInfo,
+
+  birthdate: user.birthdate || user.birthday || user.bdate || "",
+  birthday: user.birthday || user.birthdate || user.bdate || "",
+  bdate: user.bdate || user.birthdate || user.birthday || "",
+
+  contact_number:
+    user.contact_number ||
+    user.contactNumber ||
+    user.phone ||
+    user.phoneNumber ||
+    "",
+
+  contactNumber:
+    user.contactNumber ||
+    user.contact_number ||
+    user.phone ||
+    user.phoneNumber ||
+    "",
+
+  phone:
+    user.phone ||
+    user.contact_number ||
+    user.contactNumber ||
+    "",
+
+  profileImage:
+    user.profileImage ||
+    user.profileImageUrl ||
+    user.profile_image_url ||
+    user.avatar ||
+    user.imageUrl ||
+    "",
+
+  profileImageUrl:
+    user.profileImageUrl ||
+    user.profileImage ||
+    user.profile_image_url ||
+    user.avatar ||
+    user.imageUrl ||
+    "",
+
+  profile_image_url:
+    user.profile_image_url ||
+    user.profileImageUrl ||
+    user.profileImage ||
+    user.avatar ||
+    user.imageUrl ||
+    "",
+
+  avatar:
+    user.avatar ||
+    user.profileImage ||
+    user.profileImageUrl ||
+    user.profile_image_url ||
+    user.imageUrl ||
+    "",
+
+  imageUrl:
+    user.imageUrl ||
+    user.profileImage ||
+    user.profileImageUrl ||
+    user.profile_image_url ||
+    user.avatar ||
+    "",
+},
   mustChangePassword: user.mustChangePassword,
 });
 
