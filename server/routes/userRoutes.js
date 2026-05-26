@@ -48,7 +48,7 @@ router.get("/approved", authMiddleware, async (req, res) => {
 
 // PUT /api/users/change-password
 router.put("/change-password", authMiddleware, async (req, res) => {
-  console.log("✅ HIT CHANGE PASSWORD ROUTE");
+  
   try {
     const userId = req.user?.id || req.user?._id;
 
