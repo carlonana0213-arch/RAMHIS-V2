@@ -7,6 +7,32 @@ const getUserId = (req) => {
   return req.user?._id || req.user?.id || req.userId;
 };
 
+const formatMessage = (msg, userId) => {
+  const senderId = msg.sender?._id || msg.sender;
+
+  return {
+    id: msg._id,
+    _id: msg._id,
+    threadId: msg.thread,
+    senderId,
+    senderName:
+      msg.sender?.full_name ||
+      msg.sender?.name ||
+      msg.sender?.email ||
+      "User",
+    message: msg.message || "",
+    text: msg.message || "",
+    messageType: msg.messageType || "text",
+    fileUrl: msg.fileUrl || "",
+    fileName: msg.fileName || "",
+    fileType: msg.fileType || "",
+    fileSize: msg.fileSize || 0,
+    createdAt: msg.createdAt,
+    updatedAt: msg.updatedAt,
+    isMine: senderId?.toString() === userId.toString(),
+  };
+};
+
 exports.getThreads = async (req, res) => {
   try {
     const userId = getUserId(req);
@@ -55,7 +81,8 @@ exports.getThreads = async (req, res) => {
 
       const otherUser =
         thread.participants.find(
-          (user) => user._id.toString() !== userId.toString()
+          (user) =>
+            user._id.toString() !== userId.toString()
         ) || thread.participants[0];
 
       return {
@@ -69,7 +96,10 @@ exports.getThreads = async (req, res) => {
           otherUser?.email ||
           "User",
         email: otherUser?.email || "",
-        role: otherUser?.role || otherUser?.account_type || "User",
+        role:
+          otherUser?.role ||
+          otherUser?.account_type ||
+          "User",
         lastMessage: thread.lastMessage || "",
         updatedAt: thread.lastMessageAt || thread.updatedAt,
         unread: 0,
@@ -79,7 +109,9 @@ exports.getThreads = async (req, res) => {
     res.status(200).json({ threads: formatted });
   } catch (error) {
     console.error("getThreads error:", error);
-    res.status(500).json({ message: "Failed to load chat threads" });
+    res.status(500).json({
+      message: "Failed to load chat threads",
+    });
   }
 };
 
@@ -89,11 +121,15 @@ exports.createOrOpenDirectThread = async (req, res) => {
     const { userId: otherUserId } = req.body;
 
     if (!otherUserId) {
-      return res.status(400).json({ message: "userId is required" });
+      return res.status(400).json({
+        message: "userId is required",
+      });
     }
 
     if (userId.toString() === otherUserId.toString()) {
-      return res.status(400).json({ message: "Cannot chat with yourself" });
+      return res.status(400).json({
+        message: "Cannot chat with yourself",
+      });
     }
 
     const otherUser = await User.findById(otherUserId).select(
@@ -101,11 +137,16 @@ exports.createOrOpenDirectThread = async (req, res) => {
     );
 
     if (!otherUser) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({
+        message: "User not found",
+      });
     }
 
     let thread = await ChatThread.findOne({
-      participants: { $all: [userId, otherUserId], $size: 2 },
+      participants: {
+        $all: [userId, otherUserId],
+        $size: 2,
+      },
     });
 
     if (!thread) {
@@ -123,11 +164,16 @@ exports.createOrOpenDirectThread = async (req, res) => {
         otherUser.email ||
         "User",
       email: otherUser.email || "",
-      role: otherUser.role || otherUser.account_type || "User",
+      role:
+        otherUser.role ||
+        otherUser.account_type ||
+        "User",
     });
   } catch (error) {
     console.error("createOrOpenDirectThread error:", error);
-    res.status(500).json({ message: "Failed to open chat" });
+    res.status(500).json({
+      message: "Failed to open chat",
+    });
   }
 };
 
@@ -138,11 +184,16 @@ exports.getMessages = async (req, res) => {
 
     const thread = await ChatThread.findOne({
       _id: threadId,
-      participants: userId,
+      $or: [
+        { participants: userId },
+        { members: userId },
+      ],
     });
 
     if (!thread) {
-      return res.status(404).json({ message: "Thread not found" });
+      return res.status(404).json({
+        message: "Thread not found",
+      });
     }
 
     const messages = await ChatMessage.find({
@@ -151,28 +202,16 @@ exports.getMessages = async (req, res) => {
       .populate("sender", "full_name name email")
       .sort({ createdAt: 1 });
 
-    const formatted = messages.map((msg) => ({
-      id: msg._id,
-      _id: msg._id,
-      threadId: msg.thread,
-      senderId: msg.sender?._id || msg.sender,
-      senderName:
-        msg.sender?.full_name ||
-        msg.sender?.name ||
-        msg.sender?.email ||
-        "User",
-      message: msg.message,
-      text: msg.message,
-      createdAt: msg.createdAt,
-      updatedAt: msg.updatedAt,
-      isMine:
-        (msg.sender?._id || msg.sender).toString() === userId.toString(),
-    }));
+    const formatted = messages.map((msg) =>
+      formatMessage(msg, userId)
+    );
 
     res.status(200).json({ messages: formatted });
   } catch (error) {
     console.error("getMessages error:", error);
-    res.status(500).json({ message: "Failed to load messages" });
+    res.status(500).json({
+      message: "Failed to load messages",
+    });
   }
 };
 
@@ -183,22 +222,30 @@ exports.sendMessage = async (req, res) => {
     const { message } = req.body;
 
     if (!message || !message.trim()) {
-      return res.status(400).json({ message: "Message is required" });
+      return res.status(400).json({
+        message: "Message is required",
+      });
     }
 
     const thread = await ChatThread.findOne({
       _id: threadId,
-      participants: userId,
+      $or: [
+        { participants: userId },
+        { members: userId },
+      ],
     });
 
     if (!thread) {
-      return res.status(404).json({ message: "Thread not found" });
+      return res.status(404).json({
+        message: "Thread not found",
+      });
     }
 
     const newMessage = await ChatMessage.create({
       thread: threadId,
       sender: userId,
       message: message.trim(),
+      messageType: "text",
       readBy: [userId],
     });
 
@@ -206,19 +253,79 @@ exports.sendMessage = async (req, res) => {
     thread.lastMessageAt = new Date();
     await thread.save();
 
-    res.status(201).json({
-      id: newMessage._id,
-      _id: newMessage._id,
-      threadId: newMessage.thread,
-      senderId: newMessage.sender,
-      message: newMessage.message,
-      text: newMessage.message,
-      createdAt: newMessage.createdAt,
-      updatedAt: newMessage.updatedAt,
-      isMine: true,
-    });
+    const populatedMessage = await ChatMessage.findById(newMessage._id)
+      .populate("sender", "full_name name email");
+
+    res.status(201).json(formatMessage(populatedMessage, userId));
   } catch (error) {
     console.error("sendMessage error:", error);
-    res.status(500).json({ message: "Failed to send message" });
+    res.status(500).json({
+      message: "Failed to send message",
+    });
+  }
+};
+
+exports.sendFileMessage = async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    const { threadId } = req.params;
+    const { message = "" } = req.body;
+
+    if (!req.file) {
+      return res.status(400).json({
+        message: "File is required",
+      });
+    }
+
+    const thread = await ChatThread.findOne({
+      _id: threadId,
+      $or: [
+        { participants: userId },
+        { members: userId },
+      ],
+    });
+
+    if (!thread) {
+      return res.status(404).json({
+        message: "Thread not found",
+      });
+    }
+
+    const normalizedPath = req.file.path
+      .replace(/\\/g, "/")
+      .replace(/^.*uploads\//, "uploads/");
+
+    const fileUrl = `${req.protocol}://${req.get("host")}/${normalizedPath}`;
+
+    const isImage = req.file.mimetype?.startsWith("image/");
+
+    const newMessage = await ChatMessage.create({
+      thread: threadId,
+      sender: userId,
+      message: message.trim(),
+      messageType: isImage ? "image" : "file",
+      fileUrl,
+      fileName: req.file.originalname,
+      fileType: req.file.mimetype,
+      fileSize: req.file.size,
+      readBy: [userId],
+    });
+
+    thread.lastMessage = isImage
+      ? `📷 ${req.file.originalname}`
+      : `📎 ${req.file.originalname}`;
+
+    thread.lastMessageAt = new Date();
+    await thread.save();
+
+    const populatedMessage = await ChatMessage.findById(newMessage._id)
+      .populate("sender", "full_name name email");
+
+    res.status(201).json(formatMessage(populatedMessage, userId));
+  } catch (error) {
+    console.error("sendFileMessage error:", error);
+    res.status(500).json({
+      message: "Failed to send file",
+    });
   }
 };
