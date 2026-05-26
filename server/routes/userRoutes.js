@@ -6,6 +6,7 @@ const User = require("../models/user");
 
 const fs = require("fs");
 const path = require("path");
+const bcrypt = require("bcryptjs");
 
 router.get("/approved", authMiddleware, async (req, res) => {
   try {
@@ -40,6 +41,76 @@ router.get("/approved", authMiddleware, async (req, res) => {
 
     res.status(500).json({
       message: "Failed to search users",
+    });
+  }
+});
+
+// PUT /api/users/change-password
+router.put("/change-password", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user?.id || req.user?._id;
+
+    if (!userId) {
+      return res.status(401).json({
+        ok: false,
+        message: "Unauthorized",
+      });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        ok: false,
+        message: "Current password and new password are required",
+      });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        ok: false,
+        message: "New password must be at least 8 characters",
+      });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        ok: false,
+        message: "User not found",
+      });
+    }
+
+    const isMatch = await bcrypt.compare(
+      currentPassword,
+      user.password
+    );
+
+    if (!isMatch) {
+      return res.status(400).json({
+        ok: false,
+        message: "Current password is incorrect",
+      });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    user.mustChangePassword = false;
+
+    await user.save();
+
+    return res.status(200).json({
+      ok: true,
+      message: "Password changed successfully",
+    });
+  } catch (error) {
+    console.error("Change password error:", error);
+
+    return res.status(500).json({
+      ok: false,
+      message: "Failed to change password",
+      error: error.message,
     });
   }
 });
