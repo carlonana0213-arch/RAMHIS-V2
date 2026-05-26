@@ -14,7 +14,7 @@ function PharmacyQueue() {
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 15;
   const [loading, setLoading] = useState(true);
-
+  const [expandedPatients, setExpandedPatients] = useState({});
   const loadPrescriptions = async () => {
     try {
       setLoading(true);
@@ -56,24 +56,31 @@ function PharmacyQueue() {
       setAlertMessage("Failed to mark prescription as given");
     }
   };
-  const filteredPrescriptions = prescriptions.flatMap((p) =>
-    p.items
-      .filter((item) => {
+  const filteredPrescriptions = prescriptions
+    .map((p) => {
+      const filteredItems = p.items.filter((item) => {
         const patientName = p.patient?.generalInfo?.name || "";
 
         const medicineNames =
           item.medicine?.names?.join(", ") || item.medicine?.name || "";
 
-        return (
+        const matchesSearch =
           patientName.toLowerCase().includes(search.toLowerCase()) ||
-          medicineNames.toLowerCase().includes(search.toLowerCase())
-        );
-      })
-      .map((item) => ({
-        prescription: p,
-        item,
-      })),
-  );
+          medicineNames.toLowerCase().includes(search.toLowerCase());
+
+        const matchesFilter =
+          filter === "Pending" ? !item.isGiven : item.isGiven;
+
+        return matchesSearch && matchesFilter;
+      });
+
+      return {
+        ...p,
+        filteredItems,
+      };
+    })
+    .filter((p) => p.filteredItems.length > 0);
+
   const pendingCount = prescriptions
     .flatMap((p) => p.items)
     .filter((item) => !item.isGiven).length;
@@ -82,19 +89,7 @@ function PharmacyQueue() {
     .flatMap((p) => p.items)
     .filter((item) => item.isGiven).length;
 
-  const sortedPrescriptions = [...filteredPrescriptions]
-
-    .filter(({ item }) => {
-      if (filter === "Pending") {
-        return !item.isGiven;
-      }
-
-      return item.isGiven;
-    })
-    .sort((a, b) => {
-      return Number(a.item.isGiven) - Number(b.item.isGiven);
-    });
-  const totalPrescriptions = sortedPrescriptions.length;
+  const totalPrescriptions = filteredPrescriptions.length;
 
   const totalPages = Math.ceil(totalPrescriptions / ITEMS_PER_PAGE);
 
@@ -102,7 +97,7 @@ function PharmacyQueue() {
 
   const endIndex = startIndex + ITEMS_PER_PAGE;
 
-  const displayedPrescriptions = sortedPrescriptions.slice(
+  const displayedPrescriptions = filteredPrescriptions.slice(
     startIndex,
     endIndex,
   );
@@ -189,61 +184,171 @@ function PharmacyQueue() {
                 </thead>
 
                 <tbody>
-                  {displayedPrescriptions.map(({ prescription: p, item }) => (
-                    <tr key={item._id}>
-                      <td>{p.patient.generalInfo.name}</td>
+                  {displayedPrescriptions.map((p) => {
+                    const hasMultipleMedicines = p.filteredItems.length > 1;
 
-                      <td>
-                        {item.medicine?.names?.join(", ") ||
-                          item.medicine?.name ||
-                          "Unknown Medicine"}
-                      </td>
+                    // SINGLE MEDICINE → NORMAL ROW
+                    if (!hasMultipleMedicines) {
+                      const item = p.filteredItems[0];
 
-                      <td>{item.medicine?.dosage || "-"}</td>
+                      return (
+                        <tr key={item._id}>
+                          <td>{p.patient.generalInfo.name}</td>
 
-                      <td>{item.quantity}</td>
+                          <td>
+                            {item.medicine?.names?.join(", ") ||
+                              item.medicine?.name ||
+                              "Unknown Medicine"}
+                          </td>
 
-                      <td>{p.doctor?.name || "Unknown Doctor"}</td>
+                          <td>{item.medicine?.dosage || "-"}</td>
 
-                      <td>
-                        {item.medicine?.quantity <= 0 ? (
-                          <span className="stock-pill out">Out of Stock</span>
-                        ) : item.medicine?.quantity <= 50 ? (
-                          <span className="stock-pill low">Low Stock</span>
-                        ) : (
-                          <span className="stock-pill ready">Ready</span>
-                        )}
-                      </td>
+                          <td>{item.quantity}</td>
 
-                      <td>
-                        {!item.isGiven ? (
-                          item.medicine?.quantity <= 0 ? (
-                            <button className="disabled-btn" disabled>
-                              Unavailable
-                            </button>
-                          ) : (
-                            <button
-                              className="mark-given-btn"
-                              onClick={() => {
-                                setConfirmState({
-                                  message: "Mark this prescription as given?",
-                                  onConfirm: async () => {
-                                    await handleMarkAsGiven(p._id, item._id);
+                          <td>{p.doctor?.name || "Unknown Doctor"}</td>
 
-                                    setConfirmState(null);
-                                  },
-                                });
-                              }}
-                            >
-                              Mark as Given
-                            </button>
-                          )
-                        ) : (
-                          <span className="given-pill">Given</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                          <td>
+                            {item.medicine?.quantity <= 0 ? (
+                              <span className="stock-pill out">
+                                Out of Stock
+                              </span>
+                            ) : item.medicine?.quantity <= 50 ? (
+                              <span className="stock-pill low">Low Stock</span>
+                            ) : (
+                              <span className="stock-pill ready">Ready</span>
+                            )}
+                          </td>
+
+                          <td>
+                            {!item.isGiven ? (
+                              item.medicine?.quantity <= 0 ? (
+                                <button className="disabled-btn" disabled>
+                                  Unavailable
+                                </button>
+                              ) : (
+                                <button
+                                  className="mark-given-btn"
+                                  onClick={() => {
+                                    setConfirmState({
+                                      message:
+                                        "Mark this prescription as given?",
+                                      onConfirm: async () => {
+                                        await handleMarkAsGiven(
+                                          p._id,
+                                          item._id,
+                                        );
+
+                                        setConfirmState(null);
+                                      },
+                                    });
+                                  }}
+                                >
+                                  Mark as Given
+                                </button>
+                              )
+                            ) : (
+                              <span className="given-pill">Given</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    // MULTIPLE MEDICINES → DROPDOWN
+                    return (
+                      <>
+                        <tr
+                          key={p._id}
+                          className="expandable-row"
+                          onClick={() =>
+                            setExpandedPatients((prev) => ({
+                              ...prev,
+                              [p._id]: !prev[p._id],
+                            }))
+                          }
+                          style={{ cursor: "pointer" }}
+                        >
+                          <td>
+                            {expandedPatients[p._id] ? "▼" : "▶"}{" "}
+                            {p.patient.generalInfo.name}
+                          </td>
+
+                          <td colSpan="5">
+                            {p.filteredItems.length} medicine(s)
+                          </td>
+
+                          <td></td>
+                        </tr>
+
+                        {expandedPatients[p._id] &&
+                          p.filteredItems.map((item) => (
+                            <tr key={item._id} className="medicine-sub-row">
+                              <td></td>
+
+                              <td>
+                                {item.medicine?.names?.join(", ") ||
+                                  item.medicine?.name ||
+                                  "Unknown Medicine"}
+                              </td>
+
+                              <td>{item.medicine?.dosage || "-"}</td>
+
+                              <td>{item.quantity}</td>
+
+                              <td>{p.doctor?.name || "Unknown Doctor"}</td>
+
+                              <td>
+                                {item.medicine?.quantity <= 0 ? (
+                                  <span className="stock-pill out">
+                                    Out of Stock
+                                  </span>
+                                ) : item.medicine?.quantity <= 50 ? (
+                                  <span className="stock-pill low">
+                                    Low Stock
+                                  </span>
+                                ) : (
+                                  <span className="stock-pill ready">
+                                    Ready
+                                  </span>
+                                )}
+                              </td>
+
+                              <td>
+                                {!item.isGiven ? (
+                                  item.medicine?.quantity <= 0 ? (
+                                    <button className="disabled-btn" disabled>
+                                      Unavailable
+                                    </button>
+                                  ) : (
+                                    <button
+                                      className="mark-given-btn"
+                                      onClick={() => {
+                                        setConfirmState({
+                                          message:
+                                            "Mark this prescription as given?",
+                                          onConfirm: async () => {
+                                            await handleMarkAsGiven(
+                                              p._id,
+                                              item._id,
+                                            );
+
+                                            setConfirmState(null);
+                                          },
+                                        });
+                                      }}
+                                    >
+                                      Mark as Given
+                                    </button>
+                                  )
+                                ) : (
+                                  <span className="given-pill">Given</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                      </>
+                    );
+                  })}
                 </tbody>
               </table>
               {totalPrescriptions > 0 && (
