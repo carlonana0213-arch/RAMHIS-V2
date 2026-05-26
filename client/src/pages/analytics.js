@@ -20,10 +20,6 @@ const Analytics = () => {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // =========================
-  // FETCH LOCATIONS
-  // =========================
-
   useEffect(() => {
     fetchLocations();
   }, []);
@@ -31,7 +27,7 @@ const Analytics = () => {
   const fetchLocations = async () => {
     try {
       const res = await axios.get(
-        "http://localhost:5000/api/patients/locations"
+        "http://localhost:5000/api/patients/locations",
       );
 
       setLocations(res.data);
@@ -39,10 +35,6 @@ const Analytics = () => {
       console.error(error);
     }
   };
-
-  // =========================
-  // GENERATE ANALYTICS
-  // =========================
 
   const generateAnalytics = async () => {
     try {
@@ -57,12 +49,6 @@ const Analytics = () => {
       }
 
       setLoading(true);
-
-      console.log("PAYLOAD", {
-        location: selectedLocation,
-        nextMissionDate,
-        missionDays,
-      });
 
       const res = await axios.post("http://localhost:8000/generate-forecast", {
         location: selectedLocation,
@@ -82,19 +68,9 @@ const Analytics = () => {
     }
   };
 
-  // =========================
-  // RECOMMENDATIONS
-  // =========================
-
-  const recommendations = useMemo(() => {
-    if (!analytics) return [];
-
-    return analytics.recommendations || [];
-  }, [analytics]);
-
-  // =========================
+  // =====================================
   // SMART INSIGHTS
-  // =========================
+  // =====================================
 
   const smartInsights = useMemo(() => {
     if (!analytics) return [];
@@ -102,16 +78,17 @@ const Analytics = () => {
     const insights = [];
     const predictedPatients = analytics?.predictedPatients || 0;
 
+    const range =
+      (analytics?.confidenceRange?.max || 0) -
+      (analytics?.confidenceRange?.min || 0);
+
     if (predictedPatients > 100) {
       insights.push("High patient turnout expected for this mission");
     }
 
-    if (
-      analytics?.confidenceRange?.max - analytics?.confidenceRange?.min >
-      40
-    ) {
+    if (range > 40) {
       insights.push(
-        "Forecast variability is high due to limited historical data"
+        "Forecast variability is high due to limited historical data",
       );
     }
 
@@ -121,13 +98,18 @@ const Analytics = () => {
       insights.push("Potential medicine shortages detected");
     }
 
+    if (analytics?.confidence === "VERY LOW") {
+      insights.push(
+        "Historical mission data is limited — forecast reliability is low",
+      );
+    }
+
     return insights;
   }, [analytics]);
 
   return (
     <div className="predictive-analytics-page">
-      {/* HEADER */}
-      <div className="analytics-header-card">
+      <div className="analytics-header">
         <h1>Predictive Analytics</h1>
 
         <p>Forecast mission needs based on historical patient records</p>
@@ -159,7 +141,6 @@ const Analytics = () => {
           min="1"
           value={missionDays}
           onChange={(e) => setMissionDays(e.target.value)}
-          placeholder="Mission Days"
         />
 
         <button onClick={generateAnalytics}>
@@ -175,35 +156,83 @@ const Analytics = () => {
             <div className="summary-card">
               <h3>Forecasted Patients</h3>
 
-              <p>{analytics?.predictedPatients || 0}</p>
+              <p>{analytics?.predictedPatients}</p>
 
               <span>
-                Range: {analytics?.confidenceRange?.min || 0}
+                95% Range: {analytics?.confidenceRange?.min}
                 {" - "}
-                {analytics?.confidenceRange?.max || 0}
+                {analytics?.confidenceRange?.max}
               </span>
             </div>
 
             <div className="summary-card">
-              <h3>Mission Location</h3>
+              <h3>Forecast Method</h3>
 
-              <p>{analytics?.location || "N/A"}</p>
+              <p>
+                {analytics?.forecastMethod === "prophet"
+                  ? "Prophet"
+                  : "Weighted Statistical"}
+              </p>
+
+              <span>Confidence: {analytics?.confidence}</span>
+            </div>
+
+            <div className="summary-card">
+              <h3>Historical Missions</h3>
+
+              <p>{analytics?.historicalMissionCount}</p>
+
+              <span>Used for prediction</span>
             </div>
 
             <div className="summary-card">
               <h3>Mission Days</h3>
 
-              <p>{analytics?.missionDays || 1}</p>
-            </div>
+              <p>{missionDays}</p>
 
-            <div className="summary-card">
-              <h3>Medicine Items</h3>
-
-              <p>{analytics?.predictedMedicineItems || 0}</p>
+              <span>Planning duration</span>
             </div>
           </div>
 
+          {/* FORECAST TREND */}
+
+          {analytics?.forecastMethod === "prophet" &&
+            analytics?.forecastTrend?.length > 0 && (
+              <div className="analytics-card">
+                <h2>Forecast Trend</h2>
+
+                <ResponsiveContainer width="100%" height={350}>
+                  <AreaChart data={analytics?.forecastTrend}>
+                    <CartesianGrid strokeDasharray="3 3" />
+
+                    <XAxis
+                      dataKey="ds"
+                      tickFormatter={(value) =>
+                        new Date(value).toLocaleDateString()
+                      }
+                    />
+
+                    <YAxis />
+
+                    <Tooltip
+                      labelFormatter={(value) =>
+                        new Date(value).toLocaleDateString()
+                      }
+                    />
+
+                    <Area
+                      type="monotone"
+                      dataKey="yhat"
+                      stroke="#2563eb"
+                      fill="#93c5fd"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
           {/* DEPARTMENT FORECAST */}
+
           <div className="analytics-card">
             <h2>Department Forecast</h2>
 
@@ -211,15 +240,13 @@ const Analytics = () => {
               <thead>
                 <tr>
                   <th>Department</th>
-                  <th>Patients</th>
+
+                  <th>Predicted Patients</th>
                 </tr>
               </thead>
 
               <tbody>
-                {(Array.isArray(analytics?.departmentForecast)
-                  ? analytics.departmentForecast
-                  : []
-                ).map((item, index) => (
+                {(analytics?.departmentForecast || []).map((item, index) => (
                   <tr key={index}>
                     <td>{item.department}</td>
 
@@ -230,39 +257,6 @@ const Analytics = () => {
             </table>
           </div>
 
-          {/* FORECAST TREND */}
-          <div className="analytics-card">
-            <h2>Forecast Trend</h2>
-
-            <ResponsiveContainer width="100%" height={350}>
-              <AreaChart data={analytics?.forecastTrend || []}>
-                <CartesianGrid strokeDasharray="3 3" />
-
-                <XAxis
-                  dataKey="ds"
-                  tickFormatter={(value) =>
-                    new Date(value).toLocaleDateString()
-                  }
-                />
-
-                <YAxis />
-
-                <Tooltip
-                  labelFormatter={(value) =>
-                    new Date(value).toLocaleDateString()
-                  }
-                />
-
-                <Area
-                  type="monotone"
-                  dataKey="yhat"
-                  stroke="#2563eb"
-                  fill="#93c5fd"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-
           {/* TOP DIAGNOSES */}
           <div className="analytics-card">
             <h2>Top Diagnoses</h2>
@@ -271,20 +265,19 @@ const Analytics = () => {
               <thead>
                 <tr>
                   <th>Diagnosis</th>
+
                   <th>Count</th>
                 </tr>
               </thead>
 
               <tbody>
-                {Object.entries(analytics?.topDiagnoses || {}).map(
-                  ([diagnosis, count]) => (
-                    <tr key={diagnosis}>
-                      <td>{diagnosis}</td>
+                {(analytics?.topDiagnoses || []).map((item, index) => (
+                  <tr key={index}>
+                    <td>{item.diagnosis}</td>
 
-                      <td>{count}</td>
-                    </tr>
-                  )
-                )}
+                    <td>{item.count}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -297,7 +290,9 @@ const Analytics = () => {
               <thead>
                 <tr>
                   <th>Medicine</th>
+
                   <th>Estimated Need</th>
+
                   <th>Risk</th>
                 </tr>
               </thead>
@@ -316,19 +311,16 @@ const Analytics = () => {
             </table>
           </div>
 
-          {/* RECOMMENDATIONS */}
-          <div className="analytics-card">
-            <h2>Recommendations</h2>
+          {/* SUMMARY INSIGHTS */}
 
-            {recommendations.length === 0 ? (
-              <p>No recommendations available</p>
-            ) : (
-              <ul>
-                {recommendations.map((recommendation, index) => (
-                  <li key={index}>{recommendation}</li>
-                ))}
-              </ul>
-            )}
+          <div className="analytics-card">
+            <h2>Summary Insights</h2>
+
+            <ul>
+              {(analytics?.summaryInsights || []).map((item, index) => (
+                <li key={index}>{item}</li>
+              ))}
+            </ul>
           </div>
 
           {/* SMART INSIGHTS */}
