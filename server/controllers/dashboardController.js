@@ -202,19 +202,27 @@ exports.getDiagnosisDistribution = async (req, res) => {
     const diagnosisMap = {};
 
     patients.forEach((patient) => {
-      patient.doctorSheets.forEach((sheet) => {
-        const diagnosis = sheet.diagnosis;
+      if (!patient.doctorSheets?.length) return;
 
-        if (diagnosis && diagnosis.trim() !== "") {
-          diagnosisMap[diagnosis] = (diagnosisMap[diagnosis] || 0) + 1;
-        }
+      patient.doctorSheets.forEach((sheet) => {
+        const rawDiagnosis = sheet?.diagnosis;
+
+        // Skip null/undefined/empty
+        if (!rawDiagnosis || typeof rawDiagnosis !== "string") return;
+
+        const diagnosis = rawDiagnosis.trim();
+
+        if (!diagnosis) return;
+
+        // Preserve exact database input
+        diagnosisMap[diagnosis] = (diagnosisMap[diagnosis] || 0) + 1;
       });
     });
 
-    const sorted = Object.keys(diagnosisMap)
-      .map((key) => ({
-        name: key,
-        value: diagnosisMap[key],
+    const sorted = Object.entries(diagnosisMap)
+      .map(([name, value]) => ({
+        name,
+        value,
       }))
       .sort((a, b) => b.value - a.value);
 
@@ -252,17 +260,30 @@ exports.getTopMedicines = async (req, res) => {
     const medicineMap = {};
 
     prescriptions.forEach((prescription) => {
-      prescription.items.forEach((item) => {
-        const medName = item.medicine?.names?.[0] || "Unknown";
+      if (!prescription.items?.length) return;
 
-        medicineMap[medName] = (medicineMap[medName] || 0) + item.quantity;
+      prescription.items.forEach((item) => {
+        const rawMedicineName = item?.medicine?.names?.[0];
+
+        // Skip missing instead of grouping into Unknown
+        if (!rawMedicineName || typeof rawMedicineName !== "string") {
+          return;
+        }
+
+        const medName = rawMedicineName.trim();
+
+        if (!medName) return;
+
+        // Keep exact DB input
+        medicineMap[medName] =
+          (medicineMap[medName] || 0) + (item.quantity || 1);
       });
     });
 
-    const sorted = Object.keys(medicineMap)
-      .map((key) => ({
-        medicine: key,
-        count: medicineMap[key],
+    const sorted = Object.entries(medicineMap)
+      .map(([medicine, count]) => ({
+        medicine,
+        count,
       }))
       .sort((a, b) => b.count - a.count);
 
@@ -292,3 +313,4 @@ exports.getTopMedicines = async (req, res) => {
     });
   }
 };
+ 

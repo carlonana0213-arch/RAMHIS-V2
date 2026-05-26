@@ -51,7 +51,23 @@ const Analytics = () => {
 
   const generateAnalytics = async () => {
     try {
+      if (!selectedLocation) {
+        alert("Please select a location");
+        return;
+      }
+
+      if (!nextMissionDate) {
+        alert("Please select a mission date");
+        return;
+      }
+
       setLoading(true);
+
+      console.log("PAYLOAD", {
+        location: selectedLocation,
+        nextMissionDate,
+        missionDays,
+      });
 
       const res = await axios.post("http://localhost:8000/generate-forecast", {
         location: selectedLocation,
@@ -189,8 +205,38 @@ const Analytics = () => {
 
               <p>{analytics?.missionDays || 1}</p>
             </div>
-          </div>
 
+            <div className="summary-card">
+              <h3>Medicine Items</h3>
+
+              <p>{analytics?.predictedMedicineItems || 0}</p>
+            </div>
+          </div>
+          <div className="analytics-card">
+            <h2>Department Forecast</h2>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>Department</th>
+                  <th>Patients</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {(Array.isArray(analytics?.departmentForecast)
+                  ? analytics.departmentForecast
+                  : []
+                ).map((item, index) => (
+                  <tr key={index}>
+                    <td>{item.department}</td>
+
+                    <td>{item.predictedPatients}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           {/* FORECAST TREND */}
 
           <div className="analytics-card">
@@ -318,3 +364,5 @@ const Analytics = () => {
 };
 
 export default Analytics;
+
+ 

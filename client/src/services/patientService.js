@@ -28,8 +28,16 @@ export const addPatient = (data) =>
     body: JSON.stringify(data),
   });
 
-export const searchPatients = async (name) => {
-  return apiFetch(`${API}/search?name=${name}`);
+export const searchPatients = async (name, birthdate) => {
+  const params = new URLSearchParams({
+    name,
+  });
+
+  if (birthdate) {
+    params.append("birthdate", birthdate);
+  }
+
+  return apiFetch(`${API}/search?${params.toString()}`);
 };
 
 export const updatePatient = (id, data) =>
@@ -65,3 +73,5 @@ export const updateUser = async (data) => {
 };
 
 export const getPatientById = (id) => apiFetch(`${API}/${id}`);
+
+ 

@@ -1,7 +1,12 @@
 import { useState, useEffect } from "react";
 import { FiActivity } from "react-icons/fi";
-import { addPatient } from "../../services/patientService";
+import {
+  addPatient,
+  updatePatient,
+  searchPatients,
+} from "../../services/patientService"
 import "../../styles/modal.css";
+import DuplicatePatientModal from "../../components/DuplicatePatientModal";
 import GeneralStep from "../steps/GeneralStep";
 import HistoryStep from "../steps/HistoryStep";
 import ExaminationStep from "../steps/ExaminationStep";
@@ -24,7 +29,13 @@ const getSteps = (form) => {
 const AddPatientModal = ({ onClose }) => {
   const [step, setStep] = useState(0);
   const [showConsent, setShowConsent] = useState(true);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
 
+  const [matchedPatient, setMatchedPatient] = useState(null);
+
+  const [editingExistingPatient, setEditingExistingPatient] = useState(false);
+
+  const [duplicateChecked, setDuplicateChecked] = useState(false);
   const [form, setForm] = useState({
     generalInfo: {},
     medicalHistory: [],
@@ -57,10 +68,73 @@ const AddPatientModal = ({ onClose }) => {
   const prev = () => {
     if (step > 0) setStep((s) => s - 1);
   };
+  const checkDuplicatePatient = async () => {
+    try {
+      const name = form.generalInfo?.name?.trim();
 
+      const birthdate = form.generalInfo?.birthdate;
+
+      if (!name || !birthdate) return false;
+
+      const matches = await searchPatients(name, birthdate);
+
+      if (matches.length > 0) {
+        setMatchedPatient(matches[0]);
+        setShowDuplicateModal(true);
+
+        return true;
+      }
+
+      return false;
+    } catch (err) {
+      console.error(err);
+
+      return false;
+    }
+  };
   const handleSubmit = async () => {
+    if (!duplicateChecked && !editingExistingPatient) {
+      const foundDuplicate = await checkDuplicatePatient();
+
+      if (foundDuplicate) {
+        return;
+      }
+
+      setDuplicateChecked(true);
+    }
+
     const payload = {
-      ...form,
+      generalInfo: {
+        name: form.generalInfo?.name || "",
+
+        age: form.generalInfo?.age || null,
+
+        birthdate: form.generalInfo?.birthdate || "",
+
+        sex: form.generalInfo?.sex || "",
+
+        insurance: form.generalInfo?.insurance || "",
+
+        tobacco: form.generalInfo?.tobacco || "",
+
+        alcohol: form.generalInfo?.alcohol || "",
+
+        allergies: form.generalInfo?.allergies || "",
+
+        vaccine: form.generalInfo?.vaccine || "",
+      },
+
+      examination: {
+        bp: form.examination?.bp || "",
+
+        temp: form.examination?.temp || "",
+
+        height: form.examination?.height || "",
+
+        weight: form.examination?.weight || "",
+
+        bmi: form.examination?.bmi || "",
+      },
 
       medicalHistory: form.medicalHistory.map((item) =>
         item === "Other" ? form.medicalOther || "Other" : item,
@@ -71,14 +145,85 @@ const AddPatientModal = ({ onClose }) => {
       ),
 
       obstetricHistory: form.obstetricHistory || {},
+
       perinatalHistory: form.perinatalHistory || {},
-      location: "Default Location",
+
+      department: form.department || "",
+
+      initComplaint: form.initComplaint || "",
+
+      isPriority: form.isPriority || false,
+
+      location: matchedPatient?.location || "Default Location",
+
       missionDate: new Date(),
+
+      status: "waiting",
     };
 
-    await addPatient(payload);
-    alert("Patient added!");
-    onClose();
+    try {
+      if (editingExistingPatient && matchedPatient) {
+        await updatePatient(matchedPatient._id, payload);
+
+        alert("Patient updated and queued");
+      } else {
+        await addPatient(payload);
+
+        alert("Patient added!");
+      }
+
+      // reset duplicate-flow state
+      setDuplicateChecked(false);
+      setEditingExistingPatient(false);
+      setMatchedPatient(null);
+
+      onClose();
+    } catch (err) {
+      console.error(err);
+
+      alert("Failed to save patient");
+    }
+  };
+  const reusePatientRecord = async () => {
+    try {
+      await updatePatient(matchedPatient._id, {
+        status: "waiting",
+
+        department: form.department?.trim()
+          ? form.department
+          : matchedPatient.department || "General",
+
+        initComplaint: form.initComplaint?.trim()
+          ? form.initComplaint
+          : matchedPatient.initComplaint || "",
+
+        missionDate: new Date(),
+
+        location: matchedPatient.location,
+      });
+
+      alert("Patient added to queue");
+
+      onClose();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const updateExistingPatientInfo = () => {
+    setEditingExistingPatient(true);
+
+    setForm({
+      ...matchedPatient,
+    });
+
+    setShowDuplicateModal(false);
+  };
+
+  const createNewPatientAnyway = () => {
+    setShowDuplicateModal(false);
+
+    setDuplicateChecked(true);
   };
   const handleEnterKey = (e) => {
     if (e.key !== "Enter") return;
@@ -257,8 +402,18 @@ const AddPatientModal = ({ onClose }) => {
           </div>
         </div>
       )}
+      {showDuplicateModal && matchedPatient && (
+        <DuplicatePatientModal
+          patient={matchedPatient}
+          onReuse={reusePatientRecord}
+          onUpdate={updateExistingPatientInfo}
+          onCreateNew={createNewPatientAnyway}
+          onCancel={() => setShowDuplicateModal(false)}
+        />
+      )}
     </div>
   );
 };
 
 export default AddPatientModal;
+ 

@@ -49,7 +49,7 @@ router.get("/:id", auth, checkPermission("registry"), async (req, res) => {
 router.put(
   "/:id",
   auth,
-  checkPermission("doctorSheet"),
+  checkPermission("registry", "doctorSheet"),
   controller.updatePatient,
 );
 
@@ -75,3 +75,4 @@ router.delete(
 );
 
 module.exports = router;
+ 

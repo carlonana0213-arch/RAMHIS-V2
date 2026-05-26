@@ -62,17 +62,64 @@ exports.createPatient = async (req, res) => {
 };
 
 exports.getPatientsByName = async (req, res) => {
-  const { name } = req.query;
-  const patients = await Patient.find({
-    "generalInfo.name": { $regex: name, $options: "i" },
-  });
-  res.json(patients);
+  try {
+    const { name, birthdate } = req.query;
+
+    if (!name) {
+      return res.json([]);
+    }
+
+    const cleanedName = name.trim();
+
+    const query = {
+      "generalInfo.name": {
+        $regex: `^${cleanedName}$`,
+        $options: "i",
+      },
+    };
+
+    // safer duplicate matching
+    if (birthdate) {
+      query["generalInfo.birthdate"] = birthdate;
+    }
+
+    const patients = await Patient.find(query).sort({
+      updatedAt: -1,
+    });
+
+    res.json(patients);
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      error: "Failed to search patient",
+    });
+  }
 };
 
 exports.updatePatient = async (req, res) => {
-  const { id } = req.params;
-  const updated = await Patient.findByIdAndUpdate(id, req.body, { new: true });
-  res.json(updated);
+  try {
+    const { id } = req.params;
+
+    const updated = await Patient.findByIdAndUpdate(
+      id,
+      {
+        $set: req.body,
+      },
+      {
+        new: true,
+        runValidators: true,
+      },
+    );
+
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      error: "Failed to update patient",
+    });
+  }
 };
 
 exports.deletePatient = async (req, res) => {
@@ -184,3 +231,5 @@ exports.getLocations = async (req, res) => {
     });
   }
 };
+
+ 

@@ -1,0 +1,59 @@
+/* ==========================================
+   PIE CHART SKELETON
+========================================== */
+
+.pie-skeleton-chart-wrapper {
+  width: 65%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.pie-skeleton-chart {
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+
+  position: relative;
+
+  background: #e5e7eb;
+}
+
+.pie-skeleton-chart::before {
+  content: "";
+
+  position: absolute;
+
+  width: 90px;
+  height: 90px;
+
+  background: white;
+
+  border-radius: 50%;
+
+  top: 50%;
+  left: 50%;
+
+  transform: translate(-50%, -50%);
+}
+
+/* shimmer */
+.pie-skeleton-chart::after {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  border-radius: 50%;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.5),
+    transparent
+  );
+
+  transform: translateX(-100%);
+
+  animation: dashboardShimmer 1.4s infinite;
+}

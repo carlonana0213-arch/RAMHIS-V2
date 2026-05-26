@@ -35,15 +35,20 @@ function Header({ collapsed, toggleSidebar }) {
   return (
     <aside className="app-sidebar">
       <div className="sidebar-top">
-        <button className="toggle-btn" onClick={toggleSidebar}>
-          <HiMenu size={22} />
-        </button>
+        <button
+          className="toggle-btn sidebar-toggle"
+          onClick={toggleSidebar}
+          data-tooltip="Expand navigation"
+        >
+          <img src={ramlogo} alt="Logo" className="logo" />
 
-        {!collapsed && (
-          <div className="logo-group">
-            <img src={ramlogo} alt="Logo" className="logo" />
-          </div>
-        )}
+          {!collapsed && (
+            <div className="logo-group">
+              <p>RAMHIS</p>
+              <span className="collapse-arrow">◂</span>
+            </div>
+          )}
+        </button>
       </div>
 
       <nav className="nav-links">
@@ -73,6 +78,7 @@ function Header({ collapsed, toggleSidebar }) {
             </span>
           </NavLink>
         )}
+
         {hasAccess("admin") && (
           <NavLink
             to="/users"
@@ -86,7 +92,17 @@ function Header({ collapsed, toggleSidebar }) {
             </span>
           </NavLink>
         )}
-
+        <NavLink
+          to="/event"
+          className={({ isActive }) =>
+            isActive ? "nav-link active" : "nav-link"
+          }
+        >
+          <span className="nav-item">
+            <FaCalendarAlt className="nav-icon" />
+            {!collapsed && " Event"}
+          </span>
+        </NavLink>
         {hasAccess("patient") && (
           <NavLink
             to="/patient"
@@ -187,18 +203,6 @@ function Header({ collapsed, toggleSidebar }) {
         )}
 */}
 
-<NavLink
-  to="/event"
-  className={({ isActive }) =>
-    isActive ? "nav-link active" : "nav-link"
-  }
->
-  <span className="nav-item">
-    <FaCalendarAlt className="nav-icon" />
-    {!collapsed && " Event"}
-  </span>
-</NavLink>
-
         <div
           className="logout-section"
           onClick={() => {
@@ -231,3 +235,4 @@ function Header({ collapsed, toggleSidebar }) {
 }
 
 export default Header;
+ 

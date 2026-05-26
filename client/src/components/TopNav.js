@@ -1,27 +1,28 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaUserCircle } from "react-icons/fa";
 import "../styles/topnav.css";
 
 function TopNav() {
-  const [open, setOpen] = useState(false);
   const navigate = useNavigate();
 
   return (
     <div className="top-nav">
       <div className="top-nav-right">
-        <div className="user-icon" onClick={() => setOpen(!open)}>
-          <FaUserCircle size={28} />
-        </div>
+        <button
+          className="account-button"
+          onClick={() => navigate("/account")}
+          data-tooltip="Open account settings"
+        >
+          <span className="account-name">
+            {JSON.parse(localStorage.getItem("user"))?.name || "Account"}
+          </span>
 
-        {open && (
-          <div className="user-dropdown">
-            <div onClick={() => navigate("/account")}>Account Settings</div>
-          </div>
-        )}
+          <FaUserCircle className="account-icon" />
+        </button>
       </div>
     </div>
   );
 }
 
 export default TopNav;
+ 

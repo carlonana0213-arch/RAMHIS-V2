@@ -4,6 +4,9 @@ import DashboardCards from "./dashboard/dashboardCards";
 import DashboardPatientGraphs from "./dashboard/dashboardPatientsGraphs";
 import DashboardInventoryGraphs from "./dashboard/dashboardInventoryGraphs";
 import DashboardPieCard from "./dashboard/dashboardPieCard";
+import CardsSkeleton from "../components/loading/cardSkeleton";
+import PieCardSkeleton from "../components/loading/pieCardSkeleton";
+import ChartSkeleton from "../components/loading/chartSkeleton";
 import {
   getDashboardSummary,
   getPatientTrends,
@@ -46,10 +49,6 @@ function Dashboard() {
     loadDashboard();
   }, []);
 
-  if (loading) {
-    return <div className="dashboard-loading">Loading Dashboard...</div>;
-  }
-
   return (
     <div className="dashboard-page">
       <div className="dashboard-header">
@@ -60,30 +59,45 @@ function Dashboard() {
         <button className="publish-btn">Publish</button>
       </div>
 
-      <DashboardCards summary={summary} />
+      {loading ? <CardsSkeleton /> : <DashboardCards summary={summary} />}
 
       <div className="dashboard-middle-row">
-        <DashboardPieCard
-          title="Diagnosis Distribution"
-          data={diagnosisData}
-          labelKey="name"
-          valueKey="value"
-        />
+        {loading ? (
+          <>
+            <PieCardSkeleton />
+            <PieCardSkeleton />
+          </>
+        ) : (
+          <>
+            <DashboardPieCard
+              title="Diagnosis Distribution"
+              data={diagnosisData}
+              labelKey="name"
+              valueKey="value"
+            />
 
-        <DashboardPieCard
-          title="Prescribed Medicines"
-          data={topMedicines}
-          labelKey="medicine"
-          valueKey="count"
-        />
+            <DashboardPieCard
+              title="Prescribed Medicines"
+              data={topMedicines}
+              labelKey="medicine"
+              valueKey="count"
+            />
+          </>
+        )}
       </div>
 
-      <DashboardPatientGraphs
-        patientTrends={patientTrends}
-        diagnosisData={diagnosisData}
-      />
+      {loading ? (
+        <ChartSkeleton />
+      ) : (
+        <DashboardPatientGraphs
+          patientTrends={patientTrends}
+          diagnosisData={diagnosisData}
+        />
+      )}
     </div>
   );
 }
 
 export default Dashboard;
+
+ 

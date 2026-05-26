@@ -1,11 +1,19 @@
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
 
-const COLORS = ["#1d4ed8", "#3b82f6", "#60a5fa", "#93c5fd"];
+const COLORS = [
+  "#2563eb", // blue
+  "#7c3aed", // purple
+  "#16a34a", // green
+  "#eab308", // yellow
+  "#0ea5e9", // sky blue
+  "#f97316", // orange
+];
 
 function DashboardPieCard({ title, data, labelKey, valueKey }) {
-  const topThree = [...data]
-    .sort((a, b) => b[valueKey] - a[valueKey])
-    .slice(0, 3);
+  // ONE shared sorted dataset
+  const sortedData = [...data].sort((a, b) => b[valueKey] - a[valueKey]);
+
+  const topThree = sortedData.slice(0, 3);
 
   return (
     <div className="pie-card">
@@ -32,12 +40,12 @@ function DashboardPieCard({ title, data, labelKey, valueKey }) {
         <ResponsiveContainer width="65%" height={260}>
           <PieChart>
             <Pie
-              data={data}
+              data={sortedData}
               dataKey={valueKey}
               outerRadius={125}
               innerRadius={45}
             >
-              {data.map((entry, index) => (
+              {sortedData.map((entry, index) => (
                 <Cell key={index} fill={COLORS[index % COLORS.length]} />
               ))}
             </Pie>
@@ -56,3 +64,4 @@ function DashboardPieCard({ title, data, labelKey, valueKey }) {
 }
 
 export default DashboardPieCard;
+ 
