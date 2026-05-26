@@ -1,9 +1,9 @@
 import "../../styles/component-styles/cardSkeleton.css";
 
-function CardsSkeleton() {
+function CardsSkeleton({ count = 3 }) {
   return (
     <div className="dashboard-cards">
-      {[...Array(3)].map((_, index) => (
+      {[...Array(count)].map((_, index) => (
         <div key={index} className="summary-card">
           <div className="summary-card-top">
             <div style={{ flex: 1 }}>

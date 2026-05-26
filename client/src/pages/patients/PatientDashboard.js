@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../../services/api";
-
+import CardsSkeleton from "../../components/loading/cardSkeleton";
 import "../../styles/queue.css";
 import {
   FaBaby,
@@ -27,16 +27,21 @@ const departmentIcons = {
   General: <FaStethoscope />,
 };
 const PatientDashboard = () => {
+  const [loading, setLoading] = useState(true);
   const [patients, setPatients] = useState([]);
 
   useEffect(() => {
     const fetchPatients = async () => {
       try {
+        setLoading(true);
+
         const data = await apiFetch("http://localhost:5000/api/patients/queue");
 
         setPatients(data);
       } catch (err) {
         console.error("Error loading dashboard patients", err);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -49,7 +54,9 @@ const PatientDashboard = () => {
     return activePatients.filter((p) => p.department === department).length;
   };
 
-  return (
+  return loading ? (
+    <CardsSkeleton count={6} />
+  ) : (
     <div className="patient-dashboard">
       {departments.map((dept) => (
         <div className="patient-card" key={dept}>
@@ -57,7 +64,6 @@ const PatientDashboard = () => {
 
           <div className="patient-card-content">
             <h4>{dept}</h4>
-
             <p>{getDepartmentCount(dept)}</p>
           </div>
         </div>

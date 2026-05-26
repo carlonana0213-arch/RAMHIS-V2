@@ -403,3 +403,11 @@
   font-weight: 600;
   color: var(--text-light);
 }
+
+.patient-avatar-skeleton {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+
+  flex-shrink: 0;
+}

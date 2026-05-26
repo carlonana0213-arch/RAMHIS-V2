@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 import "../styles/doctor.css";
 
@@ -8,6 +8,8 @@ import ConfirmModal from "../components/ConfirmModal";
 import DoctorQueue from "./doctor/doctorQueue";
 import PatientCard from "./doctor/patientCard";
 import PatientDoctorView from "./doctor/patientDoctorView";
+import TableSkeleton from "../components/loading/tableSkeleton";
+import PatientCardSkeleton from "../components/loading/patientCardSkeleton";
 
 function Doctor() {
   const storedUser = JSON.parse(localStorage.getItem("user"));
@@ -15,6 +17,7 @@ function Doctor() {
   const doctorDepartment = storedUser?.doctorInfo?.specialization || "General";
 
   const [patients, setPatients] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [filteredPatients, setFilteredPatients] = useState([]);
 
   const [selectedPatient, setSelectedPatient] = useState(null);
@@ -24,15 +27,24 @@ function Doctor() {
   const [showDoctorView, setShowDoctorView] = useState(false);
   const [queueIndex, setQueueIndex] = useState(0);
   const [showReleaseConfirm, setShowReleaseConfirm] = useState(false);
+  const hasLoadedRef = useRef(false);
+
   const loadQueue = async () => {
     try {
+      if (!hasLoadedRef.current) {
+        setLoading(true);
+      }
+
       const queue = await getPatientQueue();
 
       const activePatients = queue.filter((p) => p.status !== "released");
 
       setPatients(activePatients);
+      hasLoadedRef.current = true;
     } catch (err) {
       console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -146,22 +158,30 @@ function Doctor() {
 
       <div className="doctor-main-layout">
         {/* CURRENT PATIENT CARD */}
-        <PatientCard
-          patient={currentPatient}
-          onSelect={openDoctorView}
-          onNextPatient={handleNextPatient}
-        />
+        {loading ? (
+          <PatientCardSkeleton />
+        ) : (
+          <PatientCard
+            patient={currentPatient}
+            onSelect={openDoctorView}
+            onNextPatient={handleNextPatient}
+          />
+        )}
 
         {/* TABLE */}
 
-        <DoctorQueue
-          patients={filteredPatients}
-          search={search}
-          setSearch={setSearch}
-          queueFilter={queueFilter}
-          setQueueFilter={setQueueFilter}
-          onOpenDoctorView={openDoctorView}
-        />
+        {loading ? (
+          <TableSkeleton rows={8} columns={6} />
+        ) : (
+          <DoctorQueue
+            patients={filteredPatients}
+            search={search}
+            setSearch={setSearch}
+            queueFilter={queueFilter}
+            setQueueFilter={setQueueFilter}
+            onOpenDoctorView={openDoctorView}
+          />
+        )}
       </div>
 
       {/* MODAL */}

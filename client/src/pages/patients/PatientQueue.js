@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../../services/api";
-
+import TableSkeleton from "../../components/loading/tableSkeleton";
 import "../../styles/queue.css";
 
 const departments = [
@@ -56,7 +56,9 @@ const PatientQueue = ({ onSelectPatient }) => {
     setCurrentPage(1);
   }, [search, departmentFilter]);
 
-  if (loading) return <p>Loading patient queue...</p>;
+  if (loading) {
+    return <TableSkeleton rows={8} columns={6} />;
+  }
 
   const activePatients = patients.filter((p) => p.status !== "released");
 
