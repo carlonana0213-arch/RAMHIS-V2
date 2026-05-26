@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { apiFetch } from "../services/api";
 import PatientQueue from "./patients/PatientQueue";
 import PatientDashboard from "./patients/PatientDashboard";
 import AddPatientModal from "./patients/AddPatientModal";
@@ -7,9 +8,35 @@ import "../styles/patient.css";
 import { useLocation } from "react-router-dom";
 
 const Patient = () => {
+  const [patients, setPatients] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
 
   const [selectedPatient, setSelectedPatient] = useState(null);
+  useEffect(() => {
+    const fetchQueue = async () => {
+      console.time("queue-load");
+
+      try {
+        const data = await apiFetch("http://localhost:5000/api/patients/queue");
+
+        setPatients(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        console.timeEnd("queue-load");
+        setLoading(false);
+      }
+    };
+
+    fetchQueue();
+
+    const interval = setInterval(() => {
+      fetchQueue();
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, []);
   return (
     <div className="patient-page">
       {/* HEADER */}
@@ -26,9 +53,13 @@ const Patient = () => {
 
       {/* MAIN CONTENT */}
       <div className="patient-content">
-        <PatientDashboard />
+        <PatientDashboard patients={patients} loading={loading} />
 
-        <PatientQueue onSelectPatient={setSelectedPatient} />
+        <PatientQueue
+          patients={patients}
+          loading={loading}
+          onSelectPatient={setSelectedPatient}
+        />
       </div>
 
       {/* MODAL */}

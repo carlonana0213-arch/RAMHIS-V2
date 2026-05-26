@@ -1,7 +1,6 @@
-import { useEffect, useState, useRef } from "react";
-
+import { useEffect, useState, useRef, useMemo } from "react";
 import "../styles/doctor.css";
-
+import { updatePatientStatus } from "../services/doctorService";
 import { getPatientQueue } from "../services/patientService";
 import ConfirmModal from "../components/ConfirmModal";
 
@@ -18,7 +17,6 @@ function Doctor() {
 
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filteredPatients, setFilteredPatients] = useState([]);
 
   const [selectedPatient, setSelectedPatient] = useState(null);
 
@@ -50,26 +48,32 @@ function Doctor() {
 
   useEffect(() => {
     let isMounted = true;
+    let interval;
 
     const fetchData = async () => {
       if (!isMounted) return;
 
       await loadQueue();
+
+      if (!interval) {
+        interval = setInterval(() => {
+          loadQueue();
+        }, 3000);
+      }
     };
 
     fetchData();
 
-    const interval = setInterval(() => {
-      fetchData();
-    }, 3000);
-
     return () => {
       isMounted = false;
-      clearInterval(interval);
+
+      if (interval) {
+        clearInterval(interval);
+      }
     };
   }, []);
 
-  useEffect(() => {
+  const filteredPatients = useMemo(() => {
     let filtered = [...patients];
 
     // ADMIN SEES EVERYTHING
@@ -92,27 +96,31 @@ function Doctor() {
       filtered = filtered.filter((p) => p.isPriority);
     }
 
-    setFilteredPatients(filtered);
+    return filtered;
   }, [patients, search, queueFilter, doctorDepartment, storedUser?.role]);
 
   const openDoctorView = async (patient) => {
     try {
-      const { updatePatientStatus } = await import("../services/doctorService");
-
-      await updatePatientStatus(patient._id, {
-        status: "beingSeen",
-      });
-
-      await loadQueue();
-
+      // open instantly
       setSelectedPatient({
         ...patient,
         status: "beingSeen",
       });
 
       setShowDoctorView(true);
+
+      await updatePatientStatus(patient._id, {
+        status: "beingSeen",
+      });
+
+      loadQueue();
     } catch (err) {
       console.error("Failed to update patient status", err);
+
+      alert("Failed to update patient status");
+
+      setShowDoctorView(false);
+      setSelectedPatient(null);
     }
   };
   const currentPatient = filteredPatients[queueIndex];

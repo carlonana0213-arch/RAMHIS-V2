@@ -14,10 +14,15 @@ import {
 
 const Analytics = () => {
   const [locations, setLocations] = useState([]);
+
   const [selectedLocation, setSelectedLocation] = useState("");
+
   const [nextMissionDate, setNextMissionDate] = useState("");
+
   const [missionDays, setMissionDays] = useState(1);
+
   const [analytics, setAnalytics] = useState(null);
+
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -76,6 +81,7 @@ const Analytics = () => {
     if (!analytics) return [];
 
     const insights = [];
+
     const predictedPatients = analytics?.predictedPatients || 0;
 
     const range =
@@ -116,6 +122,7 @@ const Analytics = () => {
       </div>
 
       {/* FILTERS */}
+
       <div className="analytics-filters">
         <select
           value={selectedLocation}
@@ -149,9 +156,11 @@ const Analytics = () => {
       </div>
 
       {/* RESULTS */}
+
       {analytics && (
         <div className="analytics-results">
           {/* SUMMARY */}
+
           <div className="summary-grid">
             <div className="summary-card">
               <h3>Forecasted Patients</h3>
@@ -258,6 +267,7 @@ const Analytics = () => {
           </div>
 
           {/* TOP DIAGNOSES */}
+
           <div className="analytics-card">
             <h2>Top Diagnoses</h2>
 
@@ -283,6 +293,7 @@ const Analytics = () => {
           </div>
 
           {/* MEDICINE FORECAST */}
+
           <div className="analytics-card">
             <h2>Medicine Forecast</h2>
 
@@ -324,6 +335,7 @@ const Analytics = () => {
           </div>
 
           {/* SMART INSIGHTS */}
+
           <div className="analytics-card">
             <h2>Smart Insights</h2>
 

@@ -22,35 +22,11 @@ const statusLabels = {
   beingSeen: "Being Served",
   forPharmacy: "For Pharmacy",
 };
-const PatientQueue = ({ onSelectPatient }) => {
-  const [patients, setPatients] = useState([]);
-  const [loading, setLoading] = useState(true);
+const PatientQueue = ({ patients, loading, onSelectPatient }) => {
   const [search, setSearch] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 15;
-  useEffect(() => {
-    const fetchQueue = async () => {
-      try {
-        const data = await apiFetch("http://localhost:5000/api/patients/queue");
-
-        setPatients(data);
-      } catch (err) {
-        console.error("Error loading patient queue", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchQueue();
-
-    const interval = setInterval(() => {
-      fetchQueue();
-    }, 3000);
-
-    // CLEANUP
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     setCurrentPage(1);

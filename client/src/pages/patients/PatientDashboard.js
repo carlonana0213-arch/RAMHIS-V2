@@ -26,28 +26,7 @@ const departmentIcons = {
   Cardio: <FaHeartbeat />,
   General: <FaStethoscope />,
 };
-const PatientDashboard = () => {
-  const [loading, setLoading] = useState(true);
-  const [patients, setPatients] = useState([]);
-
-  useEffect(() => {
-    const fetchPatients = async () => {
-      try {
-        setLoading(true);
-
-        const data = await apiFetch("http://localhost:5000/api/patients/queue");
-
-        setPatients(data);
-      } catch (err) {
-        console.error("Error loading dashboard patients", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPatients();
-  }, []);
-
+const PatientDashboard = ({ patients, loading }) => {
   const activePatients = patients.filter((p) => p.status !== "released");
 
   const getDepartmentCount = (department) => {

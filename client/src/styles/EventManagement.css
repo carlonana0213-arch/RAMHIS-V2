@@ -54,7 +54,7 @@
 
 .create-btn {
   flex-shrink: 0;
-
+  align-items: right;
   margin-top: 10px;
 
   background: #4169e1;

@@ -74,11 +74,11 @@ const EventManagement = () => {
     } catch (error) {
       console.error(
         "Update participant status error:",
-        error.response?.data || error.message
+        error.response?.data || error.message,
       );
 
       alert(
-        error.response?.data?.message || "Failed to update participant status"
+        error.response?.data?.message || "Failed to update participant status",
       );
     }
   };
@@ -109,7 +109,7 @@ const EventManagement = () => {
     } catch (error) {
       console.error(
         "Update status error:",
-        error.response?.data || error.message
+        error.response?.data || error.message,
       );
 
       alert(error.response?.data?.message || "Failed to update event status");
