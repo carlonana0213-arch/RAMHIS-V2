@@ -1,0 +1,65 @@
+/* ==========================================
+   TABLE SKELETON
+========================================== */
+
+.table-skeleton-wrapper {
+  width: 100%;
+  overflow-x: auto;
+
+  background: white;
+  border-radius: 16px;
+
+  border: 1px solid rgba(226, 232, 240, 0.5);
+
+  padding: 16px;
+}
+
+.table-skeleton {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-skeleton th,
+.table-skeleton td {
+  padding: 16px 14px;
+  text-align: left;
+}
+
+.skeleton-header {
+  width: 90px;
+  height: 16px;
+}
+
+.skeleton-cell {
+  height: 18px;
+  border-radius: 8px;
+}
+
+/* uneven widths feel realistic */
+.table-skeleton td:nth-child(1) .skeleton-cell {
+  width: 140px;
+}
+
+.table-skeleton td:nth-child(2) .skeleton-cell {
+  width: 100px;
+}
+
+.table-skeleton td:nth-child(3) .skeleton-cell {
+  width: 120px;
+}
+
+.table-skeleton td:nth-child(4) .skeleton-cell {
+  width: 100px;
+}
+
+.table-skeleton td:nth-child(5) .skeleton-cell {
+  width: 70px;
+}
+
+.table-skeleton td:nth-child(6) .skeleton-cell {
+  width: 70px;
+}
+
+.table-skeleton td:nth-child(7) .skeleton-cell {
+  width: 110px;
+}
