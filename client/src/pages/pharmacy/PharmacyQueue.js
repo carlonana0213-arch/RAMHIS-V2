@@ -4,6 +4,7 @@ import { apiFetch } from "../../services/api";
 import "../../styles/pharmacy.css";
 import ConfirmModal from "../../components/ConfirmModal";
 import AlertModal from "../../components/AlertModal";
+import TableSkeleton from "../../components/loading/tableSkeleton";
 function PharmacyQueue() {
   const [prescriptions, setPrescriptions] = useState([]);
   const [search, setSearch] = useState("");
@@ -12,11 +13,22 @@ function PharmacyQueue() {
   const [alertMessage, setAlertMessage] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 15;
+  const [loading, setLoading] = useState(true);
+
   const loadPrescriptions = async () => {
-    const data = await apiFetch(
-      "http://localhost:5000/api/prescriptions/pending",
-    );
-    setPrescriptions(data);
+    try {
+      setLoading(true);
+
+      const data = await apiFetch(
+        "http://localhost:5000/api/prescriptions/pending",
+      );
+
+      setPrescriptions(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -158,101 +170,106 @@ function PharmacyQueue() {
 
         <div className="inventory-table">
           <h3 className="queue-section-title">Prescriptions In Queue</h3>
+          {loading ? (
+            <TableSkeleton rows={8} columns={7} />
+          ) : (
+            <>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Patient</th>
+                    <th>Medicine</th>
+                    <th>Dosage</th>
+                    <th>Quantity</th>
 
-          <table>
-            <thead>
-              <tr>
-                <th>Patient</th>
-                <th>Medicine</th>
-                <th>Dosage</th>
-                <th>Quantity</th>
+                    <th>Prescribed By</th>
+                    <th>Stock Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
 
-                <th>Prescribed By</th>
-                <th>Stock Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
+                <tbody>
+                  {displayedPrescriptions.map(({ prescription: p, item }) => (
+                    <tr key={item._id}>
+                      <td>{p.patient.generalInfo.name}</td>
 
-            <tbody>
-              {displayedPrescriptions.map(({ prescription: p, item }) => (
-                <tr key={item._id}>
-                  <td>{p.patient.generalInfo.name}</td>
+                      <td>
+                        {item.medicine?.names?.join(", ") ||
+                          item.medicine?.name ||
+                          "Unknown Medicine"}
+                      </td>
 
-                  <td>
-                    {item.medicine?.names?.join(", ") ||
-                      item.medicine?.name ||
-                      "Unknown Medicine"}
-                  </td>
+                      <td>{item.medicine?.dosage || "-"}</td>
 
-                  <td>{item.medicine?.dosage || "-"}</td>
+                      <td>{item.quantity}</td>
 
-                  <td>{item.quantity}</td>
+                      <td>{p.doctor?.name || "Unknown Doctor"}</td>
 
-                  <td>{p.doctor?.name || "Unknown Doctor"}</td>
+                      <td>
+                        {item.medicine?.quantity <= 0 ? (
+                          <span className="stock-pill out">Out of Stock</span>
+                        ) : item.medicine?.quantity <= 50 ? (
+                          <span className="stock-pill low">Low Stock</span>
+                        ) : (
+                          <span className="stock-pill ready">Ready</span>
+                        )}
+                      </td>
 
-                  <td>
-                    {item.medicine?.quantity <= 0 ? (
-                      <span className="stock-pill out">Out of Stock</span>
-                    ) : item.medicine?.quantity <= 50 ? (
-                      <span className="stock-pill low">Low Stock</span>
-                    ) : (
-                      <span className="stock-pill ready">Ready</span>
-                    )}
-                  </td>
+                      <td>
+                        {!item.isGiven ? (
+                          item.medicine?.quantity <= 0 ? (
+                            <button className="disabled-btn" disabled>
+                              Unavailable
+                            </button>
+                          ) : (
+                            <button
+                              className="mark-given-btn"
+                              onClick={() => {
+                                setConfirmState({
+                                  message: "Mark this prescription as given?",
+                                  onConfirm: async () => {
+                                    await handleMarkAsGiven(p._id, item._id);
 
-                  <td>
-                    {!item.isGiven ? (
-                      item.medicine?.quantity <= 0 ? (
-                        <button className="disabled-btn" disabled>
-                          Unavailable
-                        </button>
-                      ) : (
-                        <button
-                          className="mark-given-btn"
-                          onClick={() => {
-                            setConfirmState({
-                              message: "Mark this prescription as given?",
-                              onConfirm: async () => {
-                                await handleMarkAsGiven(p._id, item._id);
+                                    setConfirmState(null);
+                                  },
+                                });
+                              }}
+                            >
+                              Mark as Given
+                            </button>
+                          )
+                        ) : (
+                          <span className="given-pill">Given</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {totalPrescriptions > 0 && (
+                <div className="pharmacy-pagination">
+                  <button
+                    className="pharmacy-page-btn"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage((prev) => prev - 1)}
+                  >
+                    Previous
+                  </button>
 
-                                setConfirmState(null);
-                              },
-                            });
-                          }}
-                        >
-                          Mark as Given
-                        </button>
-                      )
-                    ) : (
-                      <span className="given-pill">Given</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {totalPrescriptions > 0 && (
-            <div className="pharmacy-pagination">
-              <button
-                className="pharmacy-page-btn"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage((prev) => prev - 1)}
-              >
-                Previous
-              </button>
+                  <span className="pharmacy-pagination-text">
+                    {displayedCount} of {totalPrescriptions}
+                  </span>
 
-              <span className="pharmacy-pagination-text">
-                {displayedCount} of {totalPrescriptions}
-              </span>
-
-              <button
-                className="pharmacy-page-btn"
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((prev) => prev + 1)}
-              >
-                Next
-              </button>
-            </div>
+                  <button
+                    className="pharmacy-page-btn"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage((prev) => prev + 1)}
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

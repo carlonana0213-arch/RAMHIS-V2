@@ -8,6 +8,7 @@ import {
 import "../../styles/pharmacy.css";
 import ConfirmModal from "../../components/ConfirmModal";
 import AlertModal from "../../components/AlertModal";
+import TableSkeleton from "../../components/loading/tableSkeleton";
 
 function PharmacyInventory() {
   const [medicines, setMedicines] = useState([]);
@@ -25,9 +26,20 @@ function PharmacyInventory() {
   const [alertMessage, setAlertMessage] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 15;
+  const [loading, setLoading] = useState(true);
+
   const loadMedicines = async () => {
-    const data = await getMedicines();
-    setMedicines(data);
+    try {
+      setLoading(true);
+
+      const data = await getMedicines();
+
+      setMedicines(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
   const totalMedicines = medicines.length;
 
@@ -238,133 +250,139 @@ function PharmacyInventory() {
       {/* TABLE */}
       <div className="pharmacy-section">
         <div className="inventory-table">
-          <table>
-            <thead>
-              <tr>
-                <th>Medicine Names</th>
-                <th>Brand</th>
-                <th>Quantity</th>
-                <th>Dosage</th>
-                <th>Expiry Date</th>
-                <th>Action</th>
-              </tr>
-            </thead>
+          {loading ? (
+            <TableSkeleton rows={8} columns={6} />
+          ) : (
+            <>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Medicine Names</th>
+                    <th>Brand</th>
+                    <th>Quantity</th>
+                    <th>Dosage</th>
+                    <th>Expiry Date</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
 
-            <tbody>
-              {displayedMedicines.map((m) => (
-                <tr key={m._id}>
-                  <td>
-                    <div className="medicine-name-cell">
-                      <span>{m.names?.join(", ")}</span>
+                <tbody>
+                  {displayedMedicines.map((m) => (
+                    <tr key={m._id}>
+                      <td>
+                        <div className="medicine-name-cell">
+                          <span>{m.names?.join(", ")}</span>
 
-                      {m.quantity <= 0 ? (
-                        <span className="stock-pill no-stock-pill">
-                          No Stock
-                        </span>
-                      ) : m.quantity <= 50 ? (
-                        <span className="stock-pill low-stock-pill">
-                          Low Stock
-                        </span>
-                      ) : null}
-                    </div>
-                  </td>
-                  <td>{m.brand || "-"}</td>
+                          {m.quantity <= 0 ? (
+                            <span className="stock-pill no-stock-pill">
+                              No Stock
+                            </span>
+                          ) : m.quantity <= 50 ? (
+                            <span className="stock-pill low-stock-pill">
+                              Low Stock
+                            </span>
+                          ) : null}
+                        </div>
+                      </td>
+                      <td>{m.brand || "-"}</td>
 
-                  <td>
-                    {editingId === m._id ? (
-                      <input
-                        type="number"
-                        value={editQuantity}
-                        onChange={(e) => setEditQuantity(e.target.value)}
-                      />
-                    ) : (
-                      m.quantity
-                    )}
-                  </td>
+                      <td>
+                        {editingId === m._id ? (
+                          <input
+                            type="number"
+                            value={editQuantity}
+                            onChange={(e) => setEditQuantity(e.target.value)}
+                          />
+                        ) : (
+                          m.quantity
+                        )}
+                      </td>
 
-                  <td>{m.dosage}</td>
-                  <td>
-                    {m.expiryDate
-                      ? new Date(m.expiryDate).toLocaleDateString()
-                      : "-"}
-                  </td>
+                      <td>{m.dosage}</td>
+                      <td>
+                        {m.expiryDate
+                          ? new Date(m.expiryDate).toLocaleDateString()
+                          : "-"}
+                      </td>
 
-                  <td>
-                    {editingId === m._id ? (
-                      <>
-                        <button
-                          onClick={() => {
-                            setConfirmState({
-                              message: "Save updated medicine quantity?",
-                              onConfirm: async () => {
-                                await handleUpdate(m._id);
+                      <td>
+                        {editingId === m._id ? (
+                          <>
+                            <button
+                              onClick={() => {
+                                setConfirmState({
+                                  message: "Save updated medicine quantity?",
+                                  onConfirm: async () => {
+                                    await handleUpdate(m._id);
 
-                                setConfirmState(null);
-                              },
-                            });
-                          }}
-                        >
-                          Save
-                        </button>
-                        <button onClick={() => setEditingId(null)}>
-                          Cancel
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => {
-                            setEditingId(m._id);
-                            setEditQuantity(m.quantity);
-                          }}
-                        >
-                          Edit
-                        </button>
+                                    setConfirmState(null);
+                                  },
+                                });
+                              }}
+                            >
+                              Save
+                            </button>
+                            <button onClick={() => setEditingId(null)}>
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => {
+                                setEditingId(m._id);
+                                setEditQuantity(m.quantity);
+                              }}
+                            >
+                              Edit
+                            </button>
 
-                        <button
-                          onClick={() => {
-                            setConfirmState({
-                              message:
-                                "Are you sure you want to delete this medicine?",
-                              onConfirm: async () => {
-                                await handleDelete(m._id);
+                            <button
+                              onClick={() => {
+                                setConfirmState({
+                                  message:
+                                    "Are you sure you want to delete this medicine?",
+                                  onConfirm: async () => {
+                                    await handleDelete(m._id);
 
-                                setConfirmState(null);
-                              },
-                            });
-                          }}
-                        >
-                          Delete
-                        </button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {totalMedicinesFiltered > 0 && (
-            <div className="pharmacy-pagination">
-              <button
-                className="pharmacy-page-btn"
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage((prev) => prev - 1)}
-              >
-                Previous
-              </button>
+                                    setConfirmState(null);
+                                  },
+                                });
+                              }}
+                            >
+                              Delete
+                            </button>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {totalMedicinesFiltered > 0 && (
+                <div className="pharmacy-pagination">
+                  <button
+                    className="pharmacy-page-btn"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage((prev) => prev - 1)}
+                  >
+                    Previous
+                  </button>
 
-              <span className="pharmacy-pagination-text">
-                {displayedCount} of {totalMedicinesFiltered}
-              </span>
+                  <span className="pharmacy-pagination-text">
+                    {displayedCount} of {totalMedicinesFiltered}
+                  </span>
 
-              <button
-                className="pharmacy-page-btn"
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((prev) => prev + 1)}
-              >
-                Next
-              </button>
-            </div>
+                  <button
+                    className="pharmacy-page-btn"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage((prev) => prev + 1)}
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
