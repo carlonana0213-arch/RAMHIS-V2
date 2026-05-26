@@ -1,12 +1,14 @@
 import { apiFetch } from "./api";
 
-const API = "http://localhost:5000/api/patients";
+import { API_BASE_URL } from "./apiConfig";
+
+const API = `${API_BASE_URL}/api/patients`;
 
 export const getPatients = async () => {
   try {
     const token = localStorage.getItem("token");
 
-    const res = await fetch("http://localhost:5000/api/patients", {
+    const res = await fetch(API, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
@@ -56,7 +58,7 @@ export const getPatientQueue = () => apiFetch(`${API}/queue`);
 export const updateUser = async (data) => {
   const token = localStorage.getItem("token");
 
-  const res = await fetch("http://localhost:5000/api/auth/me", {
+  const res = await fetch(`${API_BASE_URL}/api/auth/me`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -73,5 +75,3 @@ export const updateUser = async (data) => {
 };
 
 export const getPatientById = (id) => apiFetch(`${API}/${id}`);
-
- 

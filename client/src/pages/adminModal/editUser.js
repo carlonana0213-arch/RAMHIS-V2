@@ -2,7 +2,7 @@ import { useState } from "react";
 import { updateUser } from "../../services/adminService";
 import ConfirmModal from "../../components/ConfirmModal";
 import AlertModal from "../../components/AlertModal";
-
+import { API_BASE_URL } from "../../services/apiConfig";
 function EditUser({ user, onClose, onSuccess }) {
   const [isEditing, setIsEditing] = useState(false);
   const [form, setForm] = useState(user);
@@ -49,7 +49,7 @@ function EditUser({ user, onClose, onSuccess }) {
   const handleResetPassword = async () => {
     try {
       const res = await fetch(
-        `http://localhost:5000/api/admin/reset-password/${form._id}`,
+        `${API_BASE_URL}/api/admin/reset-password/${form._id}`,
         {
           method: "PATCH",
           headers: {

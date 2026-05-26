@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { FiClock, FiCheckCircle } from "react-icons/fi";
 import { apiFetch } from "../../services/api";
+import { API_BASE_URL } from "../../services/apiConfig";
 import "../../styles/pharmacy.css";
 import ConfirmModal from "../../components/ConfirmModal";
 import AlertModal from "../../components/AlertModal";
@@ -19,9 +20,7 @@ function PharmacyQueue() {
     try {
       setLoading(true);
 
-      const data = await apiFetch(
-        "http://localhost:5000/api/prescriptions/pending",
-      );
+      const data = await apiFetch(`${API_BASE_URL}/api/prescriptions/pending`);
 
       setPrescriptions(data);
     } catch (err) {
@@ -38,7 +37,7 @@ function PharmacyQueue() {
   const handleMarkAsGiven = async (prescriptionId, itemId) => {
     try {
       await apiFetch(
-        `http://localhost:5000/api/prescriptions/${prescriptionId}/${itemId}`,
+        `${API_BASE_URL}/api/prescriptions/${prescriptionId}/${itemId}`,
         { method: "PATCH" },
       );
 

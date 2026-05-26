@@ -1,5 +1,6 @@
-const API_URL = "http://localhost:5000/api/auth";
+import { API_BASE_URL } from "./apiConfig";
 
+const API_URL = `${API_BASE_URL}/api/auth`;
 export const registerUser = async (data) => {
   const res = await fetch(`${API_URL}/register`, {
     method: "POST",
@@ -12,11 +13,7 @@ export const registerUser = async (data) => {
   const result = await res.json();
 
   if (!res.ok) {
-    throw new Error(
-      result.message ||
-      result.msg ||
-      "Registration failed"
-    );
+    throw new Error(result.message || result.msg || "Registration failed");
   }
 
   return result;

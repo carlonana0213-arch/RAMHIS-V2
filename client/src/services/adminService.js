@@ -1,5 +1,6 @@
-const API = "http://localhost:5000/api/admin";
+import { API_BASE_URL } from "./apiConfig";
 
+const API = `${API_BASE_URL}/api/admin`;
 export const getAllUsers = async () => {
   const res = await fetch(`${API}/users`, {
     headers: {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+
 import {
   getMedicines,
   addMedicine,
@@ -6,6 +7,7 @@ import {
   updateMedicine,
 } from "../services/pharmacyService";
 import { apiFetch } from "../services/api";
+import { API_BASE_URL } from "../services/apiConfig";
 import "../styles/pharmacy.css";
 
 function PharmacyInventory() {
@@ -25,9 +27,7 @@ function PharmacyInventory() {
   };
 
   const loadPrescriptions = async () => {
-    const data = await apiFetch(
-      "http://localhost:5000/api/prescriptions/pending",
-    );
+    const data = await apiFetch(`${API_BASE_URL}/api/prescriptions/pending`);
 
     setPrescriptions(data);
   };
@@ -59,7 +59,7 @@ function PharmacyInventory() {
 
   const handleMarkAsGiven = async (prescriptionId, itemId) => {
     await apiFetch(
-      `http://localhost:5000/api/prescriptions/${prescriptionId}/${itemId}`,
+      `${API_BASE_URL}/api/prescriptions/${prescriptionId}/${itemId}`,
       {
         method: "PATCH",
       },

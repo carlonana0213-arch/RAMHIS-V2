@@ -6,6 +6,7 @@ import AddPatientModal from "./patients/AddPatientModal";
 import PatientViewModal from "./patients/PatientViewModal";
 import "../styles/patient.css";
 import { useLocation } from "react-router-dom";
+import { API_BASE_URL } from "../services/apiConfig";
 
 const Patient = () => {
   const [patients, setPatients] = useState([]);
@@ -18,7 +19,7 @@ const Patient = () => {
       console.time("queue-load");
 
       try {
-        const data = await apiFetch("http://localhost:5000/api/patients/queue");
+        const data = await apiFetch(`${API_BASE_URL}/api/patients/queue`);
 
         setPatients(data);
       } catch (err) {

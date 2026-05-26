@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api/events";
+import { API_BASE_URL } from "./apiConfig";
+
+const API_URL = `${API_BASE_URL}/api/events`;
 
 // Token helper
 // Token helper
@@ -34,67 +36,45 @@ export const getAllEvents = async () => {
 
 // GET single event
 export const getEventById = async (id) => {
-  const response = await axios.get(
-    `${API_URL}/${id}`,
-    getConfig()
-  );
+  const response = await axios.get(`${API_URL}/${id}`, getConfig());
 
   return response.data;
 };
 
 // CREATE event
 export const createEvent = async (eventData) => {
-  const response = await axios.post(
-    API_URL,
-    eventData,
-    getConfig()
-  );
+  const response = await axios.post(API_URL, eventData, getConfig());
 
   return response.data;
 };
 
 // UPDATE event
 export const updateEvent = async (id, eventData) => {
-  const response = await axios.put(
-    `${API_URL}/${id}`,
-    eventData,
-    getConfig()
-  );
+  const response = await axios.put(`${API_URL}/${id}`, eventData, getConfig());
 
   return response.data;
 };
 
 // DELETE event
 export const deleteEvent = async (id) => {
-  const response = await axios.delete(
-    `${API_URL}/${id}`,
-    getConfig()
-  );
+  const response = await axios.delete(`${API_URL}/${id}`, getConfig());
 
   return response.data;
 };
 
 // JOIN event
 export const joinEvent = async (id) => {
-  const response = await axios.post(
-    `${API_URL}/${id}/join`,
-    {},
-    getConfig()
-  );
+  const response = await axios.post(`${API_URL}/${id}/join`, {}, getConfig());
 
   return response.data;
 };
 
 // UPDATE participant status
-export const updateParticipantStatus = async (
-  eventId,
-  userId,
-  status
-) => {
+export const updateParticipantStatus = async (eventId, userId, status) => {
   const response = await axios.patch(
     `${API_URL}/${eventId}/participants/${userId}/status`,
     { status },
-    getConfig()
+    getConfig(),
   );
 
   return response.data;

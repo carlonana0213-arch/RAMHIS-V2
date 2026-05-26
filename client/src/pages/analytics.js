@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import "../styles/predictive.css";
-
+import { API_BASE_URL, FASTAPI_BASE_URL } from "../services/apiConfig";
 import {
   ResponsiveContainer,
   CartesianGrid,
@@ -31,9 +31,7 @@ const Analytics = () => {
 
   const fetchLocations = async () => {
     try {
-      const res = await axios.get(
-        "http://localhost:5000/api/patients/locations",
-      );
+      const res = await axios.get(`${API_BASE_URL}/api/patients/locations`);
 
       setLocations(res.data);
     } catch (error) {
@@ -55,7 +53,7 @@ const Analytics = () => {
 
       setLoading(true);
 
-      const res = await axios.post("http://localhost:8000/generate-forecast", {
+      const res = await axios.post(`${FASTAPI_BASE_URL}/generate-forecast`, {
         location: selectedLocation,
         nextMissionDate,
         missionDays,

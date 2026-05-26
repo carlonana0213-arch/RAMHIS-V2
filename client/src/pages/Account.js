@@ -3,6 +3,7 @@ import { updateUser } from "../services/patientService";
 import "../styles/account.css";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import ConfirmModal from "../components/ConfirmModal";
+import { API_BASE_URL } from "../services/apiConfig";
 
 function Account() {
   const [formData, setFormData] = useState(null);
@@ -27,7 +28,7 @@ function Account() {
           return;
         }
 
-        const res = await fetch("http://localhost:5000/api/auth/me", {
+        const res = await fetch(`${API_BASE_URL}/api/auth/me`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -312,9 +313,7 @@ function Account() {
 
                 <span
                   className="eye-icon"
-                  onClick={() =>
-                    setShowConfirmPassword(!showConfirmPassword)
-                  }
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
                   {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
                 </span>

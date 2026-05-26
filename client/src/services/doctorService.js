@@ -1,6 +1,7 @@
 import { apiFetch } from "./api";
+import { API_BASE_URL } from "./apiConfig";
 
-const API = "http://localhost:5000/api";
+const API = `${API_BASE_URL}/api`;
 
 export const loadPatientPrescriptions = async (patientId) => {
   return apiFetch(`${API}/prescriptions/patient/${patientId}`);

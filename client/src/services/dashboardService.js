@@ -1,6 +1,8 @@
 import { apiFetch } from "./api";
 
-const API = "http://localhost:5000/api/dashboard";
+import { API_BASE_URL } from "./apiConfig";
+
+const API = `${API_BASE_URL}/api/dashboard`;
 
 export const getDashboardSummary = () => apiFetch(`${API}/summary`);
 
