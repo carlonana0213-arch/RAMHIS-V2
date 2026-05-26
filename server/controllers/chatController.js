@@ -12,12 +12,47 @@ exports.getThreads = async (req, res) => {
     const userId = getUserId(req);
 
     const threads = await ChatThread.find({
-      participants: userId,
+      $or: [
+        { participants: userId },
+        { members: userId },
+      ],
     })
       .populate("participants", "full_name name email role account_type")
+      .populate("members", "full_name name email role account_type")
+      .populate("eventId", "title date status")
       .sort({ lastMessageAt: -1, updatedAt: -1 });
 
     const formatted = threads.map((thread) => {
+      const isGroup = thread.type === "group";
+
+      if (isGroup) {
+        const groupParticipants =
+          thread.members?.length > 0
+            ? thread.members
+            : thread.participants || [];
+
+        return {
+          id: thread._id,
+          _id: thread._id,
+          type: "group",
+          isGroup: true,
+          name:
+            thread.name ||
+            thread.eventId?.title ||
+            "Group Chat",
+          eventId: thread.eventId?._id || thread.eventId || "",
+          eventTitle:
+            thread.eventId?.title ||
+            thread.name ||
+            "Group Chat",
+          memberCount: groupParticipants.length,
+          participants: groupParticipants,
+          lastMessage: thread.lastMessage || "",
+          updatedAt: thread.lastMessageAt || thread.updatedAt,
+          unread: 0,
+        };
+      }
+
       const otherUser =
         thread.participants.find(
           (user) => user._id.toString() !== userId.toString()
@@ -26,6 +61,8 @@ exports.getThreads = async (req, res) => {
       return {
         id: thread._id,
         _id: thread._id,
+        type: "direct",
+        isGroup: false,
         name:
           otherUser?.full_name ||
           otherUser?.name ||

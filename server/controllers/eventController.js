@@ -1,4 +1,5 @@
 const Event = require("../models/Event");
+const ChatThread = require("../models/ChatThread");
 
 let io = null;
 
@@ -87,35 +88,35 @@ exports.createEvent = async (req, res) => {
     }
 
     const event = await Event.create({
-  title,
-  description,
-  location,
+      title,
+      description,
+      location,
 
-  latitude:
-    req.body.latitude !== null &&
-    req.body.latitude !== undefined &&
-    req.body.latitude !== ""
-      ? Number(req.body.latitude)
-      : null,
+      latitude:
+        latitude !== null &&
+        latitude !== undefined &&
+        latitude !== ""
+          ? Number(latitude)
+          : null,
 
-  longitude:
-    req.body.longitude !== null &&
-    req.body.longitude !== undefined &&
-    req.body.longitude !== ""
-      ? Number(req.body.longitude)
-      : null,
+      longitude:
+        longitude !== null &&
+        longitude !== undefined &&
+        longitude !== ""
+          ? Number(longitude)
+          : null,
 
-  googleMapsUrl: req.body.googleMapsUrl || "",
+      googleMapsUrl: googleMapsUrl || "",
 
-  date,
-  startTime,
-  endTime,
-  type,
-  status,
-  imageUrl,
-  createdBy: req.user?._id || req.user?.id,
-  participants: [],
-});
+      date,
+      startTime,
+      endTime,
+      type,
+      status,
+      imageUrl,
+      createdBy: req.user?._id || req.user?.id,
+      participants: [],
+    });
 
     emitEventsUpdated(event._id);
 
@@ -136,10 +137,14 @@ exports.createEvent = async (req, res) => {
 // PUT /api/events/:id
 exports.updateEvent = async (req, res) => {
   try {
-    const event = await Event.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    })
+    const event = await Event.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      {
+        new: true,
+        runValidators: true,
+      }
+    )
       .populate("createdBy", "name email role")
       .populate("participants.userId", "name email role");
 
@@ -223,7 +228,8 @@ exports.joinEvent = async (req, res) => {
     }
 
     const alreadyJoined = event.participants.some(
-      (participant) => participant.userId.toString() === userId.toString()
+      (participant) =>
+        participant.userId.toString() === userId.toString()
     );
 
     if (alreadyJoined) {
@@ -272,7 +278,8 @@ exports.leaveEvent = async (req, res) => {
     }
 
     event.participants = event.participants.filter(
-      (participant) => participant.userId.toString() !== userId.toString()
+      (participant) =>
+        participant.userId.toString() !== userId.toString()
     );
 
     await event.save();
@@ -329,6 +336,66 @@ exports.updateParticipantStatus = async (req, res) => {
     participant.status = status;
 
     await event.save();
+
+    if (status === "Approved") {
+      const adminId =
+        event.createdBy || req.user?._id || req.user?.id;
+
+      let groupChat = await ChatThread.findOne({
+        eventId: event._id,
+        type: "group",
+      });
+
+      if (!groupChat) {
+        groupChat = await ChatThread.create({
+          type: "group",
+          name: event.title,
+          eventId: event._id,
+          members: [userId],
+          participants: [adminId, userId].filter(Boolean),
+          lastMessage: `Welcome to ${event.title} group chat!`,
+          lastMessageAt: new Date(),
+        });
+      } else {
+        await ChatThread.findByIdAndUpdate(
+          groupChat._id,
+          {
+            $addToSet: {
+              members: userId,
+              participants: {
+                $each: [adminId, userId].filter(Boolean),
+              },
+            },
+            lastMessageAt: new Date(),
+          }
+        );
+      }
+
+      if (io) {
+        io.to(userId.toString()).emit("group_chat_created", {
+          eventId: event._id,
+          eventTitle: event.title,
+          threadId: groupChat._id,
+          message: `You have been approved for ${event.title} and added to the group chat.`,
+        });
+      }
+    }
+
+    if (status === "Rejected") {
+      const groupChat = await ChatThread.findOne({
+        eventId: event._id,
+        type: "group",
+      });
+
+      if (groupChat) {
+        await ChatThread.findByIdAndUpdate(groupChat._id, {
+          $pull: {
+            members: userId,
+            participants: userId,
+          },
+        });
+      }
+    }
 
     const updatedEvent = await Event.findById(eventId)
       .populate("createdBy", "name email role")
