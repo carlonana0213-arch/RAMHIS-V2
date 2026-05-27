@@ -5,7 +5,9 @@ const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
@@ -344,7 +346,7 @@ exports.forgotPassword = async (req, res) => {
       user.email
     );
 
-
+console.log("ABOUT TO SEND EMAIL");
     await transporter.sendMail({
       to: user.email,
       subject: "RAMHIS Password Reset",
@@ -400,6 +402,7 @@ exports.forgotPassword = async (req, res) => {
     message: error.message,
   });
 }
+console.log("EMAIL SENT SUCCESSFULLY");
 };
 
 exports.resetPassword = async (
