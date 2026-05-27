@@ -11,6 +11,7 @@
     "dev": "nodemon index.js"
   },
   "dependencies": {
+    "@sendgrid/mail": "^8.1.6",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^17.3.1",
@@ -23,6 +24,7 @@
     "nodemailer": "^8.0.7",
     "nodemon": "^3.1.14",
     "path": "^0.12.7",
+    "resend": "^6.12.4",
     "socket.io": "^4.8.3"
   }
 }

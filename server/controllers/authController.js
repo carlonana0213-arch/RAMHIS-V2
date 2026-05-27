@@ -2,29 +2,12 @@ const User = require("../models/user");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
-const nodemailer = require("nodemailer");
+const sgMail = require("@sendgrid/mail");
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  requireTLS: true,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 10000,
-});
+// ── SendGrid client ──────────────────────────────────────────
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-transporter.verify((error) => {
-  if (error) {
-    console.error("SMTP ERROR:", error);
-  } else {
-    console.log("SMTP READY");
-  }
-});
+// ── Register ─────────────────────────────────────────────────
 
 exports.register = async (req, res) => {
   const {
@@ -51,7 +34,6 @@ exports.register = async (req, res) => {
   const normalizedRole =
     rawRole.charAt(0).toUpperCase() + rawRole.slice(1).toLowerCase();
   const normalizedVolunteerType = volunteerType || organization || skills || "";
-
   const uploadedFileName =
     req.file?.filename || req.file?.originalname || "";
 
@@ -83,7 +65,6 @@ exports.register = async (req, res) => {
 
     const generateTempPassword = () => Math.random().toString(36).slice(-8);
     const tempPassword = password || generateTempPassword();
-
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(tempPassword, salt);
 
@@ -120,6 +101,8 @@ exports.register = async (req, res) => {
     });
   }
 };
+
+// ── Login ────────────────────────────────────────────────────
 
 exports.login = async (req, res) => {
   const { email, password } = req.body;
@@ -159,7 +142,7 @@ exports.login = async (req, res) => {
       { expiresIn: "1h" }
     );
 
-    res.json({
+    return res.json({
       ok: true,
       msg: "Login successful",
       message: "Login successful",
@@ -182,7 +165,8 @@ exports.login = async (req, res) => {
           user.contact_number || user.contactNumber || user.phone || user.phoneNumber || "",
         contactNumber:
           user.contactNumber || user.contact_number || user.phone || user.phoneNumber || "",
-        phone: user.phone || user.contact_number || user.contactNumber || "",
+        phone:
+          user.phone || user.contact_number || user.contactNumber || "",
         profileImage:
           user.profileImage || user.profileImageUrl || user.profile_image_url || user.avatar || user.imageUrl || "",
         profileImageUrl:
@@ -197,10 +181,12 @@ exports.login = async (req, res) => {
       mustChangePassword: user.mustChangePassword,
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ msg: "Server error" });
+    console.error("LOGIN ERROR:", error);
+    return res.status(500).json({ msg: "Server error" });
   }
 };
+
+// ── Update Me ────────────────────────────────────────────────
 
 exports.updateMe = async (req, res) => {
   try {
@@ -216,25 +202,31 @@ exports.updateMe = async (req, res) => {
       updates.password = await bcrypt.hash(req.body.password, salt);
     }
 
-    const updatedUser = await User.findByIdAndUpdate(req.user.id, updates, {
-      new: true,
-    });
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.id,
+      updates,
+      { new: true }
+    );
 
-    res.json(updatedUser);
+    return res.json(updatedUser);
   } catch (err) {
-    res.status(500).json({ msg: "Failed to update account" });
+    return res.status(500).json({ msg: "Failed to update account" });
   }
 };
+
+// ── Get Me ───────────────────────────────────────────────────
 
 exports.getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
-    res.json(user);
+    return res.json(user);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ msg: "Server error" });
+    return res.status(500).json({ msg: "Server error" });
   }
 };
+
+// ── Forgot Password ──────────────────────────────────────────
 
 exports.forgotPassword = async (req, res) => {
   try {
@@ -251,7 +243,6 @@ exports.forgotPassword = async (req, res) => {
     }
 
     const resetToken = crypto.randomBytes(32).toString("hex");
-
     const hashedToken = crypto
       .createHash("sha256")
       .update(resetToken)
@@ -259,44 +250,57 @@ exports.forgotPassword = async (req, res) => {
 
     user.resetPasswordToken = hashedToken;
     user.resetPasswordExpire = Date.now() + 1000 * 60 * 15; // 15 minutes
-
     await user.save();
 
-    const resetLink = `https://ramhis-v2-1.onrender.com/api/auth/reset-password?token=${resetToken}`;
+    const resetLink = `${process.env.APP_RESET_LINK_BASE}?token=${resetToken}`;
 
-    console.log("Sending reset email to:", user.email);
+    console.log("📧 Sending reset email to:", user.email);
 
-    // FIX: moved sendMail INSIDE the try block, before res.json()
-    // Previously the success log was after the catch block (dead code placement)
-    await transporter.sendMail({
-      from: `"RAMHIS" <${process.env.EMAIL_USER}>`,
+    await sgMail.send({
       to: user.email,
+      from: {
+        email: process.env.SENDGRID_FROM_EMAIL, // must be verified in SendGrid
+        name: "RAMHIS",
+      },
       subject: "RAMHIS Password Reset",
       html: `
-        <div style="font-family: Arial;">
-          <h2>RAMHIS Password Reset</h2>
-          <p>You requested to reset your RAMHIS password.</p>
-          <p>Click the button below to reset your password:</p>
-          <a
-            href="${resetLink}"
-            style="
-              display:inline-block;
-              padding:12px 20px;
-              background:#4F46E5;
-              color:white;
-              text-decoration:none;
-              border-radius:8px;
-              font-weight:bold;
-            "
-          >
-            Reset Password
-          </a>
-          <p style="margin-top:20px;">This link expires in 15 minutes.</p>
+        <div style="font-family: Arial; max-width: 480px; margin: 0 auto;">
+          <div style="background: #4F46E5; padding: 24px; border-radius: 12px 12px 0 0; text-align: center;">
+            <h1 style="color: white; margin: 0; font-size: 22px;">RAMHIS</h1>
+            <p style="color: #c7d2fe; margin: 6px 0 0; font-size: 13px;">Password Reset Request</p>
+          </div>
+          <div style="background: #ffffff; padding: 28px; border-radius: 0 0 12px 12px; border: 1px solid #e5e7eb;">
+            <h2 style="color: #1e1b4b; font-size: 20px; margin-top: 0;">Reset Your Password</h2>
+            <p style="color: #6b7280; font-size: 15px; line-height: 1.5;">
+              You requested to reset your RAMHIS password. Click the button below to set a new password.
+            </p>
+            <div style="text-align: center; margin: 28px 0;">
+              <a
+                href="${resetLink}"
+                style="
+                  display: inline-block;
+                  padding: 14px 28px;
+                  background: #4F46E5;
+                  color: white;
+                  text-decoration: none;
+                  border-radius: 8px;
+                  font-weight: bold;
+                  font-size: 15px;
+                "
+              >
+                Reset Password
+              </a>
+            </div>
+            <p style="color: #9ca3af; font-size: 13px; margin-bottom: 0;">
+              ⏱ This link expires in <strong>15 minutes</strong>.<br/>
+              If you did not request this, you can safely ignore this email.
+            </p>
+          </div>
         </div>
       `,
     });
 
-    console.log("EMAIL SENT SUCCESSFULLY to:", user.email);
+    console.log("✅ Reset email sent successfully to:", user.email);
 
     return res.json({
       ok: true,
@@ -311,13 +315,12 @@ exports.forgotPassword = async (req, res) => {
   }
 };
 
+// ── Reset Password ───────────────────────────────────────────
+
 exports.resetPassword = async (req, res) => {
   try {
     const { token, password, newPassword } = req.body;
 
-    // FIX: finalPassword is now actually used when hashing
-    // Previously bcrypt.hash(password, salt) was used instead of finalPassword
-    // so if Flutter sent newPassword, it would hash undefined
     const finalPassword = newPassword || password;
 
     if (!finalPassword) {
@@ -340,15 +343,12 @@ exports.resetPassword = async (req, res) => {
     if (!user) {
       return res.status(400).json({
         ok: false,
-        message: "Invalid or expired token",
+        message: "Invalid or expired token.",
       });
     }
 
     const salt = await bcrypt.genSalt(10);
-
-    // FIX: was bcrypt.hash(password, salt) — now correctly uses finalPassword
     user.password = await bcrypt.hash(finalPassword, salt);
-
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
     user.mustChangePassword = false;
@@ -357,7 +357,7 @@ exports.resetPassword = async (req, res) => {
 
     return res.json({
       ok: true,
-      message: "Password reset successful",
+      message: "Password reset successful.",
     });
   } catch (error) {
     console.error("RESET PASSWORD ERROR:", error);
