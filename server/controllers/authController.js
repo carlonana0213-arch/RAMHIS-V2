@@ -259,7 +259,7 @@ exports.forgotPassword = async (req, res) => {
     await sgMail.send({
       to: user.email,
       from: {
-        email: process.env.SENDGRID_FROM_EMAIL, // must be verified in SendGrid
+        email: process.env.SENDGRID_FROM_EMAIL || "aldentolosa11@gmail.com",
         name: "RAMHIS",
       },
       subject: "RAMHIS Password Reset",
