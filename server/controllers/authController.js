@@ -230,11 +230,31 @@ exports.getMe = async (req, res) => {
 
 exports.forgotPassword = async (req, res) => {
   try {
+    const apiKey = process.env.SENDGRID_API_KEY;
+    const fromEmail =
+      process.env.SENDGRID_FROM_EMAIL || "aldentolosa11@gmail.com";
+
+    console.log("SENDGRID_API_KEY EXISTS:", !!apiKey);
+    console.log(
+      "SENDGRID_API_KEY STARTS WITH SG:",
+      apiKey?.startsWith("SG.")
+    );
+    console.log("SENDGRID_FROM_EMAIL:", fromEmail);
+    console.log("APP_RESET_LINK_BASE:", process.env.APP_RESET_LINK_BASE);
+
+    if (!apiKey) {
+      return res.status(500).json({
+        ok: false,
+        message: "SENDGRID_API_KEY is missing in runtime env.",
+      });
+    }
+
+    sgMail.setApiKey(apiKey.trim());
+
     const { email } = req.body;
 
     const user = await User.findOne({ email });
 
-    // SECURITY: never reveal whether the email exists
     if (!user) {
       return res.json({
         ok: true,
@@ -243,127 +263,73 @@ exports.forgotPassword = async (req, res) => {
     }
 
     const resetToken = crypto.randomBytes(32).toString("hex");
+
     const hashedToken = crypto
       .createHash("sha256")
       .update(resetToken)
       .digest("hex");
 
     user.resetPasswordToken = hashedToken;
-    user.resetPasswordExpire = Date.now() + 1000 * 60 * 15; // 15 minutes
+    user.resetPasswordExpire = Date.now() + 1000 * 60 * 15;
+
     await user.save();
 
-    const resetLink = `${process.env.APP_RESET_LINK_BASE}?token=${resetToken}`;
+    const resetLink =
+      `${process.env.APP_RESET_LINK_BASE}?token=${resetToken}`;
 
-    console.log("📧 Sending reset email to:", user.email);
+    console.log("Sending reset email to:", user.email);
 
     await sgMail.send({
       to: user.email,
       from: {
-        email: process.env.SENDGRID_FROM_EMAIL || "aldentolosa11@gmail.com",
+        email: fromEmail,
         name: "RAMHIS",
       },
       subject: "RAMHIS Password Reset",
       html: `
         <div style="font-family: Arial; max-width: 480px; margin: 0 auto;">
-          <div style="background: #4F46E5; padding: 24px; border-radius: 12px 12px 0 0; text-align: center;">
-            <h1 style="color: white; margin: 0; font-size: 22px;">RAMHIS</h1>
-            <p style="color: #c7d2fe; margin: 6px 0 0; font-size: 13px;">Password Reset Request</p>
-          </div>
-          <div style="background: #ffffff; padding: 28px; border-radius: 0 0 12px 12px; border: 1px solid #e5e7eb;">
-            <h2 style="color: #1e1b4b; font-size: 20px; margin-top: 0;">Reset Your Password</h2>
-            <p style="color: #6b7280; font-size: 15px; line-height: 1.5;">
-              You requested to reset your RAMHIS password. Click the button below to set a new password.
-            </p>
-            <div style="text-align: center; margin: 28px 0;">
-              <a
-                href="${resetLink}"
-                style="
-                  display: inline-block;
-                  padding: 14px 28px;
-                  background: #4F46E5;
-                  color: white;
-                  text-decoration: none;
-                  border-radius: 8px;
-                  font-weight: bold;
-                  font-size: 15px;
-                "
-              >
-                Reset Password
-              </a>
-            </div>
-            <p style="color: #9ca3af; font-size: 13px; margin-bottom: 0;">
-              ⏱ This link expires in <strong>15 minutes</strong>.<br/>
-              If you did not request this, you can safely ignore this email.
-            </p>
-          </div>
+          <h2>RAMHIS Password Reset</h2>
+          <p>You requested to reset your RAMHIS password.</p>
+          <p>Click the link below to reset your password:</p>
+          <p>
+            <a href="${resetLink}">
+              Reset Password
+            </a>
+          </p>
+          <p>This link expires in 15 minutes.</p>
         </div>
       `,
     });
 
-    console.log("✅ Reset email sent successfully to:", user.email);
+    console.log("SendGrid email sent successfully.");
 
     return res.json({
       ok: true,
       message: "If an account exists, a reset link has been sent.",
     });
   } catch (error) {
-    console.error("FORGOT PASSWORD ERROR:", error);
-    return res.status(500).json({
-      ok: false,
-      message: error.message,
-    });
-  }
-};
+    console.error("FORGOT PASSWORD ERROR MESSAGE:", error.message);
+    console.error("SENDGRID STATUS CODE:", error.code);
 
-// ── Reset Password ───────────────────────────────────────────
-
-exports.resetPassword = async (req, res) => {
-  try {
-    const { token, password, newPassword } = req.body;
-
-    const finalPassword = newPassword || password;
-
-    if (!finalPassword) {
-      return res.status(400).json({
-        ok: false,
-        message: "Password is required.",
-      });
+    if (error.response) {
+      console.error("SENDGRID RESPONSE STATUS:", error.response.statusCode);
+      console.error(
+        "SENDGRID RESPONSE BODY:",
+        JSON.stringify(error.response.body, null, 2)
+      );
+      console.error("SENDGRID RESPONSE HEADERS:", error.response.headers);
     }
 
-    const hashedToken = crypto
-      .createHash("sha256")
-      .update(token)
-      .digest("hex");
-
-    const user = await User.findOne({
-      resetPasswordToken: hashedToken,
-      resetPasswordExpire: { $gt: Date.now() },
-    });
-
-    if (!user) {
-      return res.status(400).json({
-        ok: false,
-        message: "Invalid or expired token.",
-      });
-    }
-
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(finalPassword, salt);
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpire = undefined;
-    user.mustChangePassword = false;
-
-    await user.save();
-
-    return res.json({
-      ok: true,
-      message: "Password reset successful.",
-    });
-  } catch (error) {
-    console.error("RESET PASSWORD ERROR:", error);
     return res.status(500).json({
       ok: false,
-      message: "Server error",
+      message:
+        error.response?.body?.errors?.[0]?.message ||
+        error.message ||
+        "Failed to send reset email.",
+      sendgridStatus:
+        error.response?.statusCode || error.code || null,
+      sendgridErrors:
+        error.response?.body?.errors || null,
     });
   }
 };
