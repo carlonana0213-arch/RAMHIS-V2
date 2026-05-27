@@ -46,26 +46,46 @@ function EditUser({ user, onClose, onSuccess }) {
     }
   };
 
-  const handleResetPassword = async () => {
-    try {
-      const res = await fetch(
-        `${API_BASE_URL}/api/admin/reset-password/${form._id}`,
-        {
-          method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+ const [resetLoading, setResetLoading] = useState(false);
+
+const handleResetPassword = async () => {
+  try {
+    setResetLoading(true);
+
+    const res = await fetch(
+      `${API_BASE_URL}/api/auth/forgot-password`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
+        body: JSON.stringify({
+          email: form.email,
+        }),
+      },
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(
+        data.message || "Failed to send reset email",
       );
-
-      const data = await res.json();
-
-      setAlertMessage("Password reset successful. Email sent to user.");
-    } catch (err) {
-      console.error(err);
-      setAlertMessage("Failed to reset password");
     }
-  };
+
+    setAlertMessage(
+      `✅ Reset link sent to ${form.email}`,
+    );
+  } catch (err) {
+    console.error(err);
+
+    setAlertMessage(
+      "❌ Failed to send reset email. Please try again.",
+    );
+  } finally {
+    setResetLoading(false);
+  }
+};
 
   return (
     <div className="modal-overlay">
@@ -143,9 +163,14 @@ function EditUser({ user, onClose, onSuccess }) {
             <button onClick={() => setShowConfirm(true)}>Save</button>
           )}
 
-          <button onClick={() => setShowResetConfirm(true)}>
-            Reset Password
-          </button>
+          <button
+  onClick={() => setShowResetConfirm(true)}
+  disabled={resetLoading}
+>
+  {resetLoading
+    ? "Sending..."
+    : "Reset Password"}
+</button>
 
           <button onClick={onClose}>Close</button>
         </div>
@@ -162,7 +187,7 @@ function EditUser({ user, onClose, onSuccess }) {
       )}
       {showResetConfirm && (
         <ConfirmModal
-          message="Are you sure you want to reset this user's password? A temporary password will be emailed."
+          message="Are you sure you want to send a password reset link to this user?"
           onConfirm={async () => {
             setShowResetConfirm(false);
             await handleResetPassword();
