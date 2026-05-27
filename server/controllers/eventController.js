@@ -87,22 +87,31 @@ exports.createEvent = async (req, res) => {
       });
     }
 
+    // If the new event is created as Ongoing,
+    // automatically change all other Ongoing events back to Upcoming.
+if (status === "Ongoing") {
+  await Event.updateMany(
+    {
+      status: "Ongoing",
+    },
+    {
+      $set: { status: "Upcoming" },
+    }
+  );
+}
+
     const event = await Event.create({
       title,
       description,
       location,
 
       latitude:
-        latitude !== null &&
-        latitude !== undefined &&
-        latitude !== ""
+        latitude !== null && latitude !== undefined && latitude !== ""
           ? Number(latitude)
           : null,
 
       longitude:
-        longitude !== null &&
-        longitude !== undefined &&
-        longitude !== ""
+        longitude !== null && longitude !== undefined && longitude !== ""
           ? Number(longitude)
           : null,
 
@@ -126,6 +135,8 @@ exports.createEvent = async (req, res) => {
       data: event,
     });
   } catch (error) {
+    console.error("CREATE EVENT ERROR:", error);
+
     res.status(500).json({
       ok: false,
       message: "Failed to create event",
@@ -137,6 +148,20 @@ exports.createEvent = async (req, res) => {
 // PUT /api/events/:id
 exports.updateEvent = async (req, res) => {
   try {
+    // If this event is being updated to Ongoing,
+    // automatically change all other Ongoing events back to Upcoming.
+if (req.body.status === "Ongoing") {
+  await Event.updateMany(
+    {
+      _id: { $ne: req.params.id },
+      status: "Ongoing",
+    },
+    {
+      $set: { status: "Upcoming" },
+    }
+  );
+}
+
     const event = await Event.findByIdAndUpdate(
       req.params.id,
       req.body,
@@ -163,6 +188,8 @@ exports.updateEvent = async (req, res) => {
       data: event,
     });
   } catch (error) {
+    console.error("UPDATE EVENT ERROR:", error);
+
     res.status(500).json({
       ok: false,
       message: "Failed to update event",
@@ -412,6 +439,37 @@ exports.updateParticipantStatus = async (req, res) => {
     res.status(500).json({
       ok: false,
       message: "Failed to update participant status",
+      error: error.message,
+    });
+  }
+};
+
+// GET /api/events/current/ongoing
+exports.getOngoingEvent = async (req, res) => {
+  try {
+    const event = await Event.findOne({ status: "Ongoing" })
+      .sort({ updatedAt: -1, date: -1 })
+      .populate("createdBy", "name email role")
+      .populate("participants.userId", "name email role");
+
+    if (!event) {
+      return res.status(200).json({
+        ok: true,
+        data: null,
+        message: "No ongoing event",
+      });
+    }
+
+    res.status(200).json({
+      ok: true,
+      data: event,
+    });
+  } catch (error) {
+    console.error("GET ONGOING EVENT ERROR:", error);
+
+    res.status(500).json({
+      ok: false,
+      message: "Failed to fetch ongoing event",
       error: error.message,
     });
   }

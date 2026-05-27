@@ -1,4 +1,5 @@
 const Patient = require("../models/Patient");
+const Event = require("../models/Event");
 
 exports.getAllPatients = async (req, res) => {
   try {
@@ -23,6 +24,8 @@ exports.createPatient = async (req, res) => {
       isPriority,
       location,
       missionDate,
+      eventId,
+      eventTitle,
     } = req.body;
 
     if (!location || !missionDate) {
@@ -38,6 +41,29 @@ exports.createPatient = async (req, res) => {
       return res.status(400).json({ error: "Invalid patient data" });
     }
 
+    let finalLocation = location;
+    let finalMissionDate = missionDate;
+    let finalEventId = eventId || null;
+    let finalEventTitle = eventTitle || "";
+
+    if (!finalLocation || !finalMissionDate || !finalEventId) {
+      const ongoingEvent = await Event.findOne({ status: "Ongoing" }).sort({
+        updatedAt: -1,
+        date: -1,
+      });
+
+      if (!ongoingEvent) {
+        return res.status(400).json({
+          error: "No ongoing event found. Please set an event as Ongoing first.",
+        });
+      }
+
+      finalLocation = ongoingEvent.location;
+      finalMissionDate = ongoingEvent.date || new Date();
+      finalEventId = ongoingEvent._id;
+      finalEventTitle = ongoingEvent.title;
+    }
+
     const patient = new Patient({
       generalInfo,
       medicalHistory,
@@ -48,8 +74,10 @@ exports.createPatient = async (req, res) => {
       department,
       initComplaint,
       isPriority,
-      location,
-      missionDate,
+      location: finalLocation,
+      missionDate: finalMissionDate,
+      eventId: finalEventId,
+      eventTitle: finalEventTitle,
     });
 
     await patient.save();
@@ -130,13 +158,45 @@ exports.deletePatient = async (req, res) => {
 
 exports.getPatientQueue = async (req, res) => {
   try {
-    const patients = await Patient.find({
-      status: { $ne: "released" },
+    const ongoingEvent = await Event.findOne({ status: "Ongoing" }).sort({
+      updatedAt: -1,
+      date: -1,
     });
 
-    res.json(patients);
+    let patients = [];
+
+    if (ongoingEvent) {
+      patients = await Patient.find({
+        eventId: ongoingEvent._id,
+        status: { $ne: "released" },
+      }).sort({
+        isPriority: -1,
+        createdAt: 1,
+      });
+
+      return res.json({
+        ongoingEvent,
+        patients,
+      });
+    }
+
+    patients = await Patient.find({
+      status: { $ne: "released" },
+    }).sort({
+      isPriority: -1,
+      createdAt: 1,
+    });
+
+    return res.json({
+      ongoingEvent: null,
+      patients,
+    });
   } catch (err) {
-    res.status(500).json({ msg: "Server error" });
+    console.error("Queue error:", err);
+
+    res.status(500).json({
+      msg: "Server error",
+    });
   }
 };
 
@@ -231,5 +291,4 @@ exports.getLocations = async (req, res) => {
     });
   }
 };
-
  

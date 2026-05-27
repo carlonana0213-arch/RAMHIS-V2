@@ -125,6 +125,16 @@ const PatientSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    eventId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Event",
+      default: null,
+    },
+
+    eventTitle: {
+      type: String,
+      default: "",
+    },
   },
 
   {

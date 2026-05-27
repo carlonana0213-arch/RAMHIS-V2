@@ -10,12 +10,14 @@ const {
   joinEvent,
   leaveEvent,
   updateParticipantStatus,
+  getOngoingEvent,
 } = require("../controllers/eventController");
 
 const protect = require("../middleware/protect");
 
 // Public event viewing
 router.get("/", getAllEvents);
+router.get("/current/ongoing", getOngoingEvent);
 router.get("/:id", getEventById);
 
 // Admin event management
