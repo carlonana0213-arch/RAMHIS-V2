@@ -5,18 +5,27 @@ const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
-  pool: false,
   host: "smtp.gmail.com",
   port: 587,
   secure: false,
   requireTLS: true,
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 10000,
+
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
+
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 10000,
+});
+
+transporter.verify((error, success) => {
+  if (error) {
+    console.error("SMTP ERROR:", error);
+  } else {
+    console.log("SMTP READY");
+  }
 });
 
 

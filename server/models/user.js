@@ -140,6 +140,25 @@ const UserSchema = new mongoose.Schema({
     type: String,
     default: "",
   },
+  otp_code: {
+  type: String,
+  default: null,
+},
+
+otp_expiry: {
+  type: Date,
+  default: null,
+},
+
+otp_attempts: {
+  type: Number,
+  default: 0,
+},
+
+otp_locked_until: {
+  type: Date,
+  default: null,
+},
 
   /* =========================
      DOCTOR INFO
