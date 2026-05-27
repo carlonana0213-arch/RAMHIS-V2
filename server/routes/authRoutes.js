@@ -1,14 +1,16 @@
 const express = require("express");
 const router = express.Router();
+
 const {
   register,
   login,
   forgotPassword,
   resetPassword,
-} = require("../controllers/authController");const auth = require("../middleware/authMiddleware");
-const authorize = require("../middleware/roleMiddleware");
-const { updateMe } = require("../controllers/authController");
-const { getMe } = require("../controllers/authController");
+  updateMe,
+  getMe,
+} = require("../controllers/authController");
+
+const auth = require("../middleware/authMiddleware");
 const bcrypt = require("bcryptjs");
 const multer = require("multer");
 
@@ -22,7 +24,9 @@ router.get("/someProtectedRoute", auth, (req, res) => {
     user: req.user,
   });
 });
+
 router.put("/me", auth, updateMe);
+
 router.post(
   "/register",
   upload.single("license_file"),
@@ -34,7 +38,9 @@ router.post(
   upload.single("license_file"),
   register,
 );
+
 router.post("/login", login);
+
 router.post(
   "/forgot-password",
   forgotPassword,
@@ -52,7 +58,9 @@ router.get("/reset-password", (req, res) => {
     `ramhis://reset-password?token=${token}`
   );
 });
+
 router.get("/me", auth, getMe);
+
 router.post("/change-password", auth, async (req, res) => {
   try {
     const { newPassword } = req.body;
@@ -63,6 +71,7 @@ router.post("/change-password", auth, async (req, res) => {
     const user = await require("../models/user").findById(req.user.id);
 
     user.password = hashed;
+    user.password_hash = hashed;
     user.mustChangePassword = false;
     user.tempPassword = undefined;
 
@@ -75,7 +84,3 @@ router.post("/change-password", auth, async (req, res) => {
 });
 
 module.exports = router;
-
-
-
-

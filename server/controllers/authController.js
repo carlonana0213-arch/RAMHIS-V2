@@ -307,10 +307,13 @@ exports.forgotPassword = async (req, res) => {
       email,
     });
 
+    // SECURITY:
+    // NEVER reveal whether email exists
     if (!user) {
-      return res.status(404).json({
-        ok: false,
-        message: "User not found",
+      return res.json({
+        ok: true,
+        message:
+          "If an account exists, a reset link has been sent.",
       });
     }
 
@@ -319,61 +322,67 @@ exports.forgotPassword = async (req, res) => {
         "hex",
       );
 
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+
     user.resetPasswordToken =
-      resetToken;
+      hashedToken;
 
     user.resetPasswordExpire =
-      Date.now() + 1000 * 60 * 30;
+      Date.now() + 1000 * 60 * 15;
 
     await user.save();
 
-const resetLink =
-  `https://ramhis-v2-1.onrender.com/reset-password?token=${resetToken}`;
+    // MOBILE DEEP LINK
+ const resetLink =
+  `https://ramhis-v2-1.onrender.com/api/auth/reset-password?token=${resetToken}`;
 
-await transporter.sendMail({
-  to: user.email,
-  subject: "RAMHIS Password Reset",
-  html: `
-  <div style="font-family: Arial;">
+    await transporter.sendMail({
+      to: user.email,
+      subject: "RAMHIS Password Reset",
+      html: `
+      <div style="font-family: Arial;">
 
-    <h2>RAMHIS Password Reset</h2>
+        <h2>RAMHIS Password Reset</h2>
 
-    <p>
-      You requested to reset your RAMHIS password.
-    </p>
+        <p>
+          You requested to reset your RAMHIS password.
+        </p>
 
-    <p>
-      Click the button below to reset your password:
-    </p>
+        <p>
+          Click the button below to reset your password:
+        </p>
 
-    <a
-      href="${resetLink}"
-      style="
-        display:inline-block;
-        padding:12px 20px;
-        background:#4F46E5;
-        color:white;
-        text-decoration:none;
-        border-radius:8px;
-        font-weight:bold;
-      "
-    >
-      Reset Password
-    </a>
+        <a
+          href="${resetLink}"
+          style="
+            display:inline-block;
+            padding:12px 20px;
+            background:#4F46E5;
+            color:white;
+            text-decoration:none;
+            border-radius:8px;
+            font-weight:bold;
+          "
+        >
+          Reset Password
+        </a>
 
-    <p style="margin-top:20px;">
-      This link expires in 30 minutes.
-    </p>
+        <p style="margin-top:20px;">
+          This link expires in 15 minutes.
+        </p>
 
-  </div>
-`,
-});
+      </div>
+      `,
+    });
 
-res.json({
-  ok: true,
-  message:
-    "Password reset link sent to your email.",
-});
+    res.json({
+      ok: true,
+      message:
+        "If an account exists, a reset link has been sent.",
+    });
   } catch (error) {
     console.error(error);
 
@@ -389,12 +398,23 @@ exports.resetPassword = async (
   res,
 ) => {
   try {
-    const { token, password } =
-      req.body;
+    const {
+  token,
+  password,
+  newPassword,
+} = req.body;
 
-    const user =
-      await User.findOne({
-        resetPasswordToken: token,
+const finalPassword =
+  newPassword || password;
+
+    const hashedToken = crypto
+  .createHash("sha256")
+  .update(token)
+  .digest("hex");
+
+const user =
+  await User.findOne({
+    resetPasswordToken: hashedToken,
         resetPasswordExpire: {
           $gt: Date.now(),
         },
