@@ -339,6 +339,12 @@ exports.forgotPassword = async (req, res) => {
  const resetLink =
   `https://ramhis-v2-1.onrender.com/api/auth/reset-password?token=${resetToken}`;
 
+  console.log(
+      "Sending reset email to:",
+      user.email
+    );
+
+
     await transporter.sendMail({
       to: user.email,
       subject: "RAMHIS Password Reset",
@@ -384,6 +390,13 @@ exports.forgotPassword = async (req, res) => {
         "If an account exists, a reset link has been sent.",
     });
   } catch (error) {
+    
+    console.error(
+      "FORGOT PASSWORD ERROR:",
+      error
+    );
+
+
     console.error(error);
 
     res.status(500).json({
