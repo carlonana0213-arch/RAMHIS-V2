@@ -117,6 +117,8 @@ function PharmacyInventory() {
 
       setAlertMessage("Medicine added successfully");
 
+      setShowModal(false);
+
       loadMedicines();
     } catch (err) {
       console.error(err);
@@ -457,8 +459,6 @@ function PharmacyInventory() {
                     message: "Are you sure you want to add this medicine?",
                     onConfirm: async () => {
                       await handleAdd();
-
-                      setShowModal(false);
 
                       setConfirmState(null);
                     },

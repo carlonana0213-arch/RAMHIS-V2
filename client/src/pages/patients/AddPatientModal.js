@@ -4,7 +4,10 @@ import {
   addPatient,
   updatePatient,
   searchPatients,
-} from "../../services/patientService"
+} from "../../services/patientService";
+import AlertModal from "../../components/AlertModal";
+import ConfirmModal from "../../components/ConfirmModal";
+
 import "../../styles/modal.css";
 import DuplicatePatientModal from "../../components/DuplicatePatientModal";
 import GeneralStep from "../steps/GeneralStep";
@@ -30,11 +33,10 @@ const AddPatientModal = ({ onClose }) => {
   const [step, setStep] = useState(0);
   const [showConsent, setShowConsent] = useState(true);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
-
   const [matchedPatient, setMatchedPatient] = useState(null);
-
+  const [alertMessage, setAlertMessage] = useState("");
+  const [confirmState, setConfirmState] = useState(null);
   const [editingExistingPatient, setEditingExistingPatient] = useState(false);
-
   const [duplicateChecked, setDuplicateChecked] = useState(false);
   const [form, setForm] = useState({
     generalInfo: {},
@@ -165,23 +167,21 @@ const AddPatientModal = ({ onClose }) => {
       if (editingExistingPatient && matchedPatient) {
         await updatePatient(matchedPatient._id, payload);
 
-        alert("Patient updated and queued");
+        setAlertMessage("Patient updated and queued");
       } else {
         await addPatient(payload);
 
-        alert("Patient added!");
+        setAlertMessage("Patient added successfully");
       }
 
       // reset duplicate-flow state
       setDuplicateChecked(false);
       setEditingExistingPatient(false);
       setMatchedPatient(null);
-
-      onClose();
     } catch (err) {
       console.error(err);
 
-      alert("Failed to save patient");
+      setAlertMessage("Failed to save patient");
     }
   };
   const reusePatientRecord = async () => {
@@ -202,9 +202,7 @@ const AddPatientModal = ({ onClose }) => {
         location: matchedPatient.location,
       });
 
-      alert("Patient added to queue");
-
-      onClose();
+      setAlertMessage("Patient added to queue");
     } catch (err) {
       console.error(err);
     }
@@ -405,10 +403,35 @@ const AddPatientModal = ({ onClose }) => {
       {showDuplicateModal && matchedPatient && (
         <DuplicatePatientModal
           patient={matchedPatient}
-          onReuse={reusePatientRecord}
+          onReuse={() =>
+            setConfirmState({
+              message: "Reuse this patient record and add them to queue?",
+              onConfirm: async () => {
+                await reusePatientRecord();
+                setConfirmState(null);
+              },
+            })
+          }
           onUpdate={updateExistingPatientInfo}
           onCreateNew={createNewPatientAnyway}
           onCancel={() => setShowDuplicateModal(false)}
+        />
+      )}
+      {confirmState && (
+        <ConfirmModal
+          message={confirmState.message}
+          onConfirm={confirmState.onConfirm}
+          onCancel={() => setConfirmState(null)}
+        />
+      )}
+
+      {alertMessage && (
+        <AlertModal
+          message={alertMessage}
+          onClose={() => {
+            setAlertMessage("");
+            onClose();
+          }}
         />
       )}
     </div>
@@ -416,4 +439,3 @@ const AddPatientModal = ({ onClose }) => {
 };
 
 export default AddPatientModal;
- 

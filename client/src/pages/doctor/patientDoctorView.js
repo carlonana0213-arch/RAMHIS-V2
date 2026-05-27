@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import "../../styles/patientDoctorView.css";
 
 import { getMedicines } from "../../services/pharmacyService";
+import AlertModal from "../../components/AlertModal";
+import ConfirmModal from "../../components/ConfirmModal";
 
 import {
   loadPatientPrescriptions,
@@ -15,7 +17,14 @@ import {
 
 function PatientDoctorView({ patient, onClose, refreshQueue }) {
   const storedUser = JSON.parse(localStorage.getItem("user"));
-
+  const DEPARTMENTS = [
+    "Pediatrics",
+    "Ortho",
+    "Opta",
+    "Dental",
+    "Cardio",
+    "General",
+  ];
   const emptyDoctorSheet = {
     examination: {
       generalAppearance: "",
@@ -55,7 +64,8 @@ function PatientDoctorView({ patient, onClose, refreshQueue }) {
   const [newComplaint, setNewComplaint] = useState("");
 
   const [recordMode, setRecordMode] = useState("new");
-
+  const [alertMessage, setAlertMessage] = useState("");
+  const [confirmState, setConfirmState] = useState(null);
   const [medicineSearch, setMedicineSearch] = useState({});
 
   const [activeDropdown, setActiveDropdown] = useState(null);
@@ -155,14 +165,12 @@ function PatientDoctorView({ patient, onClose, refreshQueue }) {
         recordType: hasHistory ? "follow-up" : "initial",
       });
 
-      alert("Record Saved");
+      setAlertMessage("Record saved successfully");
 
       refreshQueue();
-
-      onClose();
     } catch (err) {
       console.error(err);
-      alert(err.message);
+      setAlertMessage(err.message || "Failed to save record");
     }
   };
 
@@ -173,7 +181,8 @@ function PatientDoctorView({ patient, onClose, refreshQueue }) {
       );
 
       if (validItems.length === 0) {
-        return alert("Add at least one medicine");
+        setAlertMessage("Add at least one medicine");
+        return;
       }
 
       await savePrescription({
@@ -200,9 +209,11 @@ function PatientDoctorView({ patient, onClose, refreshQueue }) {
         },
       ]);
 
-      alert("Prescription Saved");
+      setAlertMessage("Prescription saved successfully");
     } catch (err) {
       console.error(err);
+
+      setAlertMessage(err.message || "Failed to save prescription");
     }
   };
 
@@ -212,7 +223,7 @@ function PatientDoctorView({ patient, onClose, refreshQueue }) {
 
       await loadPrescriptions();
 
-      alert("Medicine Given");
+      setAlertMessage("Medicine marked as given");
     } catch (err) {
       console.error(err);
     }
@@ -224,11 +235,13 @@ function PatientDoctorView({ patient, onClose, refreshQueue }) {
         status: "released",
       });
 
-      alert("Patient Released");
+      setAlertMessage("Patient released successfully");
 
       refreshQueue();
 
-      onClose();
+      setTimeout(() => {
+        onClose();
+      }, 300);
     } catch (err) {
       console.error(err);
     }
@@ -240,11 +253,9 @@ function PatientDoctorView({ patient, onClose, refreshQueue }) {
         status: "forPharmacy",
       });
 
-      alert("Patient Sent To Pharmacy");
+      setAlertMessage("Patient sent to pharmacy");
 
       refreshQueue();
-
-      onClose();
     } catch (err) {
       console.error(err);
     }
@@ -253,7 +264,8 @@ function PatientDoctorView({ patient, onClose, refreshQueue }) {
   const submitReferral = async () => {
     try {
       if (!referralDept || !referralReason) {
-        return alert("Complete referral details");
+        setAlertMessage("Complete referral details");
+        return;
       }
 
       // SAVE RECORD + REFERRAL
@@ -281,30 +293,24 @@ function PatientDoctorView({ patient, onClose, refreshQueue }) {
       await updatePatientStatus(patient._id, {
         department: referralDept,
 
-        status: "queued",
+        status: "waiting",
       });
 
-      alert(`Patient referred to ${referralDept}`);
+      setAlertMessage(`Patient referred to ${referralDept}`);
 
       refreshQueue();
-
-      onClose();
     } catch (err) {
       console.error(err);
 
-      alert("Referral failed");
+      setAlertMessage("Referral failed");
     }
   };
 
   const handleDeleteRecord = async (recordId) => {
     try {
-      const confirmDelete = window.confirm("Delete this record?");
-
-      if (!confirmDelete) return;
-
       await deleteDoctorRecord(patient._id, recordId, storedUser?.name);
 
-      alert("Record Deleted");
+      setAlertMessage("Record deleted successfully");
 
       refreshQueue();
 
@@ -559,7 +565,17 @@ function PatientDoctorView({ patient, onClose, refreshQueue }) {
                             <button
                               className="give-med-btn"
                               onClick={() =>
-                                handleGiveMedicine(prescription._id, item._id)
+                                setConfirmState({
+                                  message: "Mark this medicine as given?",
+                                  onConfirm: async () => {
+                                    await handleGiveMedicine(
+                                      prescription._id,
+                                      item._id,
+                                    );
+
+                                    setConfirmState(null);
+                                  },
+                                })
                               }
                             >
                               Give Now
@@ -790,13 +806,11 @@ ${m.dosage ? ` (${m.dosage})` : ""}
                       >
                         <option value="">Select Department</option>
 
-                        <option value="Pediatrics">Pediatrics</option>
-
-                        <option value="Dental">Dental</option>
-
-                        <option value="Cardio">Cardio</option>
-
-                        <option value="General">General</option>
+                        {DEPARTMENTS.map((dept) => (
+                          <option key={dept} value={dept}>
+                            {dept}
+                          </option>
+                        ))}
                       </select>
 
                       <textarea
@@ -813,7 +827,19 @@ ${m.dosage ? ` (${m.dosage})` : ""}
                         />
                       )}
 
-                      <button onClick={submitReferral}>Send Referral</button>
+                      <button
+                        onClick={() =>
+                          setConfirmState({
+                            message: "Send this patient for referral?",
+                            onConfirm: async () => {
+                              await submitReferral();
+                              setConfirmState(null);
+                            },
+                          })
+                        }
+                      >
+                        Send Referral
+                      </button>
                     </div>
                   )}
                 </div>
@@ -837,7 +863,18 @@ ${m.dosage ? ` (${m.dosage})` : ""}
                         </p>
                       </div>
 
-                      <button onClick={() => handleDeleteRecord(record._id)}>
+                      <button
+                        onClick={() =>
+                          setConfirmState({
+                            message:
+                              "Are you sure you want to delete this doctor record?",
+                            onConfirm: async () => {
+                              await handleDeleteRecord(record._id);
+                              setConfirmState(null);
+                            },
+                          })
+                        }
+                      >
                         Delete
                       </button>
                     </div>
@@ -886,15 +923,53 @@ ${m.dosage ? ` (${m.dosage})` : ""}
             Save Record
           </button>
 
-          <button className="pharmacy-btn" onClick={handleForPharmacy}>
+          <button
+            className="pharmacy-btn"
+            onClick={() =>
+              setConfirmState({
+                message: "Send this patient to pharmacy?",
+                onConfirm: async () => {
+                  await handleForPharmacy();
+                  setConfirmState(null);
+                },
+              })
+            }
+          >
             For Pharmacy
           </button>
 
-          <button className="release-btn" onClick={handleRelease}>
+          <button
+            className="release-btn"
+            onClick={() =>
+              setConfirmState({
+                message: "Are you sure you want to release this patient?",
+                onConfirm: async () => {
+                  await handleRelease();
+                  setConfirmState(null);
+                },
+              })
+            }
+          >
             Release Patient
           </button>
         </div>
       </div>
+      {confirmState && (
+        <ConfirmModal
+          message={confirmState.message}
+          onConfirm={confirmState.onConfirm}
+          onCancel={() => setConfirmState(null)}
+        />
+      )}
+
+      {alertMessage && (
+        <AlertModal
+          message={alertMessage}
+          onClose={() => {
+            setAlertMessage("");
+          }}
+        />
+      )}
     </div>
   );
 }
