@@ -2,12 +2,18 @@ const User = require("../models/user");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
-const sgMail = require("@sendgrid/mail");
+const nodemailer = require("nodemailer");
 
-// ── SendGrid client ──────────────────────────────────────────
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
-// ── Register ─────────────────────────────────────────────────
 
 exports.register = async (req, res) => {
   const {
@@ -22,24 +28,36 @@ exports.register = async (req, res) => {
     contact_number,
     birthdate,
     accepted_terms,
+
     organization,
     skills,
+
     prc_license_number,
     specialty,
     hospital_clinic,
   } = req.body;
 
+  // Normalize mobile/web fields
   const normalizedName = name || full_name;
-  const rawRole = role || account_type || "User";
-  const normalizedRole =
-    rawRole.charAt(0).toUpperCase() + rawRole.slice(1).toLowerCase();
-  const normalizedVolunteerType = volunteerType || organization || skills || "";
-  const uploadedFileName =
-    req.file?.filename || req.file?.originalname || "";
 
-  const normalizedDoctorInfo =
-    doctorInfo ||
-    (normalizedRole.toLowerCase() === "doctor"
+  const rawRole = role || account_type || "User";
+
+const normalizedRole =
+  rawRole.charAt(0).toUpperCase() +
+  rawRole.slice(1).toLowerCase();
+
+  const normalizedVolunteerType =
+    volunteerType || organization || skills || "";
+
+  const uploadedFileName =
+  req.file?.filename ||
+  req.file?.originalname ||
+  "";
+
+const normalizedDoctorInfo =
+  doctorInfo ||
+  (
+    normalizedRole.toLowerCase() === "doctor"
       ? {
           specialization: specialty || "",
           licenseNumber: prc_license_number || "",
@@ -47,7 +65,8 @@ exports.register = async (req, res) => {
           proofOfLicense: uploadedFileName || "Submitted via mobile",
           proofOfDoctorate: uploadedFileName || "Submitted via mobile",
         }
-      : undefined);
+      : undefined
+  );
 
   const normalizedAcceptedTerms =
     accepted_terms === true || accepted_terms === "true";
@@ -63,23 +82,32 @@ exports.register = async (req, res) => {
       });
     }
 
-    const generateTempPassword = () => Math.random().toString(36).slice(-8);
+    const generateTempPassword = () => {
+      return Math.random().toString(36).slice(-8);
+    };
+
     const tempPassword = password || generateTempPassword();
+
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(tempPassword, salt);
 
     user = new User({
       name: normalizedName,
       full_name: normalizedName,
+
       email,
       password: hashedPassword,
+
       role: normalizedRole,
       account_type: normalizedRole,
+
       volunteerType: normalizedVolunteerType,
       doctorInfo: normalizedDoctorInfo,
+
       contact_number,
       birthdate,
       accepted_terms: normalizedAcceptedTerms,
+
       tempPassword: password ? undefined : tempPassword,
       mustChangePassword: password ? false : true,
     });
@@ -93,16 +121,15 @@ exports.register = async (req, res) => {
       message: "Registration successful. Await admin approval.",
     });
   } catch (error) {
-    console.error("REGISTER ERROR:", error);
-    return res.status(500).json({
-      ok: false,
-      msg: error.message,
-      message: error.message,
-    });
-  }
-};
+  console.error("REGISTER ERROR:", error);
 
-// ── Login ────────────────────────────────────────────────────
+  return res.status(500).json({
+    ok: false,
+    msg: error.message,
+    message: error.message,
+  });
+}
+};
 
 exports.login = async (req, res) => {
   const { email, password } = req.body;
@@ -121,14 +148,14 @@ exports.login = async (req, res) => {
     }
 
     if (
-      user.verificationStatus === "Rejected" ||
-      user.verificationStatus === "Deactivated" ||
-      user.status === "deactivated"
-    ) {
-      return res.status(403).json({
-        msg: "Your account is deactivated, please contact administrator",
-      });
-    }
+  user.verificationStatus === "Rejected" ||
+  user.verificationStatus === "Deactivated" ||
+  user.status === "deactivated"
+) {
+  return res.status(403).json({
+    msg: "Your account is deactivated, please contact administrator",
+  });
+}
 
     const isMatch = await bcrypt.compare(password, user.password);
 
@@ -137,56 +164,107 @@ exports.login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user._id, role: user.role },
+      {
+        id: user._id,
+        role: user.role,
+      },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: "1h" },
     );
 
-    return res.json({
-      ok: true,
-      msg: "Login successful",
-      message: "Login successful",
-      token,
-      accessToken: token,
-      user: {
-        id: user._id,
-        _id: user._id,
-        name: user.name || user.full_name,
-        full_name: user.full_name || user.name,
-        email: user.email,
-        role: user.role || user.account_type,
-        account_type: user.account_type || user.role,
-        verificationStatus: user.verificationStatus,
-        doctorInfo: user.doctorInfo,
-        birthdate: user.birthdate || user.birthday || user.bdate || "",
-        birthday: user.birthday || user.birthdate || user.bdate || "",
-        bdate: user.bdate || user.birthdate || user.birthday || "",
-        contact_number:
-          user.contact_number || user.contactNumber || user.phone || user.phoneNumber || "",
-        contactNumber:
-          user.contactNumber || user.contact_number || user.phone || user.phoneNumber || "",
-        phone:
-          user.phone || user.contact_number || user.contactNumber || "",
-        profileImage:
-          user.profileImage || user.profileImageUrl || user.profile_image_url || user.avatar || user.imageUrl || "",
-        profileImageUrl:
-          user.profileImageUrl || user.profileImage || user.profile_image_url || user.avatar || user.imageUrl || "",
-        profile_image_url:
-          user.profile_image_url || user.profileImageUrl || user.profileImage || user.avatar || user.imageUrl || "",
-        avatar:
-          user.avatar || user.profileImage || user.profileImageUrl || user.profile_image_url || user.imageUrl || "",
-        imageUrl:
-          user.imageUrl || user.profileImage || user.profileImageUrl || user.profile_image_url || user.avatar || "",
-      },
-      mustChangePassword: user.mustChangePassword,
-    });
+    res.json({
+  ok: true,
+  msg: "Login successful",
+  message: "Login successful",
+  token,
+  accessToken: token,
+  user: {
+  id: user._id,
+  _id: user._id,
+
+  name: user.name || user.full_name,
+  full_name: user.full_name || user.name,
+
+  email: user.email,
+
+  role: user.role || user.account_type,
+  account_type: user.account_type || user.role,
+
+  verificationStatus: user.verificationStatus,
+  doctorInfo: user.doctorInfo,
+
+  birthdate: user.birthdate || user.birthday || user.bdate || "",
+  birthday: user.birthday || user.birthdate || user.bdate || "",
+  bdate: user.bdate || user.birthdate || user.birthday || "",
+
+  contact_number:
+    user.contact_number ||
+    user.contactNumber ||
+    user.phone ||
+    user.phoneNumber ||
+    "",
+
+  contactNumber:
+    user.contactNumber ||
+    user.contact_number ||
+    user.phone ||
+    user.phoneNumber ||
+    "",
+
+  phone:
+    user.phone ||
+    user.contact_number ||
+    user.contactNumber ||
+    "",
+
+  profileImage:
+    user.profileImage ||
+    user.profileImageUrl ||
+    user.profile_image_url ||
+    user.avatar ||
+    user.imageUrl ||
+    "",
+
+  profileImageUrl:
+    user.profileImageUrl ||
+    user.profileImage ||
+    user.profile_image_url ||
+    user.avatar ||
+    user.imageUrl ||
+    "",
+
+  profile_image_url:
+    user.profile_image_url ||
+    user.profileImageUrl ||
+    user.profileImage ||
+    user.avatar ||
+    user.imageUrl ||
+    "",
+
+  avatar:
+    user.avatar ||
+    user.profileImage ||
+    user.profileImageUrl ||
+    user.profile_image_url ||
+    user.imageUrl ||
+    "",
+
+  imageUrl:
+    user.imageUrl ||
+    user.profileImage ||
+    user.profileImageUrl ||
+    user.profile_image_url ||
+    user.avatar ||
+    "",
+},
+  mustChangePassword: user.mustChangePassword,
+});
+
   } catch (error) {
-    console.error("LOGIN ERROR:", error);
-    return res.status(500).json({ msg: "Server error" });
+    console.error(error);
+    res.status(500).json({ msg: "Server error" });
   }
 };
-
-// ── Update Me ────────────────────────────────────────────────
 
 exports.updateMe = async (req, res) => {
   try {
@@ -202,201 +280,195 @@ exports.updateMe = async (req, res) => {
       updates.password = await bcrypt.hash(req.body.password, salt);
     }
 
-    const updatedUser = await User.findByIdAndUpdate(
-      req.user.id,
-      updates,
-      { new: true }
-    );
+    const updatedUser = await User.findByIdAndUpdate(req.user.id, updates, {
+      new: true,
+    });
 
-    return res.json(updatedUser);
+    res.json(updatedUser);
   } catch (err) {
-    return res.status(500).json({ msg: "Failed to update account" });
+    res.status(500).json({ msg: "Failed to update account" });
   }
 };
-
-// ── Get Me ───────────────────────────────────────────────────
 
 exports.getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
-    return res.json(user);
+
+    res.json(user);
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ msg: "Server error" });
+    res.status(500).json({ msg: "Server error" });
   }
 };
 
-// ── Forgot Password ──────────────────────────────────────────
-
 exports.forgotPassword = async (req, res) => {
   try {
-    const apiKey = process.env.SENDGRID_API_KEY;
-    const fromEmail =
-      process.env.SENDGRID_FROM_EMAIL || "aldentolosa11@gmail.com";
-
-    console.log("SENDGRID_API_KEY EXISTS:", !!apiKey);
-    console.log(
-      "SENDGRID_API_KEY STARTS WITH SG:",
-      apiKey?.startsWith("SG.")
-    );
-    console.log("SENDGRID_FROM_EMAIL:", fromEmail);
-    console.log("APP_RESET_LINK_BASE:", process.env.APP_RESET_LINK_BASE);
-
-   const apiKey = process.env.SENDGRID_API_KEY;
-
-if (!apiKey) {
-  console.error("SENDGRID_API_KEY is missing in runtime env.");
-  return res.status(500).json({
-    ok: false,
-    message: "Email service not configured.",
-  });
-}
-
-sgMail.setApiKey(apiKey.trim());
-
     const { email } = req.body;
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({
+      email,
+    });
 
+    // SECURITY:
+    // NEVER reveal whether email exists
     if (!user) {
       return res.json({
         ok: true,
-        message: "If an account exists, a reset link has been sent.",
+        message:
+          "If an account exists, a reset link has been sent.",
       });
     }
 
-    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetToken =
+      crypto.randomBytes(32).toString(
+        "hex",
+      );
 
     const hashedToken = crypto
       .createHash("sha256")
       .update(resetToken)
       .digest("hex");
 
-    user.resetPasswordToken = hashedToken;
-    user.resetPasswordExpire = Date.now() + 1000 * 60 * 15;
+    user.resetPasswordToken =
+      hashedToken;
+
+    user.resetPasswordExpire =
+      Date.now() + 1000 * 60 * 15;
 
     await user.save();
 
-    const resetLink =
-      `${process.env.APP_RESET_LINK_BASE}?token=${resetToken}`;
+    // MOBILE DEEP LINK
+ const resetLink =
+  `https://ramhis-v2-1.onrender.com/api/auth/reset-password?token=${resetToken}`;
 
-    console.log("Sending reset email to:", user.email);
+  console.log(
+      "Sending reset email to:",
+      user.email
+    );
 
-    await sgMail.send({
+console.log("ABOUT TO SEND EMAIL");
+    await transporter.sendMail({
       to: user.email,
-      from: {
-        email: fromEmail,
-        name: "RAMHIS",
-      },
       subject: "RAMHIS Password Reset",
       html: `
-        <div style="font-family: Arial; max-width: 480px; margin: 0 auto;">
-          <h2>RAMHIS Password Reset</h2>
-          <p>You requested to reset your RAMHIS password.</p>
-          <p>Click the link below to reset your password:</p>
-          <p>
-            <a href="${resetLink}">
-              Reset Password
-            </a>
-          </p>
-          <p>This link expires in 15 minutes.</p>
-        </div>
+      <div style="font-family: Arial;">
+
+        <h2>RAMHIS Password Reset</h2>
+
+        <p>
+          You requested to reset your RAMHIS password.
+        </p>
+
+        <p>
+          Click the button below to reset your password:
+        </p>
+
+        <a
+          href="${resetLink}"
+          style="
+            display:inline-block;
+            padding:12px 20px;
+            background:#4F46E5;
+            color:white;
+            text-decoration:none;
+            border-radius:8px;
+            font-weight:bold;
+          "
+        >
+          Reset Password
+        </a>
+
+        <p style="margin-top:20px;">
+          This link expires in 15 minutes.
+        </p>
+
+      </div>
       `,
     });
 
-    console.log("SendGrid email sent successfully.");
-
-    return res.json({
+    res.json({
       ok: true,
-      message: "If an account exists, a reset link has been sent.",
-    });
-  } catch (error) {
-    console.error("FORGOT PASSWORD ERROR MESSAGE:", error.message);
-    console.error("SENDGRID STATUS CODE:", error.code);
-
-    if (error.response) {
-      console.error("SENDGRID RESPONSE STATUS:", error.response.statusCode);
-      console.error(
-        "SENDGRID RESPONSE BODY:",
-        JSON.stringify(error.response.body, null, 2)
-      );
-      console.error("SENDGRID RESPONSE HEADERS:", error.response.headers);
-    }
-
-    return res.status(500).json({
-      ok: false,
       message:
-        error.response?.body?.errors?.[0]?.message ||
-        error.message ||
-        "Failed to send reset email.",
-      sendgridStatus:
-        error.response?.statusCode || error.code || null,
-      sendgridErrors:
-        error.response?.body?.errors || null,
+        "If an account exists, a reset link has been sent.",
     });
-  }
+  }catch (error) {
+  console.error(
+    "FORGOT PASSWORD ERROR:",
+    error
+  );
+
+  res.status(500).json({
+    ok: false,
+    message: error.message,
+  });
+}
+console.log("EMAIL SENT SUCCESSFULLY");
 };
 
-// ── Reset Password ───────────────────────────────────────────
-
-exports.resetPassword = async (req, res) => {
+exports.resetPassword = async (
+  req,
+  res,
+) => {
   try {
-    const { token, password, newPassword } = req.body;
+    const {
+  token,
+  password,
+  newPassword,
+} = req.body;
 
-    const finalPassword =
-      newPassword || password;
-
-    if (!finalPassword) {
-      return res.status(400).json({
-        ok: false,
-        message: "Password is required.",
-      });
-    }
+const finalPassword =
+  newPassword || password;
 
     const hashedToken = crypto
-      .createHash("sha256")
-      .update(token)
-      .digest("hex");
+  .createHash("sha256")
+  .update(token)
+  .digest("hex");
 
-    const user = await User.findOne({
-      resetPasswordToken: hashedToken,
-      resetPasswordExpire: {
-        $gt: Date.now(),
-      },
-    });
+const user =
+  await User.findOne({
+    resetPasswordToken: hashedToken,
+        resetPasswordExpire: {
+          $gt: Date.now(),
+        },
+      });
 
     if (!user) {
       return res.status(400).json({
         ok: false,
-        message: "Invalid or expired token.",
+        message:
+          "Invalid or expired token",
       });
     }
 
-    const salt = await bcrypt.genSalt(10);
+    const salt =
+      await bcrypt.genSalt(10);
 
-    const hashedPassword =
-      await bcrypt.hash(finalPassword, salt);
+    user.password =
+      await bcrypt.hash(
+        password,
+        salt,
+      );
 
-    user.password = hashedPassword;
-    user.password_hash = hashedPassword;
+    user.resetPasswordToken =
+      undefined;
 
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpire = undefined;
-    user.mustChangePassword = false;
+    user.resetPasswordExpire =
+      undefined;
+
+    user.mustChangePassword =
+      false;
 
     await user.save();
 
-    return res.json({
+    res.json({
       ok: true,
-      message: "Password reset successful.",
+      message:
+        "Password reset successful",
     });
   } catch (error) {
-    console.error(
-      "RESET PASSWORD ERROR:",
-      error
-    );
+    console.error(error);
 
-    return res.status(500).json({
+    res.status(500).json({
       ok: false,
       message: "Server error",
     });
