@@ -333,3 +333,69 @@ exports.forgotPassword = async (req, res) => {
     });
   }
 };
+
+// ── Reset Password ───────────────────────────────────────────
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token, password, newPassword } = req.body;
+
+    const finalPassword =
+      newPassword || password;
+
+    if (!finalPassword) {
+      return res.status(400).json({
+        ok: false,
+        message: "Password is required.",
+      });
+    }
+
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
+
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: {
+        $gt: Date.now(),
+      },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        ok: false,
+        message: "Invalid or expired token.",
+      });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+
+    const hashedPassword =
+      await bcrypt.hash(finalPassword, salt);
+
+    user.password = hashedPassword;
+    user.password_hash = hashedPassword;
+
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    user.mustChangePassword = false;
+
+    await user.save();
+
+    return res.json({
+      ok: true,
+      message: "Password reset successful.",
+    });
+  } catch (error) {
+    console.error(
+      "RESET PASSWORD ERROR:",
+      error
+    );
+
+    return res.status(500).json({
+      ok: false,
+      message: "Server error",
+    });
+  }
+};
