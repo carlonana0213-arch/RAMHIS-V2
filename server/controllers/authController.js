@@ -362,11 +362,6 @@ exports.forgotPassword = async (req, res) => {
 
 console.log("ABOUT TO SEND EMAIL");
 
-return res.json({
-  ok: true,
-  message: "TEMP TEST: reset token generated",
-  resetToken,
-});
     await transporter.sendMail({
       from: `"RAMHIS" <${process.env.EMAIL_USER}>`,
       to: user.email,
