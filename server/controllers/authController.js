@@ -2,18 +2,7 @@ const User = require("../models/user");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
-const nodemailer = require("nodemailer");
-
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-
+const sgMail = require("@sendgrid/mail");
 
 exports.register = async (req, res) => {
   const {
@@ -346,9 +335,24 @@ exports.forgotPassword = async (req, res) => {
       user.email
     );
 
-console.log("ABOUT TO SEND EMAIL");
-    await transporter.sendMail({
+    // Set API key inside the function so env var is guaranteed to be loaded
+    if (!process.env.SENDGRID_API_KEY) {
+      console.error("SENDGRID_API_KEY is missing in runtime env.");
+      return res.status(500).json({
+        ok: false,
+        message: "Email service not configured.",
+      });
+    }
+
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+console.log("ABOUT TO SEND EMAIL via SendGrid");
+    await sgMail.send({
       to: user.email,
+      from: {
+        email: process.env.SENDGRID_FROM_EMAIL || "aldentolosa11@gmail.com",
+        name: "RAMHIS",
+      },
       subject: "RAMHIS Password Reset",
       html: `
       <div style="font-family: Arial;">
@@ -386,6 +390,8 @@ console.log("ABOUT TO SEND EMAIL");
       `,
     });
 
+    console.log("EMAIL SENT SUCCESSFULLY");
+
     res.json({
       ok: true,
       message:
@@ -402,7 +408,6 @@ console.log("ABOUT TO SEND EMAIL");
     message: error.message,
   });
 }
-console.log("EMAIL SENT SUCCESSFULLY");
 };
 
 exports.resetPassword = async (
@@ -445,7 +450,7 @@ const user =
 
     user.password =
       await bcrypt.hash(
-        password,
+        finalPassword,
         salt,
       );
 
