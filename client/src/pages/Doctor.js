@@ -19,11 +19,10 @@ function Doctor() {
   const [loading, setLoading] = useState(true);
 
   const [selectedPatient, setSelectedPatient] = useState(null);
-
+  const [currentPatient, setCurrentPatient] = useState(null);
   const [search, setSearch] = useState("");
   const [queueFilter, setQueueFilter] = useState("all");
   const [showDoctorView, setShowDoctorView] = useState(false);
-  const [queueIndex, setQueueIndex] = useState(0);
   const [showReleaseConfirm, setShowReleaseConfirm] = useState(false);
   const hasLoadedRef = useRef(false);
 
@@ -38,6 +37,7 @@ function Doctor() {
       const activePatients = queue.filter((p) => p.status !== "released");
 
       setPatients(activePatients);
+
       hasLoadedRef.current = true;
     } catch (err) {
       console.error(err);
@@ -93,27 +93,73 @@ function Doctor() {
 
     // PRIORITY FILTER
     if (queueFilter === "priority") {
-      filtered = filtered.filter((p) => p.isPriority);
+      filtered = filtered.filter(
+        (p) => p.isPriority && p.status !== "unconsulted",
+      );
+    }
+    // ALL TAB = exclude unconsulted
+    if (queueFilter === "all") {
+      filtered = filtered.filter((p) => p.status !== "unconsulted");
+    }
+    // UNCONSULTED FILTER
+    if (queueFilter === "unconsulted") {
+      filtered = filtered.filter((p) => p.status === "unconsulted");
     }
 
+    filtered.sort((a, b) => {
+      if (currentPatient && a._id === currentPatient._id) return -1;
+
+      if (currentPatient && b._id === currentPatient._id) return 1;
+
+      return 0;
+    });
+
     return filtered;
-  }, [patients, search, queueFilter, doctorDepartment, storedUser?.role]);
+  }, [
+    patients,
+    search,
+    queueFilter,
+    doctorDepartment,
+    storedUser?.role,
+    currentPatient,
+  ]);
+
+  useEffect(() => {
+    if (filteredPatients.length === 0) {
+      setCurrentPatient(null);
+      return;
+    }
+
+    setCurrentPatient((prev) => {
+      // if patient is already top row, preserve it
+      if (prev && filteredPatients[0]?._id === prev._id) {
+        return prev;
+      }
+
+      // otherwise follow top row
+      return filteredPatients[0];
+    });
+  }, [filteredPatients]);
 
   const openDoctorView = async (patient) => {
     try {
-      // open instantly
-      setSelectedPatient({
+      const updatedPatient = {
         ...patient,
         status: "beingSeen",
-      });
+      };
 
+      // fill patient card
+      setCurrentPatient(updatedPatient);
+
+      // open modal
+      setSelectedPatient(updatedPatient);
       setShowDoctorView(true);
 
       await updatePatientStatus(patient._id, {
         status: "beingSeen",
       });
 
-      loadQueue();
+      await loadQueue();
     } catch (err) {
       console.error("Failed to update patient status", err);
 
@@ -123,7 +169,6 @@ function Doctor() {
       setSelectedPatient(null);
     }
   };
-  const currentPatient = filteredPatients[queueIndex];
   const handleNextPatient = () => {
     if (!currentPatient) return;
 
@@ -131,27 +176,13 @@ function Doctor() {
   };
   const confirmReleaseAndNext = async () => {
     try {
-      await import("../services/doctorService").then(
-        async ({ updatePatientStatus }) => {
-          await updatePatientStatus(currentPatient._id, {
-            status: "released",
-          });
-        },
-      );
+      await updatePatientStatus(currentPatient._id, {
+        status: "released",
+      });
+
+      setCurrentPatient(null);
 
       await loadQueue();
-
-      setQueueIndex((prev) => {
-        const updatedLength = filteredPatients.length - 1;
-
-        if (updatedLength <= 0) return 0;
-
-        if (prev >= updatedLength) {
-          return 0;
-        }
-
-        return prev;
-      });
 
       setShowReleaseConfirm(false);
     } catch (err) {
@@ -173,6 +204,8 @@ function Doctor() {
             patient={currentPatient}
             onSelect={openDoctorView}
             onNextPatient={handleNextPatient}
+            refreshQueue={loadQueue}
+            setCurrentPatient={setCurrentPatient}
           />
         )}
 
@@ -188,6 +221,7 @@ function Doctor() {
             queueFilter={queueFilter}
             setQueueFilter={setQueueFilter}
             onOpenDoctorView={openDoctorView}
+            setCurrentPatient={setCurrentPatient}
           />
         )}
       </div>

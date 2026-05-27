@@ -1,4 +1,11 @@
-function PatientCard({ patient, onSelect, onNextPatient }) {
+import { updatePatient } from "../../services/patientService";
+function PatientCard({
+  patient,
+  onSelect,
+  onNextPatient,
+  refreshQueue,
+  setCurrentPatient,
+}) {
   if (!patient) {
     return (
       <div className="patient-queue-card current-patient-card empty-patient-card">
@@ -29,9 +36,25 @@ function PatientCard({ patient, onSelect, onNextPatient }) {
         <div className="patient-card-buttons">
           <button
             className="queue-action-btn"
+            onClick={async () => {
+              try {
+                await updatePatient(patient._id, {
+                  status: "unconsulted",
+                });
+
+                await refreshQueue();
+              } catch (err) {
+                console.error(err);
+              }
+            }}
+          >
+            Unconsulted
+          </button>
+          <button
+            className="queue-action-btn"
             onClick={() => onSelect(patient)}
           >
-            Open Sheet
+            Consult{" "}
           </button>
 
           <button className="next-patient-btn" onClick={onNextPatient}>

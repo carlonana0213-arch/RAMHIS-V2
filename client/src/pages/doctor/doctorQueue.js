@@ -6,6 +6,7 @@ function DoctorQueue({
   onOpenDoctorView,
   queueFilter,
   setQueueFilter,
+  setCurrentPatient,
 }) {
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 15;
@@ -57,6 +58,12 @@ function DoctorQueue({
             onClick={() => setQueueFilter("priority")}
           >
             Priority
+          </button>
+          <button
+            className={queueFilter === "unconsulted" ? "active" : ""}
+            onClick={() => setQueueFilter("unconsulted")}
+          >
+            Unconsulted
           </button>
         </div>
       </div>
@@ -118,9 +125,33 @@ function DoctorQueue({
                   <td>
                     <button
                       className="queue-action-btn"
-                      onClick={() => onOpenDoctorView(patient)}
+                      onClick={async () => {
+                        if (queueFilter === "unconsulted") {
+                          await import("../../services/doctorService").then(
+                            async ({ updatePatientStatus }) => {
+                              await updatePatientStatus(patient._id, {
+                                status: "waiting",
+                              });
+                            },
+                          );
+
+                          // wait until filter updates first
+                          setTimeout(() => {
+                            setCurrentPatient({
+                              ...patient,
+                              status: "waiting",
+                            });
+                          }, 100);
+
+                          return;
+                        }
+
+                        onOpenDoctorView(patient);
+                      }}
                     >
-                      Open Sheet
+                      {queueFilter === "unconsulted"
+                        ? "Move Back To Queue"
+                        : "Consult"}
                     </button>
                   </td>
                 </tr>

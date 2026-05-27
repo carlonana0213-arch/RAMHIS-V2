@@ -207,7 +207,7 @@ function UserManagement() {
   return (
     <div className="admin-container">
       <div className="users-header">
-        <h2>Account Management</h2>
+        <h2>User Management</h2>
       </div>
       {loading ? <CardsSkeleton /> : <UserDashboard users={users} />}
 

@@ -81,7 +81,7 @@ const PatientSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["waiting", "beingSeen", "forPharmacy", "released"],
+      enum: ["waiting", "beingSeen", "forPharmacy", "released", "unconsulted"],
       default: "waiting",
     },
     needsFurtherTreatment: {
