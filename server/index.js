@@ -52,6 +52,25 @@ app.get("/", (_req, res) => {
   });
 });
 
+app.get("/", (_req, res) => {
+  return res.json({
+    ok: true,
+    message: "RAMHIS API Running",
+  });
+});
+
+app.get("/env-test", (_req, res) => {
+  res.json({
+    hasSendGridKey: !!process.env.SENDGRID_API_KEY,
+    startsWithSG:
+      process.env.SENDGRID_API_KEY?.startsWith("SG.") || false,
+    fromEmail: process.env.SENDGRID_FROM_EMAIL || null,
+    resetBase: process.env.APP_RESET_LINK_BASE || null,
+  });
+});
+
+app.use(express.json({ limit: "25mb" }));
+
 app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ limit: "25mb", extended: true }));
 
