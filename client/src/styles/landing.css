@@ -455,7 +455,13 @@
   width: 100%;
 
   display: grid;
-  grid-template-columns: auto 1.6fr auto 1fr auto auto;
+  grid-template-columns:
+    auto
+    minmax(280px, 1.5fr)
+    minmax(90px, 0.4fr)
+    minmax(80px, 1fr)
+    auto
+    auto;
 
   align-items: center;
 
@@ -513,14 +519,19 @@
 
 .footer-socials {
   justify-content: center;
+  align-items: center;
+
   gap: 22px;
 
-  align-self: flex-start;
+  align-self: center;
 
-  padding-top: 10px;
+  padding-top: 0;
 
-  position: relative;
-  left: -350px;
+  position: static;
+  left: auto;
+  transform: none;
+
+  min-width: 90px;
 }
 
 .footer-socials a {
@@ -554,6 +565,7 @@
 
 .footer-ramhis-text {
   justify-content: flex-end;
+  white-space: nowrap;
 }
 
 /* 6TH COLUMN: RAMHIS LOGO */
@@ -568,15 +580,87 @@
   object-fit: contain;
 }
 
-/* RESPONSIVE */
+/* ===== FOOTER RESPONSIVE: TABLET ===== */
 
-@media (max-width: 900px) {
+@media (max-width: 1200px) {
   .landing-footer-content {
-    grid-template-columns: 1fr;
-    text-align: center;
+    grid-template-columns: auto minmax(260px, 1fr) auto auto;
+
+    grid-template-areas:
+      "ramLogo ramInfo ramhisText ramhisLogo"
+      "ramLogo socials ramhisText ramhisLogo";
+
+    column-gap: 22px;
+    row-gap: 8px;
   }
 
+  .footer-ram-logo {
+    grid-area: ramLogo;
+  }
+
+  .footer-ram-info {
+    grid-area: ramInfo;
+  }
+
+.footer-socials {
+  justify-content: flex-start;
+  align-items: center;
+
+  gap: 18px;
+
+  align-self: center;
+
+  padding-top: 0;
+
+  position: static;
+  left: auto;
+  transform: none;
+
+  min-width: 80px;
+  margin-left: -100px;
+}
+
+  .footer-blank {
+    display: none;
+  }
+
+  .footer-ramhis-text {
+    grid-area: ramhisText;
+    justify-content: flex-end;
+  }
+
+  .footer-ramhis-logo-wrap {
+    grid-area: ramhisLogo;
+    justify-content: flex-end;
+  }
+}
+
+/* ===== FOOTER RESPONSIVE: MOBILE ===== */
+
+@media (max-width: 768px) {
+  .landing-footer {
+    padding: 28px 22px;
+  }
+
+.landing-footer-content {
+  width: 100%;
+
+  display: grid;
+  grid-template-columns:
+    auto
+    minmax(280px, 1.2fr)
+    auto
+    1fr
+    auto
+    auto;
+
+  align-items: center;
+
+  gap: 16px;
+}
+
   .footer-col,
+  .footer-ram-logo,
   .footer-ram-info,
   .footer-socials,
   .footer-ramhis-text,
@@ -585,17 +669,25 @@
     align-items: center;
   }
 
+  .footer-ram-info {
+    align-items: center;
+  }
+
   .footer-socials {
-    align-self: center;
-    padding-top: 0;
+    justify-content: center;
+    gap: 20px;
   }
 
   .footer-address {
     max-width: 100%;
   }
 
-  .footer-blank {
-    display: none;
+  .footer-logo {
+    width: 95px;
+  }
+
+  .footer-ramhis-logo {
+    width: 110px;
   }
 }
 

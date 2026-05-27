@@ -259,3 +259,27 @@
   font-weight: 600;
   color: #64748b;
 }
+
+/* add */ 
+
+.patient-current-event {
+  margin-top: 6px;
+  color: #64748b;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.patient-current-event strong {
+  color: #1e3a8a;
+  font-weight: 700;
+}
+
+.patient-current-event.no-event {
+  color: #dc2626;
+}
+
+.add-patient-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}

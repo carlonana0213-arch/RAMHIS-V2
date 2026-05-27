@@ -29,7 +29,7 @@ const getSteps = (form) => {
   return baseSteps;
 };
 
-const AddPatientModal = ({ onClose }) => {
+const AddPatientModal = ({ onClose, ongoingEvent }) => {
   const [step, setStep] = useState(0);
   const [showConsent, setShowConsent] = useState(true);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
@@ -156,9 +156,10 @@ const AddPatientModal = ({ onClose }) => {
 
       isPriority: form.isPriority || false,
 
-      location: matchedPatient?.location || "Default Location",
-
-      missionDate: new Date(),
+      location: ongoingEvent.location,
+      missionDate: ongoingEvent.date || new Date(),
+      eventId: ongoingEvent._id,
+      eventTitle: ongoingEvent.title,
 
       status: "waiting",
     };

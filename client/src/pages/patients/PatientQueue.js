@@ -36,20 +36,22 @@ const PatientQueue = ({ patients, loading, onSelectPatient }) => {
     return <TableSkeleton rows={8} columns={6} />;
   }
 
-  const activePatients = patients.filter((p) => p.status !== "released");
+const activePatients = patients.filter((p) => p.status !== "released");
 
-  const filteredPatients = activePatients
-    .filter((p) =>
-      p.generalInfo.name.toLowerCase().includes(search.toLowerCase()),
-    )
-    .filter((p) =>
-      departmentFilter === "All" ? true : p.department === departmentFilter,
-    )
-    .sort((a, b) => {
-      if (a.isPriority && !b.isPriority) return -1;
-      if (!a.isPriority && b.isPriority) return 1;
-      return 0;
-    });
+const filteredPatients = activePatients
+  .filter((p) =>
+    (p.generalInfo?.name || "")
+      .toLowerCase()
+      .includes(search.toLowerCase())
+  )
+  .filter((p) =>
+    departmentFilter === "All" ? true : p.department === departmentFilter
+  )
+  .sort((a, b) => {
+    if (a.isPriority && !b.isPriority) return -1;
+    if (!a.isPriority && b.isPriority) return 1;
+    return 0;
+  });
   const totalPatients = filteredPatients.length;
 
   const totalPages = Math.ceil(totalPatients / ITEMS_PER_PAGE);

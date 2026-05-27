@@ -411,3 +411,21 @@
 
   flex-shrink: 0;
 }
+
+/* add */
+
+.doctor-current-event {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.doctor-current-event strong {
+  color: #1e3a8a;
+  font-weight: 700;
+}
+
+.doctor-current-event.no-event {
+  color: #dc2626;
+}
