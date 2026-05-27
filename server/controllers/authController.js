@@ -9,25 +9,22 @@ const transporter = nodemailer.createTransport({
   port: 587,
   secure: false,
   requireTLS: true,
-
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
-
   connectionTimeout: 10000,
   greetingTimeout: 10000,
   socketTimeout: 10000,
 });
 
-transporter.verify((error, success) => {
+transporter.verify((error) => {
   if (error) {
     console.error("SMTP ERROR:", error);
   } else {
     console.log("SMTP READY");
   }
 });
-
 
 exports.register = async (req, res) => {
   const {
@@ -42,36 +39,25 @@ exports.register = async (req, res) => {
     contact_number,
     birthdate,
     accepted_terms,
-
     organization,
     skills,
-
     prc_license_number,
     specialty,
     hospital_clinic,
   } = req.body;
 
-  // Normalize mobile/web fields
   const normalizedName = name || full_name;
-
   const rawRole = role || account_type || "User";
-
-const normalizedRole =
-  rawRole.charAt(0).toUpperCase() +
-  rawRole.slice(1).toLowerCase();
-
-  const normalizedVolunteerType =
-    volunteerType || organization || skills || "";
+  const normalizedRole =
+    rawRole.charAt(0).toUpperCase() + rawRole.slice(1).toLowerCase();
+  const normalizedVolunteerType = volunteerType || organization || skills || "";
 
   const uploadedFileName =
-  req.file?.filename ||
-  req.file?.originalname ||
-  "";
+    req.file?.filename || req.file?.originalname || "";
 
-const normalizedDoctorInfo =
-  doctorInfo ||
-  (
-    normalizedRole.toLowerCase() === "doctor"
+  const normalizedDoctorInfo =
+    doctorInfo ||
+    (normalizedRole.toLowerCase() === "doctor"
       ? {
           specialization: specialty || "",
           licenseNumber: prc_license_number || "",
@@ -79,8 +65,7 @@ const normalizedDoctorInfo =
           proofOfLicense: uploadedFileName || "Submitted via mobile",
           proofOfDoctorate: uploadedFileName || "Submitted via mobile",
         }
-      : undefined
-  );
+      : undefined);
 
   const normalizedAcceptedTerms =
     accepted_terms === true || accepted_terms === "true";
@@ -96,10 +81,7 @@ const normalizedDoctorInfo =
       });
     }
 
-    const generateTempPassword = () => {
-      return Math.random().toString(36).slice(-8);
-    };
-
+    const generateTempPassword = () => Math.random().toString(36).slice(-8);
     const tempPassword = password || generateTempPassword();
 
     const salt = await bcrypt.genSalt(10);
@@ -108,20 +90,15 @@ const normalizedDoctorInfo =
     user = new User({
       name: normalizedName,
       full_name: normalizedName,
-
       email,
       password: hashedPassword,
-
       role: normalizedRole,
       account_type: normalizedRole,
-
       volunteerType: normalizedVolunteerType,
       doctorInfo: normalizedDoctorInfo,
-
       contact_number,
       birthdate,
       accepted_terms: normalizedAcceptedTerms,
-
       tempPassword: password ? undefined : tempPassword,
       mustChangePassword: password ? false : true,
     });
@@ -135,14 +112,13 @@ const normalizedDoctorInfo =
       message: "Registration successful. Await admin approval.",
     });
   } catch (error) {
-  console.error("REGISTER ERROR:", error);
-
-  return res.status(500).json({
-    ok: false,
-    msg: error.message,
-    message: error.message,
-  });
-}
+    console.error("REGISTER ERROR:", error);
+    return res.status(500).json({
+      ok: false,
+      msg: error.message,
+      message: error.message,
+    });
+  }
 };
 
 exports.login = async (req, res) => {
@@ -162,14 +138,14 @@ exports.login = async (req, res) => {
     }
 
     if (
-  user.verificationStatus === "Rejected" ||
-  user.verificationStatus === "Deactivated" ||
-  user.status === "deactivated"
-) {
-  return res.status(403).json({
-    msg: "Your account is deactivated, please contact administrator",
-  });
-}
+      user.verificationStatus === "Rejected" ||
+      user.verificationStatus === "Deactivated" ||
+      user.status === "deactivated"
+    ) {
+      return res.status(403).json({
+        msg: "Your account is deactivated, please contact administrator",
+      });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
 
@@ -178,102 +154,48 @@ exports.login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      {
-        id: user._id,
-        role: user.role,
-      },
+      { id: user._id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" },
+      { expiresIn: "1h" }
     );
 
     res.json({
-  ok: true,
-  msg: "Login successful",
-  message: "Login successful",
-  token,
-  accessToken: token,
-  user: {
-  id: user._id,
-  _id: user._id,
-
-  name: user.name || user.full_name,
-  full_name: user.full_name || user.name,
-
-  email: user.email,
-
-  role: user.role || user.account_type,
-  account_type: user.account_type || user.role,
-
-  verificationStatus: user.verificationStatus,
-  doctorInfo: user.doctorInfo,
-
-  birthdate: user.birthdate || user.birthday || user.bdate || "",
-  birthday: user.birthday || user.birthdate || user.bdate || "",
-  bdate: user.bdate || user.birthdate || user.birthday || "",
-
-  contact_number:
-    user.contact_number ||
-    user.contactNumber ||
-    user.phone ||
-    user.phoneNumber ||
-    "",
-
-  contactNumber:
-    user.contactNumber ||
-    user.contact_number ||
-    user.phone ||
-    user.phoneNumber ||
-    "",
-
-  phone:
-    user.phone ||
-    user.contact_number ||
-    user.contactNumber ||
-    "",
-
-  profileImage:
-    user.profileImage ||
-    user.profileImageUrl ||
-    user.profile_image_url ||
-    user.avatar ||
-    user.imageUrl ||
-    "",
-
-  profileImageUrl:
-    user.profileImageUrl ||
-    user.profileImage ||
-    user.profile_image_url ||
-    user.avatar ||
-    user.imageUrl ||
-    "",
-
-  profile_image_url:
-    user.profile_image_url ||
-    user.profileImageUrl ||
-    user.profileImage ||
-    user.avatar ||
-    user.imageUrl ||
-    "",
-
-  avatar:
-    user.avatar ||
-    user.profileImage ||
-    user.profileImageUrl ||
-    user.profile_image_url ||
-    user.imageUrl ||
-    "",
-
-  imageUrl:
-    user.imageUrl ||
-    user.profileImage ||
-    user.profileImageUrl ||
-    user.profile_image_url ||
-    user.avatar ||
-    "",
-},
-  mustChangePassword: user.mustChangePassword,
-});
-
+      ok: true,
+      msg: "Login successful",
+      message: "Login successful",
+      token,
+      accessToken: token,
+      user: {
+        id: user._id,
+        _id: user._id,
+        name: user.name || user.full_name,
+        full_name: user.full_name || user.name,
+        email: user.email,
+        role: user.role || user.account_type,
+        account_type: user.account_type || user.role,
+        verificationStatus: user.verificationStatus,
+        doctorInfo: user.doctorInfo,
+        birthdate: user.birthdate || user.birthday || user.bdate || "",
+        birthday: user.birthday || user.birthdate || user.bdate || "",
+        bdate: user.bdate || user.birthdate || user.birthday || "",
+        contact_number:
+          user.contact_number || user.contactNumber || user.phone || user.phoneNumber || "",
+        contactNumber:
+          user.contactNumber || user.contact_number || user.phone || user.phoneNumber || "",
+        phone: user.phone || user.contact_number || user.contactNumber || "",
+        profileImage:
+          user.profileImage || user.profileImageUrl || user.profile_image_url || user.avatar || user.imageUrl || "",
+        profileImageUrl:
+          user.profileImageUrl || user.profileImage || user.profile_image_url || user.avatar || user.imageUrl || "",
+        profile_image_url:
+          user.profile_image_url || user.profileImageUrl || user.profileImage || user.avatar || user.imageUrl || "",
+        avatar:
+          user.avatar || user.profileImage || user.profileImageUrl || user.profile_image_url || user.imageUrl || "",
+        imageUrl:
+          user.imageUrl || user.profileImage || user.profileImageUrl || user.profile_image_url || user.avatar || "",
+      },
+      mustChangePassword: user.mustChangePassword,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ msg: "Server error" });
@@ -307,7 +229,6 @@ exports.updateMe = async (req, res) => {
 exports.getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
-
     res.json(user);
   } catch (err) {
     console.error(err);
@@ -319,172 +240,128 @@ exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
-    const user = await User.findOne({
-      email,
-    });
+    const user = await User.findOne({ email });
 
-    // SECURITY:
-    // NEVER reveal whether email exists
+    // SECURITY: never reveal whether the email exists
     if (!user) {
       return res.json({
         ok: true,
-        message:
-          "If an account exists, a reset link has been sent.",
+        message: "If an account exists, a reset link has been sent.",
       });
     }
 
-    const resetToken =
-      crypto.randomBytes(32).toString(
-        "hex",
-      );
+    const resetToken = crypto.randomBytes(32).toString("hex");
 
     const hashedToken = crypto
       .createHash("sha256")
       .update(resetToken)
       .digest("hex");
 
-    user.resetPasswordToken =
-      hashedToken;
-
-    user.resetPasswordExpire =
-      Date.now() + 1000 * 60 * 15;
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpire = Date.now() + 1000 * 60 * 15; // 15 minutes
 
     await user.save();
 
-    // MOBILE DEEP LINK
- const resetLink =
-  `https://ramhis-v2-1.onrender.com/api/auth/reset-password?token=${resetToken}`;
+    const resetLink = `https://ramhis-v2-1.onrender.com/api/auth/reset-password?token=${resetToken}`;
 
-  console.log(
-      "Sending reset email to:",
-      user.email
-    );
+    console.log("Sending reset email to:", user.email);
 
-console.log("ABOUT TO SEND EMAIL");
-
+    // FIX: moved sendMail INSIDE the try block, before res.json()
+    // Previously the success log was after the catch block (dead code placement)
     await transporter.sendMail({
       from: `"RAMHIS" <${process.env.EMAIL_USER}>`,
       to: user.email,
       subject: "RAMHIS Password Reset",
       html: `
-      <div style="font-family: Arial;">
-
-        <h2>RAMHIS Password Reset</h2>
-
-        <p>
-          You requested to reset your RAMHIS password.
-        </p>
-
-        <p>
-          Click the button below to reset your password:
-        </p>
-
-        <a
-          href="${resetLink}"
-          style="
-            display:inline-block;
-            padding:12px 20px;
-            background:#4F46E5;
-            color:white;
-            text-decoration:none;
-            border-radius:8px;
-            font-weight:bold;
-          "
-        >
-          Reset Password
-        </a>
-
-        <p style="margin-top:20px;">
-          This link expires in 15 minutes.
-        </p>
-
-      </div>
+        <div style="font-family: Arial;">
+          <h2>RAMHIS Password Reset</h2>
+          <p>You requested to reset your RAMHIS password.</p>
+          <p>Click the button below to reset your password:</p>
+          <a
+            href="${resetLink}"
+            style="
+              display:inline-block;
+              padding:12px 20px;
+              background:#4F46E5;
+              color:white;
+              text-decoration:none;
+              border-radius:8px;
+              font-weight:bold;
+            "
+          >
+            Reset Password
+          </a>
+          <p style="margin-top:20px;">This link expires in 15 minutes.</p>
+        </div>
       `,
     });
 
-    res.json({
-      ok: true,
-      message:
-        "If an account exists, a reset link has been sent.",
-    });
-  }catch (error) {
-  console.error(
-    "FORGOT PASSWORD ERROR:",
-    error
-  );
+    console.log("EMAIL SENT SUCCESSFULLY to:", user.email);
 
-  res.status(500).json({
-    ok: false,
-    message: error.message,
-  });
-}
-console.log("EMAIL SENT SUCCESSFULLY");
+    return res.json({
+      ok: true,
+      message: "If an account exists, a reset link has been sent.",
+    });
+  } catch (error) {
+    console.error("FORGOT PASSWORD ERROR:", error);
+    return res.status(500).json({
+      ok: false,
+      message: error.message,
+    });
+  }
 };
 
-exports.resetPassword = async (
-  req,
-  res,
-) => {
+exports.resetPassword = async (req, res) => {
   try {
-    const {
-  token,
-  password,
-  newPassword,
-} = req.body;
+    const { token, password, newPassword } = req.body;
 
-const finalPassword =
-  newPassword || password;
+    // FIX: finalPassword is now actually used when hashing
+    // Previously bcrypt.hash(password, salt) was used instead of finalPassword
+    // so if Flutter sent newPassword, it would hash undefined
+    const finalPassword = newPassword || password;
+
+    if (!finalPassword) {
+      return res.status(400).json({
+        ok: false,
+        message: "Password is required.",
+      });
+    }
 
     const hashedToken = crypto
-  .createHash("sha256")
-  .update(token)
-  .digest("hex");
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
 
-const user =
-  await User.findOne({
-    resetPasswordToken: hashedToken,
-        resetPasswordExpire: {
-          $gt: Date.now(),
-        },
-      });
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
 
     if (!user) {
       return res.status(400).json({
         ok: false,
-        message:
-          "Invalid or expired token",
+        message: "Invalid or expired token",
       });
     }
 
-    const salt =
-      await bcrypt.genSalt(10);
+    const salt = await bcrypt.genSalt(10);
 
-    user.password =
-      await bcrypt.hash(
-        password,
-        salt,
-      );
+    // FIX: was bcrypt.hash(password, salt) — now correctly uses finalPassword
+    user.password = await bcrypt.hash(finalPassword, salt);
 
-    user.resetPasswordToken =
-      undefined;
-
-    user.resetPasswordExpire =
-      undefined;
-
-    user.mustChangePassword =
-      false;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    user.mustChangePassword = false;
 
     await user.save();
 
-    res.json({
+    return res.json({
       ok: true,
-      message:
-        "Password reset successful",
+      message: "Password reset successful",
     });
   } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
+    console.error("RESET PASSWORD ERROR:", error);
+    return res.status(500).json({
       ok: false,
       message: "Server error",
     });
