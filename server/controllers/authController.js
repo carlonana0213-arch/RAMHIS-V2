@@ -389,21 +389,17 @@ exports.forgotPassword = async (req, res) => {
       message:
         "If an account exists, a reset link has been sent.",
     });
-  } catch (error) {
-    
-    console.error(
-      "FORGOT PASSWORD ERROR:",
-      error
-    );
+  }catch (error) {
+  console.error(
+    "FORGOT PASSWORD ERROR:",
+    error
+  );
 
-
-    console.error(error);
-
-    res.status(500).json({
-      ok: false,
-      message: "Server error",
-    });
-  }
+  res.status(500).json({
+    ok: false,
+    message: error.message,
+  });
+}
 };
 
 exports.resetPassword = async (
