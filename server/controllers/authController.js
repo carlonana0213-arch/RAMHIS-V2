@@ -242,14 +242,17 @@ exports.forgotPassword = async (req, res) => {
     console.log("SENDGRID_FROM_EMAIL:", fromEmail);
     console.log("APP_RESET_LINK_BASE:", process.env.APP_RESET_LINK_BASE);
 
-    if (!apiKey) {
-      return res.status(500).json({
-        ok: false,
-        message: "SENDGRID_API_KEY is missing in runtime env.",
-      });
-    }
+   const apiKey = process.env.SENDGRID_API_KEY;
 
-    sgMail.setApiKey(apiKey.trim());
+if (!apiKey) {
+  console.error("SENDGRID_API_KEY is missing in runtime env.");
+  return res.status(500).json({
+    ok: false,
+    message: "Email service not configured.",
+  });
+}
+
+sgMail.setApiKey(apiKey.trim());
 
     const { email } = req.body;
 
