@@ -16,5 +16,6 @@ const MedicineSchema = new mongoose.Schema(
 
   { timestamps: true },
 );
-
+MedicineSchema.index({ quantity: 1 });
+MedicineSchema.index({ createdAt: 1 });
 module.exports = mongoose.model("Medicine", MedicineSchema);

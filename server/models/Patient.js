@@ -131,5 +131,9 @@ const PatientSchema = new mongoose.Schema(
     timestamps: true,
   },
 );
+PatientSchema.index({ createdAt: 1 });
+PatientSchema.index({ missionDate: 1 });
+PatientSchema.index({ department: 1 });
+PatientSchema.index({ status: 1 });
 
 module.exports = mongoose.model("Patient", PatientSchema);

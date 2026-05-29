@@ -141,24 +141,24 @@ const UserSchema = new mongoose.Schema({
     default: "",
   },
   otp_code: {
-  type: String,
-  default: null,
-},
+    type: String,
+    default: null,
+  },
 
-otp_expiry: {
-  type: Date,
-  default: null,
-},
+  otp_expiry: {
+    type: Date,
+    default: null,
+  },
 
-otp_attempts: {
-  type: Number,
-  default: 0,
-},
+  otp_attempts: {
+    type: Number,
+    default: 0,
+  },
 
-otp_locked_until: {
-  type: Date,
-  default: null,
-},
+  otp_locked_until: {
+    type: Date,
+    default: null,
+  },
 
   /* =========================
      DOCTOR INFO
@@ -194,7 +194,6 @@ otp_locked_until: {
     },
   },
 });
-
-module.exports =
-  mongoose.models.User ||
-  mongoose.model("User", UserSchema);
+UserSchema.index({ role: 1 });
+UserSchema.index({ createdAt: 1 });
+module.exports = mongoose.models.User || mongoose.model("User", UserSchema);

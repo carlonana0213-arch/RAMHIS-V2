@@ -40,5 +40,8 @@ const prescriptionSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+prescriptionSchema.index({ createdAt: 1 });
+prescriptionSchema.index({ "items.medicine": 1 });
+prescriptionSchema.index({ patient: 1 });
 
 module.exports = mongoose.model("Prescription", prescriptionSchema);
