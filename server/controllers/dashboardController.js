@@ -5,75 +5,113 @@ const Prescription = require("../models/Prescription");
 
 exports.getDashboardSummary = async (req, res) => {
   try {
-    const totalPatients = await Patient.countDocuments();
-
-    const totalUsers = await User.countDocuments({
-      role: { $in: ["Volunteer", "Doctor"] },
-    });
-
-    const totalMedicines = await Medicine.countDocuments();
-
-    const lowStock = await Medicine.countDocuments({
-      quantity: { $gt: 0, $lte: 50 },
-    });
-
-    const outOfStock = await Medicine.countDocuments({
-      quantity: 0,
-    });
-
     const now = new Date();
 
-    const currentMonth = now.getMonth();
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
 
-    const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+    const previousMonth = currentMonth === 1 ? 12 : currentMonth - 1;
 
-    // =========================
-    // PATIENTS
-    // =========================
-    const allPatients = await Patient.find();
+    const previousYear = currentMonth === 1 ? currentYear - 1 : currentYear;
 
-    let currentPatients = 0;
-    let previousPatients = 0;
+    const [
+      totalPatients,
+      totalUsers,
+      totalMedicines,
+      lowStock,
+      outOfStock,
+      patientStats,
+      userStats,
+    ] = await Promise.all([
+      Patient.countDocuments(),
 
-    allPatients.forEach((patient) => {
-      if (!patient.createdAt) return;
+      User.countDocuments({
+        role: { $in: ["Volunteer", "Doctor"] },
+      }),
 
-      const month = new Date(patient.createdAt).getMonth();
+      Medicine.countDocuments(),
 
-      if (month === currentMonth) {
-        currentPatients++;
-      }
+      Medicine.countDocuments({
+        quantity: { $gt: 0, $lte: 50 },
+      }),
 
-      if (month === previousMonth) {
-        previousPatients++;
-      }
-    });
+      Medicine.countDocuments({
+        quantity: 0,
+      }),
 
-    // =========================
-    // USERS/VOLUNTEERS
-    // =========================
-    const allUsers = await User.find({
-      role: {
-        $in: ["Volunteer", "Doctor"],
-      },
-    });
+      Patient.aggregate([
+        {
+          $match: {
+            createdAt: {
+              $type: "date",
+            },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              month: {
+                $month: "$createdAt",
+              },
+              year: {
+                $year: "$createdAt",
+              },
+            },
+            count: {
+              $sum: 1,
+            },
+          },
+        },
+      ]),
 
-    let currentUsers = 0;
-    let previousUsers = 0;
+      User.aggregate([
+        {
+          $match: {
+            role: {
+              $in: ["Volunteer", "Doctor"],
+            },
+            createdAt: {
+              $type: "date",
+            },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              month: {
+                $month: "$createdAt",
+              },
+              year: {
+                $year: "$createdAt",
+              },
+            },
+            count: {
+              $sum: 1,
+            },
+          },
+        },
+      ]),
+    ]);
 
-    allUsers.forEach((user) => {
-      if (!user.createdAt) return;
+    const currentPatients =
+      patientStats.find(
+        (p) => p._id.month === currentMonth && p._id.year === currentYear,
+      )?.count || 0;
 
-      const month = new Date(user.createdAt).getMonth();
+    const previousPatients =
+      patientStats.find(
+        (p) => p._id.month === previousMonth && p._id.year === previousYear,
+      )?.count || 0;
 
-      if (month === currentMonth) {
-        currentUsers++;
-      }
+    const currentUsers =
+      userStats.find(
+        (u) => u._id.month === currentMonth && u._id.year === currentYear,
+      )?.count || 0;
 
-      if (month === previousMonth) {
-        previousUsers++;
-      }
-    });
+    const previousUsers =
+      userStats.find(
+        (u) => u._id.month === previousMonth && u._id.year === previousYear,
+      )?.count || 0;
 
     res.json({
       totalPatients,
@@ -83,7 +121,6 @@ exports.getDashboardSummary = async (req, res) => {
       patientIncrease: currentPatients - previousPatients,
 
       currentPatients,
-
       previousPatients,
 
       userIncrease: currentUsers - previousUsers,
@@ -100,16 +137,6 @@ exports.getDashboardSummary = async (req, res) => {
 
 exports.getPatientTrends = async (req, res) => {
   try {
-    const patients = await Patient.find();
-
-    const prescriptions = await Prescription.find();
-
-    const volunteers = await User.find({
-      role: {
-        $in: ["Volunteer", "Doctor"],
-      },
-    });
-
     const months = [
       "Jan",
       "Feb",
@@ -125,70 +152,93 @@ exports.getPatientTrends = async (req, res) => {
       "Dec",
     ];
 
-    const monthlyData = {};
+    const [patientStats, prescriptionStats, volunteerStats] = await Promise.all(
+      [
+        Patient.aggregate([
+          {
+            $match: {
+              missionDate: {
+                $type: "date",
+              },
+            },
+          },
+          {
+            $group: {
+              _id: {
+                $month: "$missionDate",
+              },
+              count: {
+                $sum: 1,
+              },
+            },
+          },
+        ]),
 
-    // INITIALIZE
-    months.forEach((month) => {
-      monthlyData[month] = {
-        patients: 0,
-        prescriptions: 0,
-        volunteers: 0,
+        Prescription.aggregate([
+          {
+            $match: {
+              createdAt: {
+                $type: "date",
+              },
+            },
+          },
+          {
+            $group: {
+              _id: {
+                $month: "$createdAt",
+              },
+              count: {
+                $sum: 1,
+              },
+            },
+          },
+        ]),
+
+        User.aggregate([
+          {
+            $match: {
+              role: {
+                $in: ["Volunteer", "Doctor"],
+              },
+              createdAt: {
+                $type: "date",
+              },
+            },
+          },
+          {
+            $group: {
+              _id: {
+                $month: "$createdAt",
+              },
+              count: {
+                $sum: 1,
+              },
+            },
+          },
+        ]),
+      ],
+    );
+
+    const result = months.map((month, index) => {
+      const monthNumber = index + 1;
+
+      return {
+        month,
+
+        patients: patientStats.find((p) => p._id === monthNumber)?.count || 0,
+
+        prescriptions:
+          prescriptionStats.find((p) => p._id === monthNumber)?.count || 0,
+
+        volunteers:
+          volunteerStats.find((v) => v._id === monthNumber)?.count || 0,
       };
     });
 
-    // =========================
-    // PATIENTS
-    // =========================
-    patients.forEach((patient) => {
-      if (!patient.missionDate) return;
-
-      const date = new Date(patient.missionDate);
-
-      if (isNaN(date)) return;
-
-      const month = months[date.getMonth()];
-
-      monthlyData[month].patients++;
-    });
-
-    // =========================
-    // PRESCRIPTIONS
-    // =========================
-    prescriptions.forEach((prescription) => {
-      if (!prescription.createdAt) return;
-
-      const date = new Date(prescription.createdAt);
-
-      const month = months[date.getMonth()];
-
-      monthlyData[month].prescriptions++;
-    });
-
-    // =========================
-    // VOLUNTEERS
-    // =========================
-    volunteers.forEach((user) => {
-      if (!user.createdAt) return;
-
-      const date = new Date(user.createdAt);
-
-      const month = months[date.getMonth()];
-
-      monthlyData[month].volunteers++;
-    });
-
-    const result = months.map((month) => ({
-      month,
-
-      patients: monthlyData[month].patients,
-
-      prescriptions: monthlyData[month].prescriptions,
-
-      volunteers: monthlyData[month].volunteers,
-    }));
-
     res.json(result);
   } catch (err) {
+    console.error("Patient trends error:", err);
+
     res.status(500).json({
       message: err.message,
     });
@@ -197,43 +247,51 @@ exports.getPatientTrends = async (req, res) => {
 
 exports.getDiagnosisDistribution = async (req, res) => {
   try {
-    const patients = await Patient.find();
+    const diagnoses = await Patient.aggregate([
+      {
+        $unwind: "$doctorSheets",
+      },
 
-    const diagnosisMap = {};
+      {
+        $match: {
+          "doctorSheets.diagnosis": {
+            $type: "string",
+            $ne: "",
+          },
+        },
+      },
 
-    patients.forEach((patient) => {
-      if (!patient.doctorSheets?.length) return;
+      {
+        $group: {
+          _id: {
+            $trim: {
+              input: "$doctorSheets.diagnosis",
+            },
+          },
+          value: {
+            $sum: 1,
+          },
+        },
+      },
 
-      patient.doctorSheets.forEach((sheet) => {
-        const rawDiagnosis = sheet?.diagnosis;
+      {
+        $sort: {
+          value: -1,
+        },
+      },
+    ]);
 
-        // Skip null/undefined/empty
-        if (!rawDiagnosis || typeof rawDiagnosis !== "string") return;
+    const topThree = diagnoses.slice(0, 3);
 
-        const diagnosis = rawDiagnosis.trim();
-
-        if (!diagnosis) return;
-
-        // Preserve exact database input
-        diagnosisMap[diagnosis] = (diagnosisMap[diagnosis] || 0) + 1;
-      });
-    });
-
-    const sorted = Object.entries(diagnosisMap)
-      .map(([name, value]) => ({
-        name,
-        value,
-      }))
-      .sort((a, b) => b.value - a.value);
-
-    const topThree = sorted.slice(0, 3);
-
-    const othersTotal = sorted
+    const othersTotal = diagnoses
       .slice(3)
       .reduce((sum, item) => sum + item.value, 0);
 
     const result = [
-      ...topThree,
+      ...topThree.map((d) => ({
+        name: d._id,
+        value: d.value,
+      })),
 
       ...(othersTotal > 0
         ? [
@@ -247,9 +305,12 @@ exports.getDiagnosisDistribution = async (req, res) => {
 
     res.json(result);
   } catch (err) {
+    console.error("Diagnosis distribution error:", err);
+
     res.status(500).json({
       message: err.message,
     });
+  } finally {
   }
 };
 
@@ -313,4 +374,3 @@ exports.getTopMedicines = async (req, res) => {
     });
   }
 };
- 
