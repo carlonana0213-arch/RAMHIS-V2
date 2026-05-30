@@ -15,10 +15,11 @@ import LandingPage from "./pages/Landing";
 import Dashboard from "./pages/Dashboard.js";
 import Doctor from "./pages/Doctor.js";
 import EventManagement from "./pages/EventManagement";
-
+import ConnectionStatus from "./components/ConnectionStatus";
 function App() {
   return (
     <Router>
+      <ConnectionStatus />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/register" element={<Register />} />
@@ -139,16 +140,16 @@ function App() {
             </ProtectedRoute>
           }
         />
-          <Route
-  path="/event"
-  element={
-    <ProtectedRoute>
-      <AppLayout>
-        <EventManagement />
-      </AppLayout>
-    </ProtectedRoute>
-  }
-/>
+        <Route
+          path="/event"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <EventManagement />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </Router>
   );

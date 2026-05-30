@@ -88,38 +88,11 @@ const Analytics = () => {
       setLocations(res.data);
       if (res.data.length > 0) {
         const latestLocation = res.data[res.data.length - 1];
+
         setSelectedLocation(latestLocation);
-        const fetchPatientsForLocation = async (location, page = 1) => {
-          try {
-            setPatientsLoading(true);
 
-            const token = localStorage.getItem("token");
-
-            const res = await axios.get(
-              `${API_BASE_URL}/api/patients/analytics`,
-              {
-                params: {
-                  location,
-                  page,
-                  limit: 10,
-                },
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              },
-            );
-
-            setPatients(res.data.patients || []);
-
-            setPatientTotalPages(res.data.totalPages || 1);
-
-            setPatientPage(res.data.currentPage || 1);
-          } catch (err) {
-            console.error(err);
-          } finally {
-            setPatientsLoading(false);
-          }
-        };
+        // always load first page
+        await fetchPatientsForLocation(latestLocation, 1);
       }
     } catch (err) {
       console.error(err);
@@ -314,7 +287,7 @@ const Analytics = () => {
                 setSelectedLocation(value);
                 setAnalytics(null);
                 setShowAnalytics(false);
-                fetchPatientsForLocation(value);
+                fetchPatientsForLocation(value, 1);
               }}
             >
               <option value="">Select Location</option>
