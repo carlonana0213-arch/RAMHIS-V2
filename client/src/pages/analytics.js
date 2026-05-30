@@ -7,6 +7,15 @@ import PatientViewFinal from "./analytics/patientview";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import TableSkeleton from "../components/loading/tableSkeleton";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from "recharts";
 const Analytics = () => {
   const [locations, setLocations] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState("");
@@ -377,22 +386,33 @@ const Analytics = () => {
   const departmentRows = analytics?.departmentPredictions
     ? Object.entries(analytics.departmentPredictions)
     : [];
+  const departmentChartData = departmentRows.map(([dept, count]) => ({
+    department: dept,
+    patients: count,
+  }));
 
+  const diagnosisTrendData = (analytics?.topDiagnoses || []).slice(0, 6);
+
+  const medicineTrendData = (analytics?.medicineForecast || []).slice(0, 6);
   return (
     <div className="predictive-analytics-page">
-      {/* IMPROVED ROOT FLEX HEADER GRID SPLIT */}
+      {" "}
       <div className="analytics-header-card">
+        {" "}
         <div className="header-text-group">
-          <h1>Predictive Analytics</h1>
+          {" "}
+          <h1>Predictive Analytics</h1>{" "}
           <p>
+            {" "}
             Forecast mission staffing and resource allocation metrics using
-            historical models
-          </p>
-        </div>
-
+            historical models{" "}
+          </p>{" "}
+        </div>{" "}
         <div className="analytics-control-panel">
+          {" "}
           <div className="input-container">
-            <span className="input-label">Target Location</span>
+            {" "}
+            <span className="input-label"> Target Location </span>{" "}
             <select
               value={selectedLocation}
               onChange={(e) => {
@@ -403,48 +423,51 @@ const Analytics = () => {
                 fetchPatientsForLocation(value, 1);
               }}
             >
-              <option value="">Select Location</option>
+              {" "}
+              <option value=""> Select Location </option>{" "}
               {locations.map((location) => (
                 <option key={location} value={location}>
-                  {location}
+                  {" "}
+                  {location}{" "}
                 </option>
-              ))}
-            </select>
-          </div>
-
+              ))}{" "}
+            </select>{" "}
+          </div>{" "}
           <div className="input-container">
-            <span className="input-label">Mission Date</span>
+            {" "}
+            <span className="input-label"> Mission Date </span>{" "}
             <input
               type="date"
               value={nextMissionDate}
               onChange={(e) => setNextMissionDate(e.target.value)}
-            />
-          </div>
-
+            />{" "}
+          </div>{" "}
           <div className="input-container">
-            <span className="input-label">Duration (Days)</span>
+            {" "}
+            <span className="input-label"> Duration (Days) </span>{" "}
             <input
               type="number"
               min="1"
               value={missionDays}
               onChange={(e) => setMissionDays(e.target.value)}
-            />
-          </div>
-
+            />{" "}
+          </div>{" "}
           <button
             className="btn-primary"
             onClick={generateAnalytics}
             disabled={loading}
           >
-            {loading ? "Generating..." : "Run Analytics"}
-          </button>
-        </div>
-      </div>
-
+            {" "}
+            {loading ? "Generating..." : "Run Analytics"}{" "}
+          </button>{" "}
+        </div>{" "}
+      </div>{" "}
       {!showAnalytics && (
         <div className="analytics-dashboard-layout">
+          {" "}
           <div className="dashboard-section-card">
-            <h2>Target Area Historical Records</h2>
+            {" "}
+            <h2> Target Area Historical Records </h2>{" "}
             {patientsLoading ? (
               <TableSkeleton rows={10} columns={6} />
             ) : (
@@ -457,19 +480,20 @@ const Analytics = () => {
                 }
                 onSelectPatient={(patientId) => {
                   const found = patients.find((p) => p.id === patientId);
-
                   setSelectedPatient(found?.raw);
                 }}
               />
-            )}
-          </div>
+            )}{" "}
+          </div>{" "}
         </div>
-      )}
-
+      )}{" "}
       {showAnalytics && analytics && (
         <div className="analytics-dashboard-layout">
+          {" "}
           <div className="dashboard-section-header">
+            {" "}
             <div className="header-text-group">
+              {" "}
               <p
                 style={{
                   margin: 0,
@@ -480,252 +504,478 @@ const Analytics = () => {
                   fontSize: "0.8rem",
                 }}
               >
-                Active Prediction Layer
-              </p>
-            </div>
+                {" "}
+                Active Prediction Layer{" "}
+              </p>{" "}
+            </div>{" "}
             <button className="btn-secondary" onClick={exportPDF}>
-              <span>💾</span> Export Document PDF
-            </button>
-          </div>
-
+              {" "}
+              <span>💾</span> Export Document PDF{" "}
+            </button>{" "}
+          </div>{" "}
           <div
             id="analytics-report"
             style={{ display: "flex", flexDirection: "column", gap: "24px" }}
           >
+            {" "}
+            {/* ===================== */} {/* OVERVIEW CARDS */}{" "}
+            {/* ===================== */}{" "}
             <div className="overview-metrics-grid">
+              {" "}
               <div className="metric-tile-card">
-                <h3>Forecasted Registration</h3>
-                <p className="metric-value">{analytics.predictedPatients}</p>
+                {" "}
+                <h3> Forecasted Registration </h3>{" "}
+                <p className="metric-value"> {analytics.predictedPatients} </p>{" "}
                 <span className="metric-footer">
+                  {" "}
                   Bounds: {analytics?.confidenceRange?.min} -{" "}
-                  {analytics?.confidenceRange?.max} (95% CI)
-                </span>
-              </div>
-
+                  {analytics?.confidenceRange?.max} (95% CI){" "}
+                </span>{" "}
+              </div>{" "}
               <div className="metric-tile-card">
-                <h3>Algorithmic Engine</h3>
+                {" "}
+                <h3> Algorithmic Engine </h3>{" "}
                 <p
                   className="metric-value"
+                  style={{ fontSize: "1.5rem", paddingTop: "12px" }}
+                >
+                  {" "}
+                  {analytics?.modelsUsed?.[0] || "Regression"}{" "}
+                </p>{" "}
+                <span className="metric-footer">
+                  {" "}
+                  Confidence Tier:{" "}
+                  <strong> {analytics?.confidence} </strong>{" "}
+                </span>{" "}
+              </div>{" "}
+              <div className="metric-tile-card">
+                {" "}
+                <h3> Mission Duration </h3>{" "}
+                <p className="metric-value"> {missionDays} </p>{" "}
+                <span className="metric-footer">
+                  {" "}
+                  Continuous Mission Days{" "}
+                </span>{" "}
+              </div>{" "}
+            </div>{" "}
+            {/* ===================== */} {/* ANALYTICS GRID */}{" "}
+            {/* ===================== */}{" "}
+            <div className="analytics-paired-grid">
+              {" "}
+              {/* ===================== */} {/* DEPARTMENT VISUAL */}{" "}
+              {/* ===================== */}{" "}
+              <div className="dashboard-section-card">
+                {" "}
+                <h2> Department Forecast Distribution </h2>{" "}
+                <div style={{ width: "100%", height: 340 }}>
+                  {" "}
+                  <ResponsiveContainer>
+                    {" "}
+                    <BarChart
+                      data={departmentChartData}
+                      layout="vertical"
+                      margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                    >
+                      {" "}
+                      <CartesianGrid strokeDasharray="3 3" />{" "}
+                      <XAxis type="number" />{" "}
+                      <YAxis type="category" dataKey="department" width={100} />{" "}
+                      <Tooltip />{" "}
+                      <Bar
+                        dataKey="patients"
+                        fill="#3b59c4"
+                        radius={[0, 8, 8, 0]}
+                      />{" "}
+                    </BarChart>{" "}
+                  </ResponsiveContainer>{" "}
+                </div>{" "}
+              </div>{" "}
+              {/* ===================== */} {/* DEPARTMENT TABLE */}{" "}
+              {/* ===================== */}{" "}
+              <div className="dashboard-section-card">
+                {" "}
+                <h2> Department Volume Adjustments </h2>{" "}
+                <div className="table-container">
+                  {" "}
+                  <table className="admin-table">
+                    {" "}
+                    <thead>
+                      {" "}
+                      <tr>
+                        {" "}
+                        <th> Department Domain </th>{" "}
+                        <th> Allocated Run Rate </th>{" "}
+                      </tr>{" "}
+                    </thead>{" "}
+                    <tbody>
+                      {" "}
+                      {departmentRows.map(([dept, count]) => (
+                        <tr key={dept}>
+                          {" "}
+                          <td>
+                            {" "}
+                            <strong> {dept} </strong>{" "}
+                          </td>{" "}
+                          <td> {count} patients </td>{" "}
+                        </tr>
+                      ))}{" "}
+                    </tbody>{" "}
+                  </table>{" "}
+                </div>{" "}
+              </div>{" "}
+              {/* ===================== */} {/* DIAGNOSIS SIGNALS */}{" "}
+              {/* ===================== */}{" "}
+              <div className="dashboard-section-card">
+                {" "}
+                <h2> Diagnosis Forecast Signals </h2>{" "}
+                <div className="trend-indicator-list">
+                  {" "}
+                  {diagnosisTrendData.map((item, index) => (
+                    <div key={index} className="trend-card">
+                      <div>
+                        <div
+                          style={{
+                            fontWeight: 700,
+                          }}
+                        >
+                          {item.diagnosis}
+                        </div>
+
+                        <div
+                          style={{
+                            color: "#64748b",
+                            fontSize: "0.85rem",
+                            marginTop: 4,
+                          }}
+                        >
+                          Historical avg: {item.historicalAverage}
+                        </div>
+                      </div>
+
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "flex-end",
+                          gap: 4,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontWeight: 800,
+                            color: "#3b59c4",
+                            fontSize: "1rem",
+                          }}
+                        >
+                          {item.predicted}
+                        </span>
+
+                        <span
+                          style={{
+                            fontWeight: 700,
+                            color:
+                              item.changePercent >= 0 ? "#2e7d32" : "#d32f2f",
+                            fontSize: "0.9rem",
+                          }}
+                        >
+                          {item.changePercent >= 0 ? "↑" : "↓"}{" "}
+                          {Math.abs(item.changePercent)}%
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>{" "}
+              </div>{" "}
+              {/* ===================== */} {/* DIAGNOSIS TABLE */}{" "}
+              {/* ===================== */}{" "}
+              <div className="dashboard-section-card">
+                {" "}
+                <h2> Top Anticipated Diagnoses </h2>{" "}
+                <div className="table-container">
+                  {" "}
+                  <table className="admin-table">
+                    {" "}
+                    <thead>
+                      {" "}
+                      <tr>
+                        {" "}
+                        <th> Clinical Indication </th>{" "}
+                        <th> Historical Load </th>{" "}
+                      </tr>{" "}
+                    </thead>{" "}
+                    <tbody>
+                      {" "}
+                      {(analytics?.topDiagnoses || []).map((item, index) => (
+                        <tr key={index}>
+                          {" "}
+                          <td>
+                            {" "}
+                            <strong> {item.diagnosis} </strong>{" "}
+                          </td>{" "}
+                          <td> {item.count} occurrences </td>{" "}
+                        </tr>
+                      ))}{" "}
+                    </tbody>{" "}
+                  </table>{" "}
+                </div>{" "}
+              </div>{" "}
+              {/* ===================== */} {/* MEDICINE VISUAL */}{" "}
+              {/* ===================== */}{" "}
+              <div className="dashboard-section-card">
+                {" "}
+                <h2> Medicine Demand Signals </h2>{" "}
+                <div className="trend-indicator-list">
+                  {" "}
+                  {medicineTrendData.map((med, index) => (
+                    <div key={index} className="trend-card">
+                      <div>
+                        <div
+                          style={{
+                            fontWeight: 700,
+                            textTransform: "capitalize",
+                          }}
+                        >
+                          {med.medicine}
+                        </div>
+
+                        <div
+                          style={{
+                            color: "#64748b",
+                            fontSize: "0.85rem",
+                            marginTop: 4,
+                          }}
+                        >
+                          Historical avg: {med.historicalAverage}
+                        </div>
+                      </div>
+
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "flex-end",
+                          gap: 4,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontWeight: 800,
+                            color: "#3b59c4",
+                          }}
+                        >
+                          {med.estimatedNeed}
+                        </span>
+
+                        <span
+                          style={{
+                            fontWeight: 700,
+                            color:
+                              med.changePercent >= 0 ? "#2e7d32" : "#d32f2f",
+                          }}
+                        >
+                          {med.changePercent >= 0 ? "↑" : "↓"}{" "}
+                          {Math.abs(med.changePercent)}%
+                        </span>
+
+                        <span
+                          style={{
+                            padding: "4px 10px",
+                            borderRadius: "999px",
+                            fontWeight: 700,
+                            fontSize: "0.75rem",
+                            color: "#fff",
+                            backgroundColor:
+                              med.risk === "HIGH"
+                                ? "#d32f2f"
+                                : med.risk === "MEDIUM"
+                                  ? "#f57c00"
+                                  : "#2e7d32",
+                          }}
+                        >
+                          {med.risk}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>{" "}
+              </div>{" "}
+              {/* ===================== */} {/* MEDICINE TABLE */}{" "}
+              {/* ===================== */}{" "}
+              <div className="dashboard-section-card">
+                {" "}
+                <h2> Medicine Resource Forecast </h2>{" "}
+                {!analytics?.medicineForecast?.length ? (
+                  <p className="no-data-text">
+                    {" "}
+                    No medicine forecast available{" "}
+                  </p>
+                ) : (
+                  <div className="analytics-table-wrapper">
+                    {" "}
+                    <table className="analytics-table">
+                      {" "}
+                      <thead>
+                        {" "}
+                        <tr>
+                          {" "}
+                          <th> Medicine </th> <th> Estimated Need </th>{" "}
+                          <th>Risk</th>{" "}
+                        </tr>{" "}
+                      </thead>{" "}
+                      <tbody>
+                        {" "}
+                        {analytics.medicineForecast.map((med, index) => (
+                          <tr key={index}>
+                            {" "}
+                            <td> {med.medicine} </td>{" "}
+                            <td> {med.estimatedNeed} </td>{" "}
+                            <td>
+                              {" "}
+                              <span
+                                style={{
+                                  padding: "4px 10px",
+                                  borderRadius: "12px",
+                                  fontWeight: 600,
+                                  color: "#fff",
+                                  backgroundColor:
+                                    med.risk === "HIGH"
+                                      ? "#d32f2f"
+                                      : med.risk === "MEDIUM"
+                                        ? "#f57c00"
+                                        : "#2e7d32",
+                                }}
+                              >
+                                {" "}
+                                {med.risk}{" "}
+                              </span>{" "}
+                            </td>{" "}
+                          </tr>
+                        ))}{" "}
+                      </tbody>{" "}
+                    </table>{" "}
+                  </div>
+                )}{" "}
+              </div>{" "}
+              {/* ===================== */} {/* CONFIDENCE */}{" "}
+              {/* ===================== */}{" "}
+              <div className="dashboard-section-card">
+                {" "}
+                <h2> Forecast Confidence </h2>{" "}
+                <div
                   style={{
-                    fontSize: "1.5rem",
-                    paddingTop: "12px",
-                    paddingBottom: "4px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "16px",
                   }}
                 >
-                  {analytics?.modelsUsed?.[0] || "Regression Analysis"}
-                </p>
-                <span className="metric-footer">
-                  Confidence Tier: <strong>{analytics?.confidence}</strong>
-                </span>
-              </div>
-
-              <div className="metric-tile-card">
-                <h3>Operation Bounds</h3>
-                <p className="metric-value">{missionDays}</p>
-                <span className="metric-footer">Continuous Mission Days</span>
-              </div>
-            </div>
-
-            <div className="dashboard-columns-container">
-              <div className="insights-column-stack">
-                <div className="dashboard-section-card">
-                  <h2>Department Volume Adjustments</h2>
-                  <div className="table-container">
-                    <table className="admin-table">
-                      <thead>
-                        <tr>
-                          <th>Department Domain</th>
-                          <th>Allocated Run Rate</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {departmentRows.map(([dept, count]) => (
-                          <tr key={dept}>
-                            <td>
-                              <strong>{dept}</strong>
-                            </td>
-                            <td>{count} patients</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                <div className="dashboard-section-card">
-                  <h2>Top Anticipated Diagnoses</h2>
-                  <div className="table-container">
-                    <table className="admin-table">
-                      <thead>
-                        <tr>
-                          <th>Clinical Indication</th>
-                          <th>Historical Load Prevalence</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(analytics?.topDiagnoses || []).map((item, index) => (
-                          <tr key={index}>
-                            <td>
-                              <strong>{item.diagnosis}</strong>
-                            </td>
-                            <td>{item.count} occurrences</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-                <div className="dashboard-section-card">
-                  <h2>Medicine Resource Forecast</h2>
-
-                  {!analytics?.medicineForecast?.length ? (
-                    <p className="no-data-text">
-                      No medicine forecast available
-                    </p>
-                  ) : (
+                  {" "}
+                  <div className="confidence-pill">
+                    {" "}
+                    {analytics?.confidence}{" "}
+                  </div>{" "}
+                  <div
+                    style={{
+                      background: "#f8fafc",
+                      borderRadius: "12px",
+                      overflow: "hidden",
+                      height: "16px",
+                    }}
+                  >
+                    {" "}
                     <div
-                      className="
-        analytics-table-wrapper
-      "
-                    >
-                      <table
-                        className="
-          analytics-table
-        "
-                      >
-                        <thead>
-                          <tr>
-                            <th>Medicine</th>
-
-                            <th>Estimated Need</th>
-
-                            <th>Risk</th>
-                          </tr>
-                        </thead>
-
-                        <tbody>
-                          {analytics.medicineForecast.map((med, index) => (
-                            <tr key={index}>
-                              <td>{med.medicine}</td>
-
-                              <td>{med.estimatedNeed}</td>
-
-                              <td>
-                                <span
-                                  style={{
-                                    padding: "4px 10px",
-
-                                    borderRadius: "12px",
-
-                                    fontWeight: 600,
-
-                                    color: "#fff",
-
-                                    backgroundColor:
-                                      med.risk === "HIGH"
-                                        ? "#d32f2f"
-                                        : med.risk === "MEDIUM"
-                                          ? "#f57c00"
-                                          : "#2e7d32",
-                                  }}
-                                >
-                                  {med.risk}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="insights-column-stack">
-                <div className="dashboard-section-card">
-                  <h2>Summary Insights</h2>
+                      style={{
+                        width:
+                          analytics?.confidence === "HIGH"
+                            ? "90%"
+                            : analytics?.confidence === "MEDIUM"
+                              ? "60%"
+                              : "35%",
+                        height: "100%",
+                        background:
+                          analytics?.confidence === "HIGH"
+                            ? "#2e7d32"
+                            : analytics?.confidence === "MEDIUM"
+                              ? "#f57c00"
+                              : "#d32f2f",
+                        transition: "0.3s ease",
+                      }}
+                    />{" "}
+                  </div>{" "}
+                </div>{" "}
+              </div>{" "}
+              {/* ===================== */} {/* RECOMMENDATIONS */}{" "}
+              {/* ===================== */}{" "}
+              <div className="dashboard-section-card">
+                {" "}
+                <h2> Recommendations </h2>{" "}
+                {operationalInsights.length === 0 ? (
+                  <p className="no-data-text">
+                    {" "}
+                    No operational recommendations generated.{" "}
+                  </p>
+                ) : (
                   <ul className="insight-list-group">
-                    {(analytics?.summaryInsights || []).map((item, index) => (
-                      <li key={index} className="insight-list-item">
-                        {item}
-                      </li>
-                    ))}
-                    {(analytics?.summaryInsights || []).length === 0 && (
-                      <p className="no-data-text">
-                        No summary evaluation items generated
-                      </p>
-                    )}
+                    {" "}
+                    {operationalInsights.map((insight, index) => {
+                      const borderColor =
+                        insight.severity === "high"
+                          ? "#d32f2f"
+                          : insight.severity === "warning"
+                            ? "#e0a924"
+                            : insight.severity === "good"
+                              ? "#2e7d32"
+                              : "#3b59c4";
+                      return (
+                        <li
+                          key={index}
+                          className="insight-list-item"
+                          style={{ borderLeftColor: borderColor }}
+                        >
+                          {" "}
+                          {insight.text}{" "}
+                        </li>
+                      );
+                    })}{" "}
                   </ul>
-                </div>
-
-                <div className="dashboard-section-card">
-                  <h2>Recommendations</h2>
-                  {operationalInsights.length === 0 ? (
-                    <p className="no-data-text">
-                      No operational recommendations generated.
-                    </p>
-                  ) : (
-                    <ul className="insight-list-group">
-                      {operationalInsights.map((insight, index) => {
-                        const borderColor =
-                          insight.severity === "high"
-                            ? "#d32f2f"
-                            : insight.severity === "warning"
-                              ? "#e0a924"
-                              : insight.severity === "good"
-                                ? "#2e7d32"
-                                : "#3b59c4";
-
-                        return (
-                          <li
-                            key={index}
-                            className="
-              insight-list-item
-            "
-                            style={{
-                              borderLeftColor: borderColor,
-                            }}
-                          >
-                            {insight.text}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+                )}{" "}
+              </div>{" "}
+            </div>{" "}
+          </div>{" "}
         </div>
-      )}
+      )}{" "}
       {showPreview && (
         <div className="pdf-preview-overlay">
+          {" "}
           <div className="pdf-preview-modal">
+            {" "}
             <div className="pdf-preview-header">
-              <h2>PDF Preview</h2>
-
+              {" "}
+              <h2> PDF Preview </h2>{" "}
               <div className="preview-actions">
+                {" "}
                 <button onClick={() => window.open(pdfPreview)}>
-                  Download PDF
-                </button>
-
-                <button onClick={() => setShowPreview(false)}>Close</button>
-              </div>
-            </div>
-
+                  {" "}
+                  Download PDF{" "}
+                </button>{" "}
+                <button onClick={() => setShowPreview(false)}>
+                  {" "}
+                  Close{" "}
+                </button>{" "}
+              </div>{" "}
+            </div>{" "}
             <iframe
               src={pdfPreview}
               title="PDF Preview"
               width="100%"
               height="700"
-            />
-          </div>
+            />{" "}
+          </div>{" "}
         </div>
-      )}
+      )}{" "}
       <PatientViewFinal
         patient={selectedPatient}
         onClose={() => setSelectedPatient(null)}
-      />
+      />{" "}
     </div>
   );
 };

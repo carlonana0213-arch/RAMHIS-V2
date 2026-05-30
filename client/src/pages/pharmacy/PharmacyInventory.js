@@ -245,7 +245,7 @@ function PharmacyInventory() {
             className={filter === "No Stock" ? "active" : ""}
             onClick={() => setFilter("No Stock")}
           >
-            No Stock
+            Out of Stock
           </button>
         </div>
       </div>

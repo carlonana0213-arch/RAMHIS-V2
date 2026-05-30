@@ -359,3 +359,40 @@
   border-radius: 8px;
   cursor: pointer;
 }
+
+.analytics-paired-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.chart-wrapper {
+  height: 320px;
+}
+
+.trend-indicator-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.trend-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 14px 16px;
+  border: 1px solid #e2e8f0;
+  font-weight: 600;
+}
+
+.confidence-pill {
+  background: #f0f3ff;
+  color: #3b59c4;
+  border-radius: 999px;
+  padding: 18px;
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 800;
+}
