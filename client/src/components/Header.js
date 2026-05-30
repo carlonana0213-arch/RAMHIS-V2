@@ -92,17 +92,21 @@ function Header({ collapsed, toggleSidebar }) {
             </span>
           </NavLink>
         )}
-        <NavLink
-          to="/event"
-          className={({ isActive }) =>
-            isActive ? "nav-link active" : "nav-link"
-          }
-        >
-          <span className="nav-item">
-            <FaCalendarAlt className="nav-icon" />
-            {!collapsed && " Event"}
-          </span>
-        </NavLink>
+
+        {hasAccess("admin") && (
+          <NavLink
+            to="/event"
+            className={({ isActive }) =>
+              isActive ? "nav-link active" : "nav-link"
+            }
+          >
+            <span className="nav-item">
+              <FaCalendarAlt className="nav-icon" />
+              {!collapsed && " Event"}
+            </span>
+          </NavLink>
+        )}
+
         {hasAccess("patient") && (
           <NavLink
             to="/patient"
@@ -235,4 +239,3 @@ function Header({ collapsed, toggleSidebar }) {
 }
 
 export default Header;
- 

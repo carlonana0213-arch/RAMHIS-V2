@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { FiClock, FiCheckCircle } from "react-icons/fi";
 import { apiFetch } from "../../services/api";
 import { API_BASE_URL } from "../../services/apiConfig";
@@ -6,6 +6,7 @@ import "../../styles/pharmacy.css";
 import ConfirmModal from "../../components/ConfirmModal";
 import AlertModal from "../../components/AlertModal";
 import TableSkeleton from "../../components/loading/tableSkeleton";
+import socket from "../../services/socket";
 function PharmacyQueue() {
   const [prescriptions, setPrescriptions] = useState([]);
   const [search, setSearch] = useState("");
@@ -16,7 +17,13 @@ function PharmacyQueue() {
   const ITEMS_PER_PAGE = 15;
   const [loading, setLoading] = useState(true);
   const [expandedPatients, setExpandedPatients] = useState({});
+  let isFetching = false;
+
   const loadPrescriptions = async () => {
+    if (isFetching) return;
+
+    isFetching = true;
+
     try {
       setLoading(true);
 
@@ -27,58 +34,126 @@ function PharmacyQueue() {
       console.error(err);
     } finally {
       setLoading(false);
+      isFetching = false;
     }
   };
 
   useEffect(() => {
     loadPrescriptions();
+
+    // socket sync
+    socket.on("queueUpdated", () => {
+      loadPrescriptions();
+    });
+
+    // fallback refresh
+    const fallbackTimer = setInterval(() => {
+      if (!document.hidden) {
+        loadPrescriptions();
+      }
+    }, 60000);
+
+    return () => {
+      clearInterval(fallbackTimer);
+
+      socket.off("queueUpdated");
+    };
   }, []);
 
   const handleMarkAsGiven = async (prescriptionId, itemId) => {
     try {
-      await apiFetch(
-        `${API_BASE_URL}/api/prescriptions/${prescriptionId}/${itemId}`,
-        { method: "PATCH" },
+      // optimistic UI
+      setPrescriptions((prev) =>
+        prev.map((prescription) => {
+          if (prescription._id !== prescriptionId) {
+            return prescription;
+          }
+
+          return {
+            ...prescription,
+            items: prescription.items.map((item) =>
+              item._id === itemId
+                ? {
+                    ...item,
+                    isGiven: true,
+                  }
+                : item,
+            ),
+          };
+        }),
       );
 
-      setAlertMessage("Prescription marked as given");
+      const result = await apiFetch(
+        `${API_BASE_URL}/api/prescriptions/${prescriptionId}/${itemId}`,
+        {
+          method: "PATCH",
+        },
+      );
 
-      loadPrescriptions();
+      setAlertMessage(
+        result.patientReleased
+          ? "Prescription completed. Patient released."
+          : "Prescription marked as given",
+      );
     } catch (err) {
       console.error("FULL ERROR:", err);
 
-      if (err.response) {
-        console.log("STATUS:", err.response.status);
-        console.log("DATA:", err.response.data);
-      }
+      // rollback on failure
+      loadPrescriptions();
 
       setAlertMessage("Failed to mark prescription as given");
     }
   };
-  const filteredPrescriptions = prescriptions
-    .map((p) => {
-      const filteredItems = p.items.filter((item) => {
-        const patientName = p.patient?.generalInfo?.name || "";
 
-        const medicineNames =
-          item.medicine?.names?.join(", ") || item.medicine?.name || "";
+  const filteredPrescriptions = useMemo(() => {
+    return Object.values(
+      prescriptions.reduce((acc, prescription) => {
+        const patientId = prescription.patient?._id;
 
-        const matchesSearch =
-          patientName.toLowerCase().includes(search.toLowerCase()) ||
-          medicineNames.toLowerCase().includes(search.toLowerCase());
+        if (!patientId) return acc;
 
-        const matchesFilter =
-          filter === "Pending" ? !item.isGiven : item.isGiven;
+        const filteredItems = prescription.items.filter((item) => {
+          const patientName = prescription.patient?.generalInfo?.name || "";
 
-        return matchesSearch && matchesFilter;
-      });
+          const medicineNames =
+            item.medicine?.names?.join(", ") || item.medicine?.name || "";
 
-      return {
-        ...p,
-        filteredItems,
-      };
-    })
-    .filter((p) => p.filteredItems.length > 0);
+          const matchesSearch =
+            patientName.toLowerCase().includes(search.toLowerCase()) ||
+            medicineNames.toLowerCase().includes(search.toLowerCase());
+
+          const matchesFilter =
+            filter === "Pending" ? !item.isGiven : item.isGiven;
+
+          return matchesSearch && matchesFilter;
+        });
+
+        if (filteredItems.length === 0) {
+          return acc;
+        }
+
+        // initialize patient group
+        if (!acc[patientId]) {
+          acc[patientId] = {
+            _id: patientId,
+            patient: prescription.patient,
+            doctor: prescription.doctor,
+            filteredItems: [],
+          };
+        }
+
+        // merge medicines
+        acc[patientId].filteredItems.push(
+          ...filteredItems.map((item) => ({
+            ...item,
+            prescriptionId: prescription._id,
+          })),
+        );
+
+        return acc;
+      }, {}),
+    );
+  }, [prescriptions, search, filter]);
 
   const pendingCount = prescriptions
     .flatMap((p) => p.items)
@@ -233,7 +308,7 @@ function PharmacyQueue() {
                                         "Mark this prescription as given?",
                                       onConfirm: async () => {
                                         await handleMarkAsGiven(
-                                          p._id,
+                                          item.prescriptionId,
                                           item._id,
                                         );
 
@@ -327,7 +402,7 @@ function PharmacyQueue() {
                                             "Mark this prescription as given?",
                                           onConfirm: async () => {
                                             await handleMarkAsGiven(
-                                              p._id,
+                                              item.prescriptionId,
                                               item._id,
                                             );
 

@@ -1,4 +1,5 @@
 import { updatePatient } from "../../services/patientService";
+import { FaUserCircle } from "react-icons/fa";
 function PatientCard({
   patient,
   onSelect,
@@ -17,7 +18,9 @@ function PatientCard({
   }
   return (
     <div className="patient-queue-card current-patient-card">
-      <div className="patient-avatar"></div>
+      <div className="patient-avatar">
+        <FaUserCircle />
+      </div>
 
       <div className="patient-card-content">
         <h2>{patient.generalInfo?.name}</h2>
