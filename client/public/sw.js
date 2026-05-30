@@ -1,13 +1,11 @@
-const CACHE_NAME = "ramhis-v1";
+const CACHE_NAME = "ramhis-v2";
 
-const urlsToCache = ["/", "/manifest.json"];
+const APP_SHELL = ["/", "/manifest.json", "/favicon.ico"];
 
 // install
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(urlsToCache);
-    }),
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)),
   );
 
   self.skipWaiting();
@@ -30,11 +28,29 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// fetch strategy
+// fetch
 self.addEventListener("fetch", (event) => {
+  if (event.request.method !== "GET") return;
+
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      return cached || fetch(event.request).catch(() => caches.match("/"));
-    }),
+    fetch(event.request)
+      .then((response) => {
+        const copy = response.clone();
+
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, copy);
+        });
+
+        return response;
+      })
+      .catch(async () => {
+        const cached = await caches.match(event.request);
+
+        // serve cached file
+        if (cached) return cached;
+
+        // SPA fallback
+        return caches.match("/");
+      }),
   );
 });
