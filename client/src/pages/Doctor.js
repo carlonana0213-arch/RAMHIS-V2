@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import "../styles/doctor.css";
 import { updatePatientStatus } from "../services/doctorService";
-import { getPatientQueue } from "../services/patientService";
+import { getPatientQueue, getPatientById } from "../services/patientService";
 import ConfirmModal from "../components/ConfirmModal";
 
 import DoctorQueue from "./doctor/doctorQueue";
@@ -159,7 +159,9 @@ function Doctor() {
 
   const openDoctorView = async (patient) => {
     try {
-      setCurrentPatient(patient);
+      const fullPatient = await getPatientById(patient._id);
+
+      setCurrentPatient(fullPatient || patient);
     } catch (err) {
       console.error(err);
     }
@@ -201,21 +203,27 @@ function Doctor() {
               if (!currentPatient) return;
 
               try {
-                // only update if still waiting
-                if (currentPatient.status === "waiting") {
+                // load full patient
+                const fullPatient = await getPatientById(currentPatient._id);
+
+                // online status update only
+                if (navigator.onLine && currentPatient.status === "waiting") {
                   await updatePatientStatus(currentPatient._id, {
                     status: "beingSeen",
                   });
                 }
 
                 setSelectedPatient({
-                  ...currentPatient,
-                  status: "beingSeen",
+                  ...(fullPatient || currentPatient),
+
+                  status: navigator.onLine
+                    ? "beingSeen"
+                    : currentPatient.status,
                 });
 
                 setShowDoctorView(true);
               } catch (err) {
-                console.error("Failed to update patient status", err);
+                console.error("Failed to open doctor sheet", err);
               }
             }}
             onNextPatient={handleNextPatient}

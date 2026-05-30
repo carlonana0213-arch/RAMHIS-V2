@@ -210,7 +210,17 @@ function PatientDoctorView({ patient, onClose, refreshQueue }) {
         })),
       });
 
-      await loadPrescriptions();
+      const saved = await savePrescription({
+        patient: patient._id,
+        doctor: storedUser?.id,
+        items: validItems.map((i) => ({
+          medicine: i.medicine,
+          quantity: Number(i.quantity),
+          directions: i.directions,
+        })),
+      });
+
+      setExistingPrescriptions((prev) => [...prev, saved]);
 
       setPrescriptionItems([
         {

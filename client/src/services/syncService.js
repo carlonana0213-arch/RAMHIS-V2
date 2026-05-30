@@ -34,6 +34,27 @@ export const syncOfflineTransactions = async () => {
             break;
           }
 
+          case "SAVE_DOCTOR_RECORD": {
+            await apiFetch(`${API}/${item.patientId}/doctor-record`, {
+              method: "POST",
+              body: JSON.stringify(item.payload),
+            });
+
+            break;
+          }
+
+          case "SAVE_PRESCRIPTION": {
+            await apiFetch(
+              `${process.env.REACT_APP_API_URL}/api/prescriptions`,
+              {
+                method: "POST",
+                body: JSON.stringify(item.payload),
+              },
+            );
+
+            break;
+          }
+
           default:
             break;
         }
