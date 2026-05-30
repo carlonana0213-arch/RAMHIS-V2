@@ -13,6 +13,7 @@ const dashboardRoutes = require("./routes/dashboardRoutes");
 const predictiveAnalyticsRoutes = require("./routes/predictiveAnalyticsRoutes");
 const eventRoutes = require("./routes/eventRoutes");
 const chatRoutes = require("./routes/chatRoutes");
+const User = require("./models/user");
 
 const allowedOrigins = ["http://localhost:3000"];
 
@@ -97,8 +98,54 @@ const PORT = process.env.PORT || 5000;
 io.on("connection", (socket) => {
   console.log("🔌 Client connected:", socket.id);
 
-  socket.on("disconnect", () => {
+  socket.on("user_online", async (userId) => {
+    try {
+      if (!userId) return;
+
+      await User.findByIdAndUpdate(userId, {
+        isOnline: true,
+        lastSeen: null,
+        socketId: socket.id,
+      });
+
+      socket.userId = userId;
+
+      socket.broadcast.emit("user_status_changed", {
+        userId,
+        isOnline: true,
+        lastSeen: null,
+      });
+
+      console.log(`✅ User ${userId} online`);
+    } catch (error) {
+      console.error("user_online error:", error);
+    }
+  });
+
+  socket.on("disconnect", async () => {
     console.log("❌ Client disconnected:", socket.id);
+
+    if (!socket.userId) return;
+
+    try {
+      const lastSeen = new Date();
+
+      await User.findByIdAndUpdate(socket.userId, {
+        isOnline: false,
+        lastSeen,
+        socketId: null,
+      });
+
+      io.emit("user_status_changed", {
+        userId: socket.userId,
+        isOnline: false,
+        lastSeen,
+      });
+
+      console.log(`❌ User ${socket.userId} offline`);
+    } catch (error) {
+      console.error("disconnect error:", error);
+    }
   });
 });
 

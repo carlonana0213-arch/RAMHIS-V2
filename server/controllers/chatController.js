@@ -43,8 +43,14 @@ exports.getThreads = async (req, res) => {
         { members: userId },
       ],
     })
-      .populate("participants", "full_name name email role account_type")
-      .populate("members", "full_name name email role account_type")
+      .populate(
+        "participants",
+        "full_name name email role account_type isOnline lastSeen"
+      )
+      .populate(
+        "members",
+        "full_name name email role account_type isOnline lastSeen"
+      )
       .populate("eventId", "title date status")
       .sort({ lastMessageAt: -1, updatedAt: -1 });
 
@@ -90,16 +96,29 @@ exports.getThreads = async (req, res) => {
         _id: thread._id,
         type: "direct",
         isGroup: false,
+
         name:
           otherUser?.full_name ||
           otherUser?.name ||
           otherUser?.email ||
           "User",
+
         email: otherUser?.email || "",
+
         role:
           otherUser?.role ||
           otherUser?.account_type ||
           "User",
+
+        otherUserId:
+          otherUser?._id?.toString() || "",
+
+        isOnline:
+          otherUser?.isOnline === true,
+
+        lastSeen:
+          otherUser?.lastSeen || null,
+
         lastMessage: thread.lastMessage || "",
         updatedAt: thread.lastMessageAt || thread.updatedAt,
         unread: 0,
@@ -133,7 +152,7 @@ exports.createOrOpenDirectThread = async (req, res) => {
     }
 
     const otherUser = await User.findById(otherUserId).select(
-      "full_name name email role account_type"
+      "full_name name email role account_type isOnline lastSeen"
     );
 
     if (!otherUser) {
@@ -158,16 +177,28 @@ exports.createOrOpenDirectThread = async (req, res) => {
     res.status(200).json({
       id: thread._id,
       _id: thread._id,
+
       name:
         otherUser.full_name ||
         otherUser.name ||
         otherUser.email ||
         "User",
+
       email: otherUser.email || "",
+
       role:
         otherUser.role ||
         otherUser.account_type ||
         "User",
+
+      otherUserId:
+        otherUser._id?.toString() || "",
+
+      isOnline:
+        otherUser.isOnline === true,
+
+      lastSeen:
+        otherUser.lastSeen || null,
     });
   } catch (error) {
     console.error("createOrOpenDirectThread error:", error);
@@ -256,7 +287,9 @@ exports.sendMessage = async (req, res) => {
     const populatedMessage = await ChatMessage.findById(newMessage._id)
       .populate("sender", "full_name name email");
 
-    res.status(201).json(formatMessage(populatedMessage, userId));
+    res.status(201).json(
+      formatMessage(populatedMessage, userId)
+    );
   } catch (error) {
     console.error("sendMessage error:", error);
     res.status(500).json({
@@ -295,17 +328,19 @@ exports.sendFileMessage = async (req, res) => {
       .replace(/\\/g, "/")
       .replace(/^.*uploads\//, "uploads/");
 
-    const fileUrl = `${req.protocol}://${req.get("host")}/${normalizedPath}`;
+    const fileUrl =
+      `${req.protocol}://${req.get("host")}/${normalizedPath}`;
 
-    const originalName = (req.file.originalname || "").toLowerCase();
+    const originalName =
+      (req.file.originalname || "").toLowerCase();
 
-const isImage =
-  req.file.mimetype?.startsWith("image/") ||
-  originalName.endsWith(".jpg") ||
-  originalName.endsWith(".jpeg") ||
-  originalName.endsWith(".png") ||
-  originalName.endsWith(".gif") ||
-  originalName.endsWith(".webp");
+    const isImage =
+      req.file.mimetype?.startsWith("image/") ||
+      originalName.endsWith(".jpg") ||
+      originalName.endsWith(".jpeg") ||
+      originalName.endsWith(".png") ||
+      originalName.endsWith(".gif") ||
+      originalName.endsWith(".webp");
 
     const newMessage = await ChatMessage.create({
       thread: threadId,
@@ -329,7 +364,9 @@ const isImage =
     const populatedMessage = await ChatMessage.findById(newMessage._id)
       .populate("sender", "full_name name email");
 
-    res.status(201).json(formatMessage(populatedMessage, userId));
+    res.status(201).json(
+      formatMessage(populatedMessage, userId)
+    );
   } catch (error) {
     console.error("sendFileMessage error:", error);
     res.status(500).json({

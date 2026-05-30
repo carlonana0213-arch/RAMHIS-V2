@@ -104,6 +104,21 @@ const UserSchema = new mongoose.Schema({
     default: "",
   },
 
+  isOnline: {
+    type: Boolean,
+    default: false,
+  },
+
+  lastSeen: {
+    type: Date,
+    default: null,
+  },
+
+  socketId: {
+    type: String,
+    default: null,
+  },
+
   accepted_terms: {
     type: Boolean,
     default: false,
@@ -140,6 +155,7 @@ const UserSchema = new mongoose.Schema({
     type: String,
     default: "",
   },
+
   otp_code: {
     type: String,
     default: null,
@@ -194,6 +210,10 @@ const UserSchema = new mongoose.Schema({
     },
   },
 });
+
 UserSchema.index({ role: 1 });
 UserSchema.index({ createdAt: 1 });
-module.exports = mongoose.models.User || mongoose.model("User", UserSchema);
+
+module.exports =
+  mongoose.models.User ||
+  mongoose.model("User", UserSchema);

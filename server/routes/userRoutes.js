@@ -30,7 +30,9 @@ router.get("/approved", authMiddleware, async (req, res) => {
         { account_type: { $regex: q, $options: "i" } },
       ],
     })
-      .select("full_name name email role account_type verificationStatus")
+      .select(
+        "full_name name email role account_type verificationStatus isOnline lastSeen"
+      )
       .limit(30);
 
     console.log("FOUND USERS:", users.length);
@@ -45,10 +47,36 @@ router.get("/approved", authMiddleware, async (req, res) => {
   }
 });
 
+router.get("/online", authMiddleware, async (req, res) => {
+  try {
+    const users = await User.find(
+      { isOnline: true },
+      {
+        _id: 1,
+        name: 1,
+        full_name: 1,
+        role: 1,
+        isOnline: 1,
+      }
+    );
+
+    return res.status(200).json({
+      ok: true,
+      users,
+    });
+  } catch (error) {
+    console.error("Get online users error:", error);
+
+    return res.status(500).json({
+      ok: false,
+      message: "Failed to fetch online users",
+      error: error.message,
+    });
+  }
+});
 
 // PUT /api/users/change-password
 router.put("/change-password", authMiddleware, async (req, res) => {
-  
   try {
     const userId = req.user?.id || req.user?._id;
 
@@ -169,52 +197,55 @@ router.put("/:id", authMiddleware, async (req, res) => {
     }
 
     if (contactNumber !== undefined) {
-  updates.contact_number = contactNumber;
-  updates.contactNumber = contactNumber;
-  updates.phone = contactNumber;
-  updates.phoneNumber = contactNumber;
-}
+      updates.contact_number = contactNumber;
+      updates.contactNumber = contactNumber;
+      updates.phone = contactNumber;
+      updates.phoneNumber = contactNumber;
+    }
 
-if (birthdate !== undefined) {
-  updates.birthdate = birthdate;
-  updates.birthday = birthdate;
-  updates.bdate = birthdate;
-}
+    if (birthdate !== undefined) {
+      updates.birthdate = birthdate;
+      updates.birthday = birthdate;
+      updates.bdate = birthdate;
+    }
 
-if (req.body.profileImage !== undefined) {
-  updates.profileImage = req.body.profileImage;
-}
+    if (req.body.profileImage !== undefined) {
+      updates.profileImage = req.body.profileImage;
+    }
 
-if (req.body.avatar !== undefined) {
-  updates.avatar = req.body.avatar;
-}
+    if (req.body.avatar !== undefined) {
+      updates.avatar = req.body.avatar;
+    }
 
-if (req.body.imageBase64) {
-  const uploadDir = path.join(__dirname, "../uploads/profile");
+    if (req.body.imageBase64) {
+      const uploadDir = path.join(__dirname, "../uploads/profile");
 
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
 
-  const rawBase64 = req.body.imageBase64.includes(",")
-    ? req.body.imageBase64.split(",")[1]
-    : req.body.imageBase64;
+      const rawBase64 = req.body.imageBase64.includes(",")
+        ? req.body.imageBase64.split(",")[1]
+        : req.body.imageBase64;
 
-  const fileName = `${targetUserId}-${Date.now()}.jpg`;
-  const filePath = path.join(uploadDir, fileName);
+      const fileName = `${targetUserId}-${Date.now()}.jpg`;
+      const filePath = path.join(uploadDir, fileName);
 
-  fs.writeFileSync(filePath, Buffer.from(rawBase64, "base64"));
+      fs.writeFileSync(
+        filePath,
+        Buffer.from(rawBase64, "base64")
+      );
 
-  const imageUrl = `/uploads/profile/${fileName}`;
+      const imageUrl = `/uploads/profile/${fileName}`;
 
-  updates.profileImage = imageUrl;
-  updates.profileImageUrl = imageUrl;
-  updates.profile_image_url = imageUrl;
-  updates.avatar = imageUrl;
-  updates.imageUrl = imageUrl;
-}
+      updates.profileImage = imageUrl;
+      updates.profileImageUrl = imageUrl;
+      updates.profile_image_url = imageUrl;
+      updates.avatar = imageUrl;
+      updates.imageUrl = imageUrl;
+    }
 
-const updatedUser = await User.findByIdAndUpdate(
+    const updatedUser = await User.findByIdAndUpdate(
       targetUserId,
       updates,
       {
