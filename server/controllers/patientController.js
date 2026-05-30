@@ -272,3 +272,69 @@ exports.getLocations = async (req, res) => {
     });
   }
 };
+
+exports.getAnalyticsPatients = async (req, res) => {
+  try {
+    const { location, page = 1, limit = 10 } = req.query;
+
+    const pageNumber = Number(page);
+
+    const pageLimit = Number(limit);
+
+    const filter = {
+      $or: [{ location }, { visitPlace: location }],
+    };
+
+    const total = await Patient.countDocuments(filter);
+
+    const patients = await Patient.find(filter)
+      .select(
+        `
+          generalInfo.name
+          generalInfo.sex
+          generalInfo.gender
+          generalInfo.age
+          missionDate
+          location
+          visitPlace
+          doctorSheets
+        `,
+      )
+      .sort({
+        missionDate: -1,
+      })
+      .skip((pageNumber - 1) * pageLimit)
+      .limit(pageLimit)
+      .lean();
+
+    const formatted = patients.map((patient) => ({
+      id: patient._id,
+
+      name: patient.generalInfo?.name,
+
+      sex: patient.generalInfo?.sex || patient.generalInfo?.gender,
+
+      age: patient.generalInfo?.age,
+
+      diagnosis:
+        patient.doctorSheets?.[patient.doctorSheets.length - 1]?.diagnosis,
+
+      visitDate: patient.missionDate,
+
+      visitPlace: patient.location || patient.visitPlace,
+    }));
+
+    res.json({
+      patients: formatted,
+      total,
+      totalPages: Math.ceil(total / pageLimit),
+      currentPage: pageNumber,
+    });
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};

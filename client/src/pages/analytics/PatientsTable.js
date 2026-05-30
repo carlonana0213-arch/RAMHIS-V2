@@ -1,22 +1,20 @@
-import React, { useState } from "react";
+import React from "react";
 import "../../styles/analytics.css";
 
-const ITEMS_PER_PAGE = 10;
+const PatientTable = ({
+  patients = [],
+  onSelectPatient,
+  currentPage = 1,
+  totalPages = 1,
+  onPageChange,
+}) => {
+  const PAGE_GROUP_SIZE = 10;
 
-const PatientTable = ({ patients = [], onSelectPatient }) => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const totalPages = Math.ceil(patients.length / ITEMS_PER_PAGE);
+  const currentGroup = Math.floor((currentPage - 1) / PAGE_GROUP_SIZE);
 
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const currentPatients = patients.slice(
-    startIndex,
-    startIndex + ITEMS_PER_PAGE,
-  );
+  const startPage = currentGroup * PAGE_GROUP_SIZE + 1;
 
-  const goToPage = (page) => {
-    if (page < 1 || page > totalPages) return;
-    setCurrentPage(page);
-  };
+  const endPage = Math.min(startPage + PAGE_GROUP_SIZE - 1, totalPages);
 
   if (!patients.length) {
     return (
@@ -50,7 +48,7 @@ const PatientTable = ({ patients = [], onSelectPatient }) => {
           </tr>
         </thead>
         <tbody>
-          {currentPatients.map((p) => (
+          {patients.map((p) => (
             <tr
               key={p.id}
               className="clickable-row"
@@ -109,25 +107,34 @@ const PatientTable = ({ patients = [], onSelectPatient }) => {
 
       <div className="pagination">
         <button
-          onClick={() => goToPage(currentPage - 1)}
+          onClick={() => onPageChange?.(currentPage - 1)}
           disabled={currentPage === 1}
           style={{ opacity: currentPage === 1 ? 0.4 : 1 }}
         >
           &lt;
         </button>
 
-        {Array.from({ length: totalPages }, (_, i) => (
-          <button
-            key={i}
-            className={currentPage === i + 1 ? "active-page" : ""}
-            onClick={() => goToPage(i + 1)}
-          >
-            {i + 1}
-          </button>
-        ))}
+        {Array.from(
+          {
+            length: endPage - startPage + 1,
+          },
+          (_, i) => {
+            const page = startPage + i;
+
+            return (
+              <button
+                key={page}
+                className={currentPage === page ? "active-page" : ""}
+                onClick={() => onPageChange?.(page)}
+              >
+                {page}
+              </button>
+            );
+          },
+        )}
 
         <button
-          onClick={() => goToPage(currentPage + 1)}
+          onClick={() => onPageChange?.(currentPage + 1)}
           disabled={currentPage === totalPages}
           style={{ opacity: currentPage === totalPages ? 0.4 : 1 }}
         >

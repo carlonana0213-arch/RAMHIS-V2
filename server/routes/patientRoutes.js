@@ -10,8 +10,9 @@ const checkPermission = require("../middleware/permissionMiddleware");
 const { referPatient } = require("../controllers/referralController");
 const Patient = require("../models/Patient");
 const { getLocations } = require("../controllers/patientController");
+const { getAnalyticsPatients } = require("../controllers/patientController");
 router.get("/locations", getLocations);
-
+router.get("/analytics", getAnalyticsPatients);
 router.patch("/:id/referral", referPatient);
 
 router.post("/", auth, checkPermission("registry"), controller.createPatient);
@@ -75,4 +76,3 @@ router.delete(
 );
 
 module.exports = router;
- 

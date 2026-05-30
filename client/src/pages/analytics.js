@@ -6,7 +6,7 @@ import PatientTable from "./analytics/PatientsTable";
 import PatientViewFinal from "./analytics/patientview";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-
+import TableSkeleton from "../components/loading/tableSkeleton";
 const Analytics = () => {
   const [locations, setLocations] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState("");
@@ -15,41 +15,40 @@ const Analytics = () => {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(false);
   const [patients, setPatients] = useState([]);
+
+  const [patientPage, setPatientPage] = useState(1);
+
+  const [patientTotalPages, setPatientTotalPages] = useState(1);
+  const [patientsLoading, setPatientsLoading] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
 
-  const fetchPatientsForLocation = async (location) => {
+  const fetchPatientsForLocation = async (location, page = 1) => {
     try {
+      setPatientsLoading(true);
+
       const token = localStorage.getItem("token");
-      const res = await axios.get(`${API_BASE_URL}/api/patients`, {
+
+      const res = await axios.get(`${API_BASE_URL}/api/patients/analytics`, {
+        params: {
+          location,
+          page,
+          limit: 10,
+        },
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      const allPatients = res.data || [];
-      const filtered = allPatients.filter((patient) => {
-        const patientLocation = patient.location || patient.visitPlace || "";
-        return (
-          patientLocation.toLowerCase().trim() === location.toLowerCase().trim()
-        );
-      });
+      setPatients(res.data?.patients || []);
 
-      setPatients(
-        filtered.map((patient) => ({
-          id: patient._id,
-          name: patient?.generalInfo?.name,
-          sex: patient?.generalInfo?.sex || patient?.generalInfo?.gender,
-          age: patient?.generalInfo?.age,
-          diagnosis:
-            patient?.doctorSheets?.[patient.doctorSheets.length - 1]?.diagnosis,
-          visitDate: patient?.missionDate,
-          visitPlace: patient?.location,
-          raw: patient,
-        })),
-      );
+      setPatientTotalPages(res.data?.totalPages || 1);
+
+      setPatientPage(res.data?.currentPage || 1);
     } catch (err) {
       console.error(err);
+    } finally {
+      setPatientsLoading(false);
     }
   };
 
@@ -90,7 +89,37 @@ const Analytics = () => {
       if (res.data.length > 0) {
         const latestLocation = res.data[res.data.length - 1];
         setSelectedLocation(latestLocation);
-        fetchPatientsForLocation(latestLocation);
+        const fetchPatientsForLocation = async (location, page = 1) => {
+          try {
+            setPatientsLoading(true);
+
+            const token = localStorage.getItem("token");
+
+            const res = await axios.get(
+              `${API_BASE_URL}/api/patients/analytics`,
+              {
+                params: {
+                  location,
+                  page,
+                  limit: 10,
+                },
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              },
+            );
+
+            setPatients(res.data.patients || []);
+
+            setPatientTotalPages(res.data.totalPages || 1);
+
+            setPatientPage(res.data.currentPage || 1);
+          } catch (err) {
+            console.error(err);
+          } finally {
+            setPatientsLoading(false);
+          }
+        };
       }
     } catch (err) {
       console.error(err);
@@ -330,13 +359,23 @@ const Analytics = () => {
         <div className="analytics-dashboard-layout">
           <div className="dashboard-section-card">
             <h2>Target Area Historical Records</h2>
-            <PatientTable
-              patients={patients}
-              onSelectPatient={(patientId) => {
-                const found = patients.find((p) => p.id === patientId);
-                setSelectedPatient(found?.raw);
-              }}
-            />
+            {patientsLoading ? (
+              <TableSkeleton rows={10} columns={6} />
+            ) : (
+              <PatientTable
+                patients={patients}
+                currentPage={patientPage}
+                totalPages={patientTotalPages}
+                onPageChange={(page) =>
+                  fetchPatientsForLocation(selectedLocation, page)
+                }
+                onSelectPatient={(patientId) => {
+                  const found = patients.find((p) => p.id === patientId);
+
+                  setSelectedPatient(found?.raw);
+                }}
+              />
+            )}
           </div>
         </div>
       )}
