@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { apiFetch } from "../services/api";
+import { getPatientQueue } from "../services/patientService";
 import PatientQueue from "./patients/PatientQueue";
 import PatientDashboard from "./patients/PatientDashboard";
 import AddPatientModal from "./patients/AddPatientModal";
@@ -25,7 +25,7 @@ const Patient = () => {
       console.time("queue-load");
 
       try {
-        const data = await apiFetch(`${API_BASE_URL}/api/patients/queue`);
+        const data = await getPatientQueue();
 
         setPatients(data);
       } catch (err) {
