@@ -2,45 +2,47 @@
   position: fixed;
   inset: 0;
   background: rgba(17, 24, 39, 0.55);
+
   display: flex;
   justify-content: center;
   align-items: center;
+
   z-index: 999;
   padding: 20px;
+
+  overflow-y: auto;
 }
 
 .event-modal {
   width: 100%;
   max-width: 560px;
+
   background: #ffffff;
   border-radius: 18px;
   padding: 22px;
+
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
+
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
+/* ── Header ── */
 .event-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 18px;
+  margin-bottom: 20px;
 }
 
 .event-modal-header h2 {
   margin: 0;
-  color: #1f2937;
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
 }
 
-.event-modal-header button {
-  border: none;
-  background: #f3f4f6;
-  color: #374151;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  font-size: 22px;
-  cursor: pointer;
-}
-
+/* ── Form fields ── */
 .event-form {
   display: flex;
   flex-direction: column;
@@ -51,12 +53,22 @@
 .event-form textarea,
 .event-form select {
   width: 100%;
-  border: 1px solid #d1d5db;
-  border-radius: 12px;
   padding: 12px 14px;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
   font-size: 14px;
+  color: #111827;
+  background: #F8FAFC;
   outline: none;
   box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.event-form input:focus,
+.event-form textarea:focus,
+.event-form select:focus {
+  border-color: #4169E1;
+  background: #fff;
 }
 
 .event-form textarea {
@@ -64,30 +76,30 @@
   resize: vertical;
 }
 
-.event-form input:focus,
-.event-form textarea:focus,
-.event-form select:focus {
-  border-color: #3949ab;
-  box-shadow: 0 0 0 3px rgba(57, 73, 171, 0.12);
-}
-
 .event-form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
   gap: 12px;
 }
 
+.event-form-row input {
+  flex: 1;
+}
+
+/* ── Save button ── */
 .save-event-btn {
-  margin-top: 8px;
-  background: #3949ab;
-  color: white;
-  border: none;
+  width: 100%;
   padding: 13px;
-  border-radius: 12px;
+  background: #4169E1;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
   font-weight: 700;
   cursor: pointer;
+  margin-top: 6px;
+  transition: background 0.2s;
 }
 
 .save-event-btn:hover {
-  background: #303f9f;
+  background: #3457C0;
 }

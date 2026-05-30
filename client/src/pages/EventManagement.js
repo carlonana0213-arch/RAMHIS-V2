@@ -124,22 +124,26 @@ const EventManagement = () => {
           <h1>Event Management</h1>
           <p>Create and manage community health events</p>
         </div>
-
-        <button
-          className="create-btn"
-          onClick={() => {
-            setEditEvent(null);
-            setShowModal(true);
-          }}
-        >
-          + Create New Event
-        </button>
       </div>
 
       {/* EVENTS TABLE */}
       <div className="event-card">
-        <div className="card-title">
-          <FaUsers /> My Created Events
+        <div className="card-title" style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}>
+          <span><FaUsers /> My Created Events</span>
+
+          <button
+            className="create-btn"
+            onClick={() => {
+              setEditEvent(null);
+              setShowModal(true);
+            }}
+          >
+            + Create New Event
+          </button>
         </div>
 
         <table className="event-table">
@@ -180,15 +184,16 @@ const EventManagement = () => {
                 <td>{event.participants?.length || 0}</td>
 
                 <td className="action-buttons">
-                  <button
-                    onClick={() => {
-                      setSelectedEvent(event);
-                      setShowViewModal(true);
-                    }}
-                  >
-                    <FaEye />
-                  </button>
-                </td>
+  <button
+    onClick={() => {
+      setSelectedEvent(event);
+      setShowViewModal(true);
+    }}
+    className="details-btn"
+  >
+    Details
+  </button>
+</td>
               </tr>
             ))}
           </tbody>
