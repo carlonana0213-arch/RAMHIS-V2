@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import DashboardCards from "./dashboard/dashboardCards";
 import DashboardPatientGraphs from "./dashboard/dashboardPatientsGraphs";
 import DashboardInventoryGraphs from "./dashboard/dashboardInventoryGraphs";
@@ -23,7 +24,26 @@ function Dashboard() {
   const [topMedicines, setTopMedicines] = useState([]);
 
   const [loading, setLoading] = useState(true);
+  const handleExportPDF = async () => {
+    const dashboard = document.querySelector(".dashboard-page");
 
+    if (!dashboard) return;
+
+    const canvas = await html2canvas(dashboard, {
+      scale: 2,
+    });
+
+    const imgData = canvas.toDataURL("image/png");
+
+    const pdf = new jsPDF("p", "mm", "a4");
+
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+
+    pdf.save("dashboard-report.pdf");
+  };
   useEffect(() => {
     const loadDashboard = async () => {
       try {
@@ -56,7 +76,9 @@ function Dashboard() {
           <h1>Dashboard</h1>
         </div>
 
-        <button className="publish-btn">Publish</button>
+        <button className="publish-btn" onClick={handleExportPDF}>
+          Export
+        </button>
       </div>
 
       {loading ? <CardsSkeleton /> : <DashboardCards summary={summary} />}
@@ -99,5 +121,3 @@ function Dashboard() {
 }
 
 export default Dashboard;
-
- 

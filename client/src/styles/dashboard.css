@@ -468,3 +468,18 @@
   color: #dc2626 !important;
   font-weight: 500;
 }
+
+.publish-btn {
+  background: linear-gradient(135deg, var(--brand-blue), #2e46a1);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 11px 24px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(59, 89, 196, 0.3);
+  transition: var(--transition-smooth);
+  align-self: flex-end;
+}
