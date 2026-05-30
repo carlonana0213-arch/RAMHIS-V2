@@ -51,7 +51,11 @@ function PatientDoctorView({ patient, onClose, refreshQueue }) {
 
   const [existingPrescriptions, setExistingPrescriptions] = useState([]);
 
-  const [medicines, setMedicines] = useState([]);
+  const [medicines, setMedicines] = useState(() => {
+    const cached = sessionStorage.getItem("doctorMedicines");
+
+    return cached ? JSON.parse(cached) : [];
+  });
 
   const [activeTab, setActiveTab] = useState("current");
 
@@ -124,9 +128,16 @@ function PatientDoctorView({ patient, onClose, refreshQueue }) {
 
   const loadMedicines = async () => {
     try {
+      // already cached
+      if (medicines.length > 0) {
+        return;
+      }
+
       const data = await getMedicines();
 
       setMedicines(data);
+
+      sessionStorage.setItem("doctorMedicines", JSON.stringify(data));
     } catch (err) {
       console.error(err);
     }

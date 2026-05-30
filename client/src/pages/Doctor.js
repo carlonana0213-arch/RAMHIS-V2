@@ -9,6 +9,7 @@ import PatientCard from "./doctor/patientCard";
 import PatientDoctorView from "./doctor/patientDoctorView";
 import TableSkeleton from "../components/loading/tableSkeleton";
 import PatientCardSkeleton from "../components/loading/patientCardSkeleton";
+import socket from "../services/socket";
 
 function Doctor() {
   const storedUser = JSON.parse(localStorage.getItem("user"));
@@ -48,28 +49,40 @@ function Doctor() {
 
   useEffect(() => {
     let isMounted = true;
-    let interval;
+    let isFetching = false;
 
-    const fetchData = async () => {
-      if (!isMounted) return;
+    const safeLoadQueue = async () => {
+      if (!isMounted || isFetching) return;
 
-      await loadQueue();
+      isFetching = true;
 
-      if (!interval) {
-        interval = setInterval(() => {
-          loadQueue();
-        }, 3000);
+      try {
+        await loadQueue();
+      } finally {
+        isFetching = false;
       }
     };
 
-    fetchData();
+    safeLoadQueue();
+
+    // socket updates
+    socket.on("queueUpdated", () => {
+      safeLoadQueue();
+    });
+
+    // fallback refresh every minute
+    const fallbackTimer = setInterval(() => {
+      if (!document.hidden) {
+        safeLoadQueue();
+      }
+    }, 60000);
 
     return () => {
       isMounted = false;
 
-      if (interval) {
-        clearInterval(interval);
-      }
+      clearInterval(fallbackTimer);
+
+      socket.off("queueUpdated");
     };
   }, []);
 
@@ -106,14 +119,17 @@ function Doctor() {
       filtered = filtered.filter((p) => p.status === "unconsulted");
     }
 
-    filtered.sort((a, b) => {
-      if (currentPatient && a._id === currentPatient._id) return -1;
+    if (currentPatient) {
+      const currentIndex = filtered.findIndex(
+        (p) => p._id === currentPatient._id,
+      );
 
-      if (currentPatient && b._id === currentPatient._id) return 1;
+      if (currentIndex > 0) {
+        const [selected] = filtered.splice(currentIndex, 1);
 
-      return 0;
-    });
-
+        filtered.unshift(selected);
+      }
+    }
     return filtered;
   }, [
     patients,
@@ -143,30 +159,9 @@ function Doctor() {
 
   const openDoctorView = async (patient) => {
     try {
-      const updatedPatient = {
-        ...patient,
-        status: "beingSeen",
-      };
-
-      // fill patient card
-      setCurrentPatient(updatedPatient);
-
-      // open modal
-      setSelectedPatient(updatedPatient);
-      setShowDoctorView(true);
-
-      await updatePatientStatus(patient._id, {
-        status: "beingSeen",
-      });
-
-      await loadQueue();
+      setCurrentPatient(patient);
     } catch (err) {
-      console.error("Failed to update patient status", err);
-
-      alert("Failed to update patient status");
-
-      setShowDoctorView(false);
-      setSelectedPatient(null);
+      console.error(err);
     }
   };
   const handleNextPatient = () => {
@@ -202,7 +197,27 @@ function Doctor() {
         ) : (
           <PatientCard
             patient={currentPatient}
-            onSelect={openDoctorView}
+            onSelect={async () => {
+              if (!currentPatient) return;
+
+              try {
+                // only update if still waiting
+                if (currentPatient.status === "waiting") {
+                  await updatePatientStatus(currentPatient._id, {
+                    status: "beingSeen",
+                  });
+                }
+
+                setSelectedPatient({
+                  ...currentPatient,
+                  status: "beingSeen",
+                });
+
+                setShowDoctorView(true);
+              } catch (err) {
+                console.error("Failed to update patient status", err);
+              }
+            }}
             onNextPatient={handleNextPatient}
             refreshQueue={loadQueue}
             setCurrentPatient={setCurrentPatient}

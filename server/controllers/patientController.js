@@ -54,6 +54,12 @@ exports.createPatient = async (req, res) => {
 
     await patient.save();
 
+    const io = req.app.get("io");
+
+    io.emit("queueUpdated");
+
+    res.status(201).json(patient);
+
     res.status(201).json(patient);
   } catch (err) {
     console.error("MONGOOSE SAVE ERROR:", err);
@@ -112,6 +118,10 @@ exports.updatePatient = async (req, res) => {
       },
     );
 
+    const io = req.app.get("io");
+
+    io.emit("queueUpdated");
+
     res.json(updated);
   } catch (err) {
     console.error(err);
@@ -132,11 +142,30 @@ exports.getPatientQueue = async (req, res) => {
   try {
     const patients = await Patient.find({
       status: { $ne: "released" },
-    });
+    })
+      .select(
+        `
+        _id
+        status
+        department
+        isPriority
+        createdAt
+        generalInfo.name
+        generalInfo.age
+        generalInfo.sex
+        generalInfo.gender
+        `,
+      )
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.json(patients);
   } catch (err) {
-    res.status(500).json({ msg: "Server error" });
+    console.error(err);
+
+    res.status(500).json({
+      msg: "Server error",
+    });
   }
 };
 
@@ -147,6 +176,10 @@ exports.updatePatientInfo = async (req, res) => {
       req.body,
       { new: true, runValidators: true },
     );
+
+    const io = req.app.get("io");
+
+    io.emit("queueUpdated");
 
     res.json(updatedPatient);
   } catch (err) {
@@ -170,6 +203,10 @@ exports.addDoctorRecord = async (req, res) => {
       },
       { new: true },
     );
+
+    const io = req.app.get("io");
+
+    io.emit("queueUpdated");
 
     res.json(updated);
   } catch (err) {
@@ -206,6 +243,10 @@ exports.deleteDoctorRecord = async (req, res) => {
 
     await patient.save();
 
+    const io = req.app.get("io");
+
+    io.emit("queueUpdated");
+
     res.json(patient);
   } catch (err) {
     console.error("Delete doctor record error:", err);
@@ -231,5 +272,3 @@ exports.getLocations = async (req, res) => {
     });
   }
 };
-
- 

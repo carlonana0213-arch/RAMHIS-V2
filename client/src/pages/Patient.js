@@ -7,6 +7,7 @@ import PatientViewModal from "./patients/PatientViewModal";
 import "../styles/patient.css";
 import { useLocation } from "react-router-dom";
 import { API_BASE_URL } from "../services/apiConfig";
+import socket from "../services/socket";
 
 const Patient = () => {
   const [patients, setPatients] = useState([]);
@@ -15,7 +16,12 @@ const Patient = () => {
 
   const [selectedPatient, setSelectedPatient] = useState(null);
   useEffect(() => {
+    let isFetching = false;
+
     const fetchQueue = async () => {
+      if (isFetching) return;
+
+      isFetching = true;
       console.time("queue-load");
 
       try {
@@ -27,16 +33,27 @@ const Patient = () => {
       } finally {
         console.timeEnd("queue-load");
         setLoading(false);
+        isFetching = false;
       }
     };
-
     fetchQueue();
 
-    const interval = setInterval(() => {
-      fetchQueue();
-    }, 3000);
+    let fallbackTimer;
 
-    return () => clearInterval(interval);
+    socket.on("queueUpdated", () => {
+      fetchQueue();
+    });
+
+    fallbackTimer = setInterval(() => {
+      if (!document.hidden) {
+        fetchQueue();
+      }
+    }, 60000);
+
+    return () => {
+      clearInterval(fallbackTimer);
+      socket.off("queueUpdated");
+    };
   }, []);
   return (
     <div className="patient-page">

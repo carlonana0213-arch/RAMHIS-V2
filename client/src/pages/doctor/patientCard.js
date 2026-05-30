@@ -41,8 +41,6 @@ function PatientCard({
                 await updatePatient(patient._id, {
                   status: "unconsulted",
                 });
-
-                await refreshQueue();
               } catch (err) {
                 console.error(err);
               }
@@ -54,7 +52,7 @@ function PatientCard({
             className="queue-action-btn"
             onClick={() => onSelect(patient)}
           >
-            Consult{" "}
+            Open Sheet{" "}
           </button>
 
           <button className="next-patient-btn" onClick={onNextPatient}>
