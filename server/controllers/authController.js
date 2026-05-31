@@ -16,6 +16,7 @@ exports.register = async (req, res) => {
     doctorInfo,
     contact_number,
     birthdate,
+
     accepted_terms,
 
     organization,
@@ -31,22 +32,16 @@ exports.register = async (req, res) => {
 
   const rawRole = role || account_type || "User";
 
-const normalizedRole =
-  rawRole.charAt(0).toUpperCase() +
-  rawRole.slice(1).toLowerCase();
+  const normalizedRole =
+    rawRole.charAt(0).toUpperCase() + rawRole.slice(1).toLowerCase();
 
-  const normalizedVolunteerType =
-    volunteerType || organization || skills || "";
+  const normalizedVolunteerType = volunteerType || organization || skills || "";
 
-  const uploadedFileName =
-  req.file?.filename ||
-  req.file?.originalname ||
-  "";
+  const uploadedFileName = req.file?.filename || req.file?.originalname || "";
 
-const normalizedDoctorInfo =
-  doctorInfo ||
-  (
-    normalizedRole.toLowerCase() === "doctor"
+  const normalizedDoctorInfo =
+    doctorInfo ||
+    (normalizedRole.toLowerCase() === "doctor"
       ? {
           specialization: specialty || "",
           licenseNumber: prc_license_number || "",
@@ -54,8 +49,7 @@ const normalizedDoctorInfo =
           proofOfLicense: uploadedFileName || "Submitted via mobile",
           proofOfDoctorate: uploadedFileName || "Submitted via mobile",
         }
-      : undefined
-  );
+      : undefined);
 
   const normalizedAcceptedTerms =
     accepted_terms === true || accepted_terms === "true";
@@ -95,6 +89,8 @@ const normalizedDoctorInfo =
 
       contact_number,
       birthdate,
+      birthday: birthdate,
+      bdate: birthdate,
       accepted_terms: normalizedAcceptedTerms,
 
       tempPassword: password ? undefined : tempPassword,
@@ -110,14 +106,14 @@ const normalizedDoctorInfo =
       message: "Registration successful. Await admin approval.",
     });
   } catch (error) {
-  console.error("REGISTER ERROR:", error);
+    console.error("REGISTER ERROR:", error);
 
-  return res.status(500).json({
-    ok: false,
-    msg: error.message,
-    message: error.message,
-  });
-}
+    return res.status(500).json({
+      ok: false,
+      msg: error.message,
+      message: error.message,
+    });
+  }
 };
 
 exports.login = async (req, res) => {
@@ -137,14 +133,14 @@ exports.login = async (req, res) => {
     }
 
     if (
-  user.verificationStatus === "Rejected" ||
-  user.verificationStatus === "Deactivated" ||
-  user.status === "deactivated"
-) {
-  return res.status(403).json({
-    msg: "Your account is deactivated, please contact administrator",
-  });
-}
+      user.verificationStatus === "Rejected" ||
+      user.verificationStatus === "Deactivated" ||
+      user.status === "deactivated"
+    ) {
+      return res.status(403).json({
+        msg: "Your account is deactivated, please contact administrator",
+      });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
 
@@ -162,93 +158,88 @@ exports.login = async (req, res) => {
     );
 
     res.json({
-  ok: true,
-  msg: "Login successful",
-  message: "Login successful",
-  token,
-  accessToken: token,
-  user: {
-  id: user._id,
-  _id: user._id,
+      ok: true,
+      msg: "Login successful",
+      message: "Login successful",
+      token,
+      accessToken: token,
+      user: {
+        id: user._id,
+        _id: user._id,
 
-  name: user.name || user.full_name,
-  full_name: user.full_name || user.name,
+        name: user.name || user.full_name,
+        full_name: user.full_name || user.name,
 
-  email: user.email,
+        email: user.email,
 
-  role: user.role || user.account_type,
-  account_type: user.account_type || user.role,
+        role: user.role || user.account_type,
+        account_type: user.account_type || user.role,
 
-  verificationStatus: user.verificationStatus,
-  doctorInfo: user.doctorInfo,
+        verificationStatus: user.verificationStatus,
+        doctorInfo: user.doctorInfo,
 
-  birthdate: user.birthdate || user.birthday || user.bdate || "",
-  birthday: user.birthday || user.birthdate || user.bdate || "",
-  bdate: user.bdate || user.birthdate || user.birthday || "",
+        birthdate: user.birthdate || user.birthday || user.bdate || "",
+        birthday: user.birthday || user.birthdate || user.bdate || "",
+        bdate: user.bdate || user.birthdate || user.birthday || "",
 
-  contact_number:
-    user.contact_number ||
-    user.contactNumber ||
-    user.phone ||
-    user.phoneNumber ||
-    "",
+        contact_number:
+          user.contact_number ||
+          user.contactNumber ||
+          user.phone ||
+          user.phoneNumber ||
+          "",
 
-  contactNumber:
-    user.contactNumber ||
-    user.contact_number ||
-    user.phone ||
-    user.phoneNumber ||
-    "",
+        contactNumber:
+          user.contactNumber ||
+          user.contact_number ||
+          user.phone ||
+          user.phoneNumber ||
+          "",
 
-  phone:
-    user.phone ||
-    user.contact_number ||
-    user.contactNumber ||
-    "",
+        phone: user.phone || user.contact_number || user.contactNumber || "",
 
-  profileImage:
-    user.profileImage ||
-    user.profileImageUrl ||
-    user.profile_image_url ||
-    user.avatar ||
-    user.imageUrl ||
-    "",
+        profileImage:
+          user.profileImage ||
+          user.profileImageUrl ||
+          user.profile_image_url ||
+          user.avatar ||
+          user.imageUrl ||
+          "",
 
-  profileImageUrl:
-    user.profileImageUrl ||
-    user.profileImage ||
-    user.profile_image_url ||
-    user.avatar ||
-    user.imageUrl ||
-    "",
+        profileImageUrl:
+          user.profileImageUrl ||
+          user.profileImage ||
+          user.profile_image_url ||
+          user.avatar ||
+          user.imageUrl ||
+          "",
 
-  profile_image_url:
-    user.profile_image_url ||
-    user.profileImageUrl ||
-    user.profileImage ||
-    user.avatar ||
-    user.imageUrl ||
-    "",
+        profile_image_url:
+          user.profile_image_url ||
+          user.profileImageUrl ||
+          user.profileImage ||
+          user.avatar ||
+          user.imageUrl ||
+          "",
 
-  avatar:
-    user.avatar ||
-    user.profileImage ||
-    user.profileImageUrl ||
-    user.profile_image_url ||
-    user.imageUrl ||
-    "",
+        avatar:
+          user.avatar ||
+          user.profileImage ||
+          user.profileImageUrl ||
+          user.profile_image_url ||
+          user.imageUrl ||
+          "",
 
-  imageUrl:
-    user.imageUrl ||
-    user.profileImage ||
-    user.profileImageUrl ||
-    user.profile_image_url ||
-    user.avatar ||
-    "",
-},
-  mustChangePassword: user.mustChangePassword,
-});
-
+        imageUrl:
+          user.imageUrl ||
+          user.profileImage ||
+          user.profileImageUrl ||
+          user.profile_image_url ||
+          user.avatar ||
+          "",
+      },
+      mustChangePassword: user.mustChangePassword,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ msg: "Server error" });
@@ -303,37 +294,27 @@ exports.forgotPassword = async (req, res) => {
     if (!user) {
       return res.json({
         ok: true,
-        message:
-          "If an account exists, a reset link has been sent.",
+        message: "If an account exists, a reset link has been sent.",
       });
     }
 
-    const resetToken =
-      crypto.randomBytes(32).toString(
-        "hex",
-      );
+    const resetToken = crypto.randomBytes(32).toString("hex");
 
     const hashedToken = crypto
       .createHash("sha256")
       .update(resetToken)
       .digest("hex");
 
-    user.resetPasswordToken =
-      hashedToken;
+    user.resetPasswordToken = hashedToken;
 
-    user.resetPasswordExpire =
-      Date.now() + 1000 * 60 * 15;
+    user.resetPasswordExpire = Date.now() + 1000 * 60 * 15;
 
     await user.save();
 
     // MOBILE DEEP LINK
- const resetLink =
-  `https://ramhis-v2-1.onrender.com/api/auth/reset-password?token=${resetToken}`;
+    const resetLink = `https://ramhis-v2-1.onrender.com/api/auth/reset-password?token=${resetToken}`;
 
-  console.log(
-      "Sending reset email to:",
-      user.email
-    );
+    console.log("Sending reset email to:", user.email);
 
     // Set API key inside the function so env var is guaranteed to be loaded
     if (!process.env.SENDGRID_API_KEY) {
@@ -346,7 +327,7 @@ exports.forgotPassword = async (req, res) => {
 
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-console.log("ABOUT TO SEND EMAIL via SendGrid");
+    console.log("ABOUT TO SEND EMAIL via SendGrid");
     await sgMail.send({
       to: user.email,
       from: {
@@ -394,81 +375,55 @@ console.log("ABOUT TO SEND EMAIL via SendGrid");
 
     res.json({
       ok: true,
-      message:
-        "If an account exists, a reset link has been sent.",
+      message: "If an account exists, a reset link has been sent.",
     });
-  }catch (error) {
-  console.error(
-    "FORGOT PASSWORD ERROR:",
-    error
-  );
+  } catch (error) {
+    console.error("FORGOT PASSWORD ERROR:", error);
 
-  res.status(500).json({
-    ok: false,
-    message: error.message,
-  });
-}
+    res.status(500).json({
+      ok: false,
+      message: error.message,
+    });
+  }
 };
 
-exports.resetPassword = async (
-  req,
-  res,
-) => {
+exports.resetPassword = async (req, res) => {
   try {
-    const {
-  token,
-  password,
-  newPassword,
-} = req.body;
+    const { token, password, newPassword } = req.body;
 
-const finalPassword =
-  newPassword || password;
+    const finalPassword = newPassword || password;
 
-    const hashedToken = crypto
-  .createHash("sha256")
-  .update(token)
-  .digest("hex");
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
-const user =
-  await User.findOne({
-    resetPasswordToken: hashedToken,
-        resetPasswordExpire: {
-          $gt: Date.now(),
-        },
-      });
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: {
+        $gt: Date.now(),
+      },
+    });
 
     if (!user) {
       return res.status(400).json({
         ok: false,
-        message:
-          "Invalid or expired token",
+        message: "Invalid or expired token",
       });
     }
 
-    const salt =
-      await bcrypt.genSalt(10);
+    const salt = await bcrypt.genSalt(10);
 
-    user.password =
-      await bcrypt.hash(
-        finalPassword,
-        salt,
-      );
+    user.password = await bcrypt.hash(finalPassword, salt);
 
-    user.resetPasswordToken =
-      undefined;
+    user.resetPasswordToken = undefined;
 
-    user.resetPasswordExpire =
-      undefined;
+    user.resetPasswordExpire = undefined;
 
-    user.mustChangePassword =
-      false;
+    user.mustChangePassword = false;
 
     await user.save();
 
     res.json({
       ok: true,
-      message:
-        "Password reset successful",
+      message: "Password reset successful",
     });
   } catch (error) {
     console.error(error);

@@ -19,7 +19,7 @@ import ConnectionStatus from "./components/ConnectionStatus";
 function App() {
   return (
     <Router>
-      <ConnectionStatus />
+      {/*<ConnectionStatus />*/}
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/register" element={<Register />} />

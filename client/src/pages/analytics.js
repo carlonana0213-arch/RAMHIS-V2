@@ -412,7 +412,10 @@ const Analytics = () => {
           {" "}
           <div className="input-container">
             {" "}
-            <span className="input-label"> Target Location </span>{" "}
+            <span className="input-label">
+              {" "}
+              Select Historical Mission Location{" "}
+            </span>{" "}
             <select
               value={selectedLocation}
               onChange={(e) => {
@@ -435,7 +438,7 @@ const Analytics = () => {
           </div>{" "}
           <div className="input-container">
             {" "}
-            <span className="input-label"> Mission Date </span>{" "}
+            <span className="input-label"> Next Mission Date </span>{" "}
             <input
               type="date"
               value={nextMissionDate}

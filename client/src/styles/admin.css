@@ -214,21 +214,66 @@ td
   border-left: 4px solid var(--status-deactivated);
 }
 
-/* Status Badges */
-.admin-table td:nth-child(3) {
-  font-weight: 600;
+/* =========================
+   STATUS BADGES
+========================= */
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 6px 12px;
+  border-radius: 999px;
+
   font-size: 0.85rem;
+  font-weight: 600;
 }
 
-/* Logic for text colors based on status */
-.admin-table td:contains("Approved") {
-  color: var(--status-approved);
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
 }
-.admin-table td:contains("Pending") {
-  color: var(--status-pending);
+
+/* APPROVED / ACTIVE */
+.status-approved {
+  color: var(--status-approved) !important;
+  background: #eafaf1;
 }
-.admin-table td:contains("Deactivated") {
-  color: var(--status-deactivated);
+
+.status-approved .status-dot {
+  background: var(--status-approved);
+}
+
+/* PENDING */
+.status-pending {
+  color: var(--status-pending) !important;
+  background: #fff6e8;
+}
+
+.status-pending .status-dot {
+  background: var(--status-pending);
+}
+
+/* REJECTED */
+.status-rejected {
+  color: #e74c3c !important;
+  background: #fdecea;
+}
+
+.status-rejected .status-dot {
+  background: #e74c3c;
+}
+
+/* DEACTIVATED */
+.status-deactivated {
+  color: #f39c12 !important;
+  background: #fff1dd;
+}
+
+.status-deactivated .status-dot {
+  background: #f39c12;
 }
 
 /* =========================

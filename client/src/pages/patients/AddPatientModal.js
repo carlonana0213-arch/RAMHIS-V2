@@ -95,6 +95,53 @@ const AddPatientModal = ({ onClose }) => {
     }
   };
   const handleSubmit = async () => {
+    const firstName = form.generalInfo?.firstName?.trim();
+    const lastName = form.generalInfo?.lastName?.trim();
+    const birthdate = form.generalInfo?.birthdate;
+    const sex = form.generalInfo?.sex;
+    const age = Number(form.generalInfo?.age || 0);
+
+    const department = form.department?.trim();
+    const remarks = form.initComplaint?.trim();
+
+    /* ---------- GENERAL STEP VALIDATION ---------- */
+
+    if (!firstName) {
+      setAlertMessage("First name is required");
+      return;
+    }
+
+    if (!lastName) {
+      setAlertMessage("Last name is required");
+      return;
+    }
+
+    if (!birthdate) {
+      setAlertMessage("Birthdate is required");
+      return;
+    }
+
+    if (!sex) {
+      setAlertMessage("Please select sex");
+      return;
+    }
+
+    if (age < 0) {
+      setAlertMessage("Age cannot be negative");
+      return;
+    }
+
+    /* ---------- DEPARTMENT STEP VALIDATION ---------- */
+
+    if (!department) {
+      setAlertMessage("Department is required");
+      return;
+    }
+
+    if (!remarks) {
+      setAlertMessage("Remarks are required");
+      return;
+    }
     if (!duplicateChecked && !editingExistingPatient) {
       const foundDuplicate = await checkDuplicatePatient();
 
@@ -105,9 +152,17 @@ const AddPatientModal = ({ onClose }) => {
       setDuplicateChecked(true);
     }
 
+    const fullName = [
+      form.generalInfo?.firstName?.trim(),
+      form.generalInfo?.middleName?.trim(),
+      form.generalInfo?.lastName?.trim(),
+    ]
+      .filter(Boolean)
+      .join(" ");
+
     const payload = {
       generalInfo: {
-        name: form.generalInfo?.name || "",
+        name: fullName,
 
         age: form.generalInfo?.age || null,
 

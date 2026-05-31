@@ -309,7 +309,25 @@ function UserManagement() {
               >
                 <td>{user.name}</td>
                 <td>{user.role}</td>
-                <td>{user.verificationStatus}</td>
+                <td>
+                  <span
+                    className={`status-badge ${
+                      user.verificationStatus === "Approved"
+                        ? "status-approved"
+                        : user.verificationStatus === "Pending"
+                          ? "status-pending"
+                          : user.verificationStatus === "Rejected"
+                            ? "status-rejected"
+                            : user.verificationStatus === "Deactivated"
+                              ? "status-deactivated"
+                              : ""
+                    }`}
+                  >
+                    <span className="status-dot" />
+
+                    {user.verificationStatus}
+                  </span>
+                </td>
                 <td>
                   {user.createdAt
                     ? new Date(user.createdAt).toLocaleDateString()

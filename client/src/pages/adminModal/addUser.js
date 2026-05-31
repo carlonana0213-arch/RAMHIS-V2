@@ -6,13 +6,20 @@ import AlertModal from "../../components/AlertModal";
 
 function AddUser({ onClose, onSuccess }) {
   const [form, setForm] = useState({
-    name: "",
+    firstName: "",
+    middleName: "",
+    lastName: "",
+    birthday: "",
+
     email: "",
     password: "",
+
     role: "Doctor",
     volunteerType: "",
+
     specialization: "",
     licenseNumber: "",
+
     proofOfLicense: "",
     proofOfDoctorate: "",
   });
@@ -25,12 +32,78 @@ function AddUser({ onClose, onSuccess }) {
   };
 
   const handleSubmit = async () => {
+    const firstName = form.firstName?.trim();
+    const lastName = form.lastName?.trim();
+
+    const email = form.email?.trim();
+    const birthday = form.birthday?.trim();
+
+    /* ---------- GENERAL REQUIRED ---------- */
+
+    if (!firstName) {
+      setAlertMessage("First name is required");
+      return;
+    }
+
+    if (!lastName) {
+      setAlertMessage("Last name is required");
+      return;
+    }
+
+    if (!birthday) {
+      setAlertMessage("Birthday is required");
+      return;
+    }
+
+    if (!email) {
+      setAlertMessage("Email address is required");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(email)) {
+      setAlertMessage("Please enter a valid email address");
+      return;
+    }
+
+    /* ---------- DOCTOR REQUIRED ---------- */
+
+    if (form.role === "Doctor") {
+      if (!form.specialization?.trim()) {
+        setAlertMessage("Specialization is required for doctors");
+        return;
+      }
+
+      if (!form.licenseNumber?.trim()) {
+        setAlertMessage("License number is required for doctors");
+        return;
+      }
+
+      if (!form.proofOfLicense?.trim()) {
+        setAlertMessage("Proof of license is required for doctors");
+        return;
+      }
+
+      if (!form.proofOfDoctorate?.trim()) {
+        setAlertMessage("Proof of doctorate is required for doctors");
+        return;
+      }
+    }
     try {
       setError("");
 
+      const fullName = [
+        form.firstName?.trim(),
+        form.middleName?.trim(),
+        form.lastName?.trim(),
+      ]
+        .filter(Boolean)
+        .join(" ");
+
       const dataToSend = {
-        name: form.name,
+        name: fullName,
         email: form.email,
+        birthdate: form.birthday,
 
         role: form.role,
       };
@@ -51,9 +124,6 @@ function AddUser({ onClose, onSuccess }) {
       await registerUser(dataToSend);
 
       setAlertMessage("User created successfully");
-
-      onSuccess();
-      onClose();
     } catch (err) {
       console.error(err);
       setAlertMessage("User Creation Error");
@@ -70,11 +140,36 @@ function AddUser({ onClose, onSuccess }) {
 
           <div className="medicine-form-grid">
             <div className="form-group">
-              <label>Full Name</label>
+              <label>First Name *</label>
 
               <input
-                name="name"
-                placeholder="Enter full name"
+                name="firstName"
+                value={form.firstName}
+                placeholder="Enter first name"
+                onChange={handleChange}
+              />
+            </div>
+
+            {/* Middle Name */}
+            <div className="form-group">
+              <label>Middle Name</label>
+
+              <input
+                name="middleName"
+                value={form.middleName}
+                placeholder="Optional"
+                onChange={handleChange}
+              />
+            </div>
+
+            {/* Last Name */}
+            <div className="form-group full-width">
+              <label>Last Name *</label>
+
+              <input
+                name="lastName"
+                value={form.lastName}
+                placeholder="Enter last name"
                 onChange={handleChange}
               />
             </div>
@@ -88,7 +183,17 @@ function AddUser({ onClose, onSuccess }) {
                 onChange={handleChange}
               />
             </div>
+            <div className="form-group">
+              <label>Birthday *</label>
 
+              <input
+                type="date"
+                name="birthday"
+                value={form.birthday}
+                max={new Date().toISOString().split("T")[0]}
+                onChange={handleChange}
+              />
+            </div>
             <div className="form-group full-width">
               <label>Role</label>
 
@@ -184,9 +289,14 @@ function AddUser({ onClose, onSuccess }) {
         <AlertModal
           message={alertMessage}
           onClose={() => {
+            const isSuccess = alertMessage === "User created successfully";
+
             setAlertMessage("");
-            onSuccess();
-            onClose();
+
+            if (isSuccess) {
+              onSuccess();
+              onClose();
+            }
           }}
         />
       )}

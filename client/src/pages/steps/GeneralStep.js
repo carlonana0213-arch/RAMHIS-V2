@@ -48,11 +48,20 @@ const GeneralStep = ({ form, setForm }) => {
       const today = new Date();
       const birth = new Date(birthdate);
 
-      age = today.getFullYear() - birth.getFullYear();
-      const m = today.getMonth() - birth.getMonth();
+      // prevent future dates
+      if (birth > today) {
+        age = 0;
+      } else {
+        age = today.getFullYear() - birth.getFullYear();
 
-      if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
-        age--;
+        const m = today.getMonth() - birth.getMonth();
+
+        if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+          age--;
+        }
+
+        // extra safety
+        age = Math.max(age, 0);
       }
     }
 
@@ -74,12 +83,36 @@ const GeneralStep = ({ form, setForm }) => {
 
         <div className="form-grid">
           {/* Name */}
-          <div className="field-group full">
-            <label>Name</label>
+          {/* First Name */}
+          <div className="field-group">
+            <label>First Name </label>
             <input
-              value={general.name || ""}
-              onChange={(e) => handleChange("name", e.target.value)}
+              value={general.firstName || ""}
+              onChange={(e) => handleChange("firstName", e.target.value)}
               onKeyDown={handleEnterKey}
+              placeholder="Enter first name"
+            />
+          </div>
+
+          {/* Middle Name */}
+          <div className="field-group">
+            <label>Middle Name</label>
+            <input
+              value={general.middleName || ""}
+              onChange={(e) => handleChange("middleName", e.target.value)}
+              onKeyDown={handleEnterKey}
+              placeholder="Optional"
+            />
+          </div>
+
+          {/* Last Name */}
+          <div className="field-group full">
+            <label>Last Name </label>
+            <input
+              value={general.lastName || ""}
+              onChange={(e) => handleChange("lastName", e.target.value)}
+              onKeyDown={handleEnterKey}
+              placeholder="Enter last name"
             />
           </div>
 
@@ -89,6 +122,7 @@ const GeneralStep = ({ form, setForm }) => {
             <input
               type="date"
               value={general.birthdate || ""}
+              max={new Date().toISOString().split("T")[0]}
               onChange={(e) => handleBirthdateChange(e.target.value)}
               onKeyDown={handleEnterKey}
             />

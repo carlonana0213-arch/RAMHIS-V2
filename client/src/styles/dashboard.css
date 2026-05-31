@@ -484,6 +484,9 @@
   align-self: flex-end;
 }
 
+.publish-btn:hover {
+  background: #7a96ec;
+}
 .pdf-preview-overlay {
   position: fixed;
   inset: 0;

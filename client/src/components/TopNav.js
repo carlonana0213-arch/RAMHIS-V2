@@ -1,12 +1,13 @@
 import { useNavigate } from "react-router-dom";
 import { FaUserCircle } from "react-icons/fa";
 import "../styles/topnav.css";
-
+import ConnectionStatus from "./ConnectionStatus";
 function TopNav() {
   const navigate = useNavigate();
 
   return (
     <div className="top-nav">
+      <ConnectionStatus />
       <div className="top-nav-right">
         <button
           className="account-button"
@@ -25,4 +26,3 @@ function TopNav() {
 }
 
 export default TopNav;
- 
