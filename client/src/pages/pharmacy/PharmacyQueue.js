@@ -9,12 +9,16 @@ import TableSkeleton from "../../components/loading/tableSkeleton";
 import socket from "../../services/socket";
 function PharmacyQueue() {
   const [prescriptions, setPrescriptions] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const [totalPrescriptions, setTotalPrescriptions] = useState(0);
+
+  const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("Pending");
   const [confirmState, setConfirmState] = useState(null);
   const [alertMessage, setAlertMessage] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 15;
+
   const [loading, setLoading] = useState(true);
   const [expandedPatients, setExpandedPatients] = useState({});
   let isFetching = false;
@@ -27,9 +31,15 @@ function PharmacyQueue() {
     try {
       setLoading(true);
 
-      const data = await apiFetch(`${API_BASE_URL}/api/prescriptions/pending`);
+      const data = await apiFetch(
+        `${API_BASE_URL}/api/prescriptions/queue?page=${currentPage}&search=${search}&filter=${filter}`,
+      );
 
-      setPrescriptions(data);
+      setPrescriptions(data.prescriptions);
+
+      setTotalPrescriptions(data.total);
+
+      setTotalPages(data.totalPages);
     } catch (err) {
       console.error(err);
     } finally {
@@ -58,7 +68,7 @@ function PharmacyQueue() {
 
       socket.off("queueUpdated");
     };
-  }, []);
+  }, [currentPage, search, filter]);
 
   const handleMarkAsGiven = async (prescriptionId, itemId) => {
     try {
@@ -105,78 +115,12 @@ function PharmacyQueue() {
     }
   };
 
-  const filteredPrescriptions = useMemo(() => {
-    return Object.values(
-      prescriptions.reduce((acc, prescription) => {
-        const patientId = prescription.patient?._id;
+  const pendingCount = filter === "Pending" ? totalPrescriptions : 0;
 
-        if (!patientId) return acc;
+  const givenCount = filter === "Given" ? totalPrescriptions : 0;
+  const displayedPrescriptions = prescriptions;
 
-        const filteredItems = prescription.items.filter((item) => {
-          const patientName = prescription.patient?.generalInfo?.name || "";
-
-          const medicineNames =
-            item.medicine?.names?.join(", ") || item.medicine?.name || "";
-
-          const matchesSearch =
-            patientName.toLowerCase().includes(search.toLowerCase()) ||
-            medicineNames.toLowerCase().includes(search.toLowerCase());
-
-          const matchesFilter =
-            filter === "Pending" ? !item.isGiven : item.isGiven;
-
-          return matchesSearch && matchesFilter;
-        });
-
-        if (filteredItems.length === 0) {
-          return acc;
-        }
-
-        // initialize patient group
-        if (!acc[patientId]) {
-          acc[patientId] = {
-            _id: patientId,
-            patient: prescription.patient,
-            doctor: prescription.doctor,
-            filteredItems: [],
-          };
-        }
-
-        // merge medicines
-        acc[patientId].filteredItems.push(
-          ...filteredItems.map((item) => ({
-            ...item,
-            prescriptionId: prescription._id,
-          })),
-        );
-
-        return acc;
-      }, {}),
-    );
-  }, [prescriptions, search, filter]);
-
-  const pendingCount = prescriptions
-    .flatMap((p) => p.items)
-    .filter((item) => !item.isGiven).length;
-
-  const givenCount = prescriptions
-    .flatMap((p) => p.items)
-    .filter((item) => item.isGiven).length;
-
-  const totalPrescriptions = filteredPrescriptions.length;
-
-  const totalPages = Math.ceil(totalPrescriptions / ITEMS_PER_PAGE);
-
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-
-  const endIndex = startIndex + ITEMS_PER_PAGE;
-
-  const displayedPrescriptions = filteredPrescriptions.slice(
-    startIndex,
-    endIndex,
-  );
-
-  const displayedCount = Math.min(endIndex, totalPrescriptions);
+  const displayedCount = Math.min(currentPage * 15, totalPrescriptions);
   useEffect(() => {
     setCurrentPage(1);
   }, [search, filter]);
@@ -272,10 +216,11 @@ function PharmacyQueue() {
                           <td>
                             {item.medicine?.names?.join(", ") ||
                               item.medicine?.name ||
+                              item.name ||
                               "Unknown Medicine"}
                           </td>
 
-                          <td>{item.medicine?.dosage || "-"}</td>
+                          <td>{item.medicine?.dosage || item.dosage || "-"}</td>
 
                           <td>{item.quantity}</td>
 
@@ -362,10 +307,13 @@ function PharmacyQueue() {
                               <td>
                                 {item.medicine?.names?.join(", ") ||
                                   item.medicine?.name ||
+                                  item.name ||
                                   "Unknown Medicine"}
                               </td>
 
-                              <td>{item.medicine?.dosage || "-"}</td>
+                              <td>
+                                {item.medicine?.dosage || item.dosage || "-"}
+                              </td>
 
                               <td>{item.quantity}</td>
 

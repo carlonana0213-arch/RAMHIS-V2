@@ -52,7 +52,7 @@ exports.getPendingPrescriptions = async (req, res) => {
 
       .populate({
         path: "items.medicine",
-        select: `
+        select: `       
             names
             quantity
             dosage
@@ -72,6 +72,140 @@ exports.getPendingPrescriptions = async (req, res) => {
 
     res.status(500).json({
       message: err.message,
+    });
+  }
+};
+
+exports.getPharmacyQueue = async (req, res) => {
+  try {
+    const { page = 1, limit = 15, search = "", filter = "Pending" } = req.query;
+
+    const pageNumber = Number(page);
+
+    const pageLimit = Number(limit);
+
+    const query = {};
+
+    // status
+    if (filter === "Pending") {
+      query.status = "Pending";
+    }
+
+    if (filter === "Given") {
+      query.status = "Completed";
+    }
+
+    // search patient name
+    // search patient OR medicine
+    if (search.trim()) {
+      // patient matches
+      const matchingPatients = await Patient.find({
+        "generalInfo.name": {
+          $regex: search.trim(),
+          $options: "i",
+        },
+      }).select("_id");
+
+      // medicine matches (NEW schema)
+      const matchingMedicines = await Medicine.find({
+        names: {
+          $regex: search.trim(),
+          $options: "i",
+        },
+      }).select("_id");
+
+      query.$or = [
+        {
+          patient: {
+            $in: matchingPatients.map((p) => p._id),
+          },
+        },
+
+        {
+          "items.medicine": {
+            $in: matchingMedicines.map((m) => m._id),
+          },
+        },
+
+        // OLD SCHEMA fallback
+        {
+          "items.name": {
+            $regex: search.trim(),
+            $options: "i",
+          },
+        },
+      ];
+    }
+
+    // total count
+    const total = await Prescription.countDocuments(query);
+
+    // PAGINATE FIRST
+    const prescriptions = await Prescription.find(query)
+      .select(
+        `
+            patient
+            doctor
+            items
+            status
+            createdAt
+          `,
+      )
+      .sort({
+        createdAt: -1,
+      })
+      .skip((pageNumber - 1) * pageLimit)
+      .limit(pageLimit)
+      .populate({
+        path: "patient",
+        select: `
+              generalInfo.name
+              generalInfo.age
+              generalInfo.gender
+              generalInfo.sex
+              status
+            `,
+      })
+      .populate({
+        path: "doctor",
+        select: "name",
+      })
+      .populate({
+        path: "items.medicine",
+        select: `
+              names
+              quantity
+              dosage
+              brand
+            `,
+      })
+      .lean();
+
+    const grouped = prescriptions.map((prescription) => ({
+      _id: prescription._id,
+      patient: prescription.patient,
+      doctor: prescription.doctor,
+      filteredItems: prescription.items
+        .filter((item) =>
+          filter === "Pending" ? !Boolean(item.isGiven) : Boolean(item.isGiven),
+        )
+        .map((item) => ({
+          ...item,
+          prescriptionId: prescription._id,
+        })),
+    }));
+
+    res.json({
+      prescriptions: grouped,
+      total,
+      totalPages: Math.ceil(total / pageLimit),
+      currentPage: pageNumber,
+    });
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      message: "Failed to load pharmacy queue",
     });
   }
 };
