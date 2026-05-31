@@ -21,57 +21,60 @@ exports.getPendingUsers = async (req, res) => {
       "-password",
     );
 
-res.json({
-  ok: true,
-  data: users,
-});
-} catch (err) {
-  res.status(500).json({ msg: "Server error" });
-}
+    res.json({
+      ok: true,
+      data: users,
+    });
+  } catch (err) {
+    res.status(500).json({ msg: "Server error" });
+  }
 };
 
 exports.approveUser = async (req, res) => {
   try {
+    const tempPassword = generateTempPassword();
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
     const user = await User.findByIdAndUpdate(
-  req.params.id,
-  {
-    verificationStatus: "Approved",
-    status: "active",
-    is_verified: true,
-    isActive: true,
-  },
-  { new: true },
-);
+      req.params.id,
+      {
+        verificationStatus: "Approved",
+        status: "active",
+        is_verified: true,
+        isActive: true,
+
+        password: hashedPassword,
+        tempPassword,
+        mustChangePassword: true,
+      },
+      { new: true },
+    );
 
     await transporter.sendMail({
+      from: process.env.EMAIL_USER,
       to: user.email,
       subject: "RAMHIS Account Approved",
       html: `
-    <h3>Your account has been approved</h3>
-    <p><b>Email:</b> ${user.email}</p>
-    <p><b>Temporary Password:</b> ${user.tempPassword}</p>
-    <p>Please log in and change your password immediately.</p>
-    <p>RAMHIS WEBAPP:  .</p>
-  `,
+        <h3>Your account has been approved</h3>
+        <p><b>Email:</b> ${user.email}</p>
+        <p><b>Temporary Password:</b> ${tempPassword}</p>
+        <p>Please log in and change your password immediately.</p>
+        <p>RAMHIS: https://ramhis-v2-2.onrender.com </P>
+      `,
     });
 
-    await logAudit(req, {
-      module: "Accounts",
-      action: "Approve User",
-      description: `Approved user ${user.name || user.email}.`,
-      targetId: user._id,
-      targetName: user.name || user.email,
-      location: "Account Management",
-      metadata: {
-        email: user.email,
-        role: user.role,
-        verificationStatus: user.verificationStatus,
-      },
+    res.json({
+      ok: true,
+      msg: "User approved and email sent",
+      user,
     });
-
-    res.json({ msg: "User approved and email sent", user });
   } catch (err) {
-    res.status(500).json({ msg: "Server error" });
+    console.error("APPROVE EMAIL ERROR:", err);
+
+    res.status(500).json({
+      ok: false,
+      msg: err.message,
+    });
   }
 };
 
@@ -148,11 +151,9 @@ exports.updateUser = async (req, res) => {
 
     delete updates.createdAt;
 
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      updates,
-      { new: true }
-    );
+    const user = await User.findByIdAndUpdate(req.params.id, updates, {
+      new: true,
+    });
 
     await logAudit(req, {
       module: "Accounts",
@@ -189,7 +190,7 @@ exports.updateUserStatus = async (req, res) => {
 
     if (
       !["Pending", "Approved", "Rejected", "Deactivated"].includes(
-        verificationStatus
+        verificationStatus,
       )
     ) {
       return res.status(400).json({
@@ -225,7 +226,7 @@ exports.updateUserStatus = async (req, res) => {
         is_verified,
         isActive,
       },
-      { new: true }
+      { new: true },
     );
 
     if (user) {
@@ -273,6 +274,7 @@ exports.resetUserPassword = async (req, res) => {
 
     // SEND EMAIL AGAIN
     await transporter.sendMail({
+      from: process.env.EMAIL_USER,
       to: user.email,
       subject: "Password Reset - RAMHIS",
       html: `
@@ -296,11 +298,16 @@ exports.resetUserPassword = async (req, res) => {
     });
 
     res.json({
-  ok: true,
-  msg: "Password reset successful",
-  message: "Password reset successful",
-});
-} catch (err) {
-  res.status(500).json({ msg: "Reset failed" });
-}
+      ok: true,
+      msg: "Password reset successful",
+      message: "Password reset successful",
+    });
+  } catch (err) {
+    console.error("RESET EMAIL ERROR:", err);
+
+    res.status(500).json({
+      ok: false,
+      msg: err.message,
+    });
+  }
 };

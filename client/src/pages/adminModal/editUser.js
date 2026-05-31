@@ -46,46 +46,40 @@ function EditUser({ user, onClose, onSuccess }) {
     }
   };
 
- const [resetLoading, setResetLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
 
-const handleResetPassword = async () => {
-  try {
-    setResetLoading(true);
+  const handleResetPassword = async () => {
+    try {
+      setResetLoading(true);
 
-    const res = await fetch(
-      `${API_BASE_URL}/api/auth/forgot-password`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const token = localStorage.getItem("token");
+
+      const res = await fetch(
+        `${API_BASE_URL}/api/admin/reset-password/${form._id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         },
-        body: JSON.stringify({
-          email: form.email,
-        }),
-      },
-    );
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(
-        data.message || "Failed to send reset email",
       );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to send reset email");
+      }
+
+      setAlertMessage(`✅ Reset link sent to ${form.email}`);
+    } catch (err) {
+      console.error(err);
+
+      setAlertMessage("❌ Failed to send reset email. Please try again.");
+    } finally {
+      setResetLoading(false);
     }
-
-    setAlertMessage(
-      `✅ Reset link sent to ${form.email}`,
-    );
-  } catch (err) {
-    console.error(err);
-
-    setAlertMessage(
-      "❌ Failed to send reset email. Please try again.",
-    );
-  } finally {
-    setResetLoading(false);
-  }
-};
+  };
 
   return (
     <div className="modal-overlay">
@@ -164,13 +158,11 @@ const handleResetPassword = async () => {
           )}
 
           <button
-  onClick={() => setShowResetConfirm(true)}
-  disabled={resetLoading}
->
-  {resetLoading
-    ? "Sending..."
-    : "Reset Password"}
-</button>
+            onClick={() => setShowResetConfirm(true)}
+            disabled={resetLoading}
+          >
+            {resetLoading ? "Sending..." : "Reset Password"}
+          </button>
 
           <button onClick={onClose}>Close</button>
         </div>
