@@ -8,11 +8,17 @@ const PatientViewModal = ({ patient, onClose }) => {
     try {
       const updated = !isPriority;
 
-      await updatePatient(patient._id, {
+      const result = await updatePatient(patient._id, {
         isPriority: updated,
       });
 
       setIsPriority(updated);
+
+      alert(
+        result?.offline
+          ? "Priority updated offline. Will sync automatically."
+          : "Patient priority updated",
+      );
     } catch (err) {
       console.error("Failed to update priority", err);
     }

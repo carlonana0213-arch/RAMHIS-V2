@@ -220,13 +220,21 @@ const AddPatientModal = ({ onClose }) => {
 
     try {
       if (editingExistingPatient && matchedPatient) {
-        await updatePatient(matchedPatient._id, payload);
+        const result = await updatePatient(matchedPatient._id, payload);
 
-        setAlertMessage("Patient updated and queued");
+        setAlertMessage(
+          result?.offline
+            ? "Patient updated offline and queued. Will sync automatically."
+            : "Patient updated and queued",
+        );
       } else {
-        await addPatient(payload);
+        const result = await addPatient(payload);
 
-        setAlertMessage("Patient added successfully");
+        setAlertMessage(
+          result?.offline
+            ? "Patient added offline. Will sync automatically."
+            : "Patient added successfully",
+        );
       }
 
       // reset duplicate-flow state
@@ -241,7 +249,7 @@ const AddPatientModal = ({ onClose }) => {
   };
   const reusePatientRecord = async () => {
     try {
-      await updatePatient(matchedPatient._id, {
+      const result = await updatePatient(matchedPatient._id, {
         status: "waiting",
 
         department: form.department?.trim()
@@ -256,6 +264,12 @@ const AddPatientModal = ({ onClose }) => {
 
         location: matchedPatient.location,
       });
+
+      setAlertMessage(
+        result?.offline
+          ? "Patient queued offline. Will sync automatically."
+          : "Patient added to queue",
+      );
 
       setAlertMessage("Patient added to queue");
     } catch (err) {

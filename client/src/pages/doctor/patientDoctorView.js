@@ -164,7 +164,7 @@ function PatientDoctorView({ patient, onClose, refreshQueue }) {
 
   const handleSaveRecord = async () => {
     try {
-      await saveDoctorRecord(patient._id, {
+      const result = await saveDoctorRecord(patient._id, {
         ...doctorSheet,
 
         initComplaint: newComplaint || doctorSheet.initComplaint,
@@ -176,7 +176,11 @@ function PatientDoctorView({ patient, onClose, refreshQueue }) {
         recordType: hasHistory ? "follow-up" : "initial",
       });
 
-      setAlertMessage("Record saved successfully");
+      setAlertMessage(
+        result?.offline
+          ? "Record saved offline. Will sync automatically."
+          : "Record saved successfully",
+      );
 
       refreshQueue();
     } catch (err) {
@@ -196,29 +200,35 @@ function PatientDoctorView({ patient, onClose, refreshQueue }) {
         return;
       }
 
-      await savePrescription({
-        patient: patient._id,
-
-        doctor: storedUser?.id,
-
-        items: validItems.map((i) => ({
-          medicine: i.medicine,
-
-          quantity: Number(i.quantity),
-
-          directions: i.directions,
-        })),
-      });
-
       const saved = await savePrescription({
         patient: patient._id,
+
         doctor: storedUser?.id,
+
         items: validItems.map((i) => ({
           medicine: i.medicine,
+
           quantity: Number(i.quantity),
+
           directions: i.directions,
         })),
       });
+
+      setExistingPrescriptions((prev) => [...prev, saved]);
+
+      setPrescriptionItems([
+        {
+          medicine: "",
+          quantity: "",
+          directions: "",
+        },
+      ]);
+
+      setAlertMessage(
+        saved?.offline
+          ? "Prescription saved offline. Will sync automatically."
+          : "Prescription saved successfully",
+      );
 
       setExistingPrescriptions((prev) => [...prev, saved]);
 
@@ -240,11 +250,15 @@ function PatientDoctorView({ patient, onClose, refreshQueue }) {
 
   const handleGiveMedicine = async (prescriptionId, itemId) => {
     try {
-      await markMedicineGiven(prescriptionId, itemId);
+      const result = await markMedicineGiven(prescriptionId, itemId);
 
       await loadPrescriptions();
 
-      setAlertMessage("Medicine marked as given");
+      setAlertMessage(
+        result?.offline
+          ? "Medicine marked as given offline. Will sync automatically."
+          : "Medicine marked as given",
+      );
     } catch (err) {
       console.error(err);
     }
@@ -256,7 +270,11 @@ function PatientDoctorView({ patient, onClose, refreshQueue }) {
         status: "released",
       });
 
-      setAlertMessage("Patient released successfully");
+      setAlertMessage(
+        result?.offline
+          ? "Patient released offline. Will sync automatically."
+          : "Patient released successfully",
+      );
 
       refreshQueue();
 
@@ -274,7 +292,11 @@ function PatientDoctorView({ patient, onClose, refreshQueue }) {
         status: "forPharmacy",
       });
 
-      setAlertMessage("Patient sent to pharmacy");
+      setAlertMessage(
+        result?.offline
+          ? "Patient sent to pharmacy offline. Will sync automatically."
+          : "Patient sent to pharmacy",
+      );
 
       refreshQueue();
     } catch (err) {
@@ -317,7 +339,11 @@ function PatientDoctorView({ patient, onClose, refreshQueue }) {
         status: "waiting",
       });
 
-      setAlertMessage(`Patient referred to ${referralDept}`);
+      setAlertMessage(
+        result?.offline
+          ? `Referral saved offline (${referralDept}). Will sync automatically.`
+          : `Patient referred to ${referralDept}`,
+      );
 
       refreshQueue();
     } catch (err) {
