@@ -229,18 +229,6 @@ function PatientDoctorView({ patient, onClose, refreshQueue }) {
           ? "Prescription saved offline. Will sync automatically."
           : "Prescription saved successfully",
       );
-
-      setExistingPrescriptions((prev) => [...prev, saved]);
-
-      setPrescriptionItems([
-        {
-          medicine: "",
-          quantity: "",
-          directions: "",
-        },
-      ]);
-
-      setAlertMessage("Prescription saved successfully");
     } catch (err) {
       console.error(err);
 
@@ -338,12 +326,6 @@ function PatientDoctorView({ patient, onClose, refreshQueue }) {
 
         status: "waiting",
       });
-
-      setAlertMessage(
-        result?.offline
-          ? `Referral saved offline (${referralDept}). Will sync automatically.`
-          : `Patient referred to ${referralDept}`,
-      );
 
       setAlertMessage(
         result?.offline

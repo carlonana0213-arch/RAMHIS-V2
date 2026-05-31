@@ -226,8 +226,15 @@ function Registry({ patientIdFromQueue }) {
       };
 
       const res = await addPatient(payload);
+
       console.log("Add patient response:", res);
-      alert("Patient added successfully");
+
+      setAlertMessage(
+        res?.offline
+          ? "Patient added offline. Will sync automatically."
+          : "Patient added successfully",
+      );
+
       clearForm();
     } catch (err) {
       console.error("Error adding patient:", err);
@@ -261,8 +268,15 @@ function Registry({ patientIdFromQueue }) {
       };
 
       const res = await updatePatient(patientId, payload);
+
       console.log("Update patient response:", res);
-      setAlertMessage("Patient updated successfully");
+
+      setAlertMessage(
+        res?.offline
+          ? "Patient updated offline. Will sync automatically."
+          : "Patient updated successfully",
+      );
+
       clearForm();
     } catch (err) {
       console.error("Error updating patient:", err);

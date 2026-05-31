@@ -55,7 +55,10 @@ export const saveDoctorRecord = async (patientId, data) => {
       payload: data,
     });
 
-    return offlineRecord;
+    return {
+      ...offlineRecord,
+      offline: true,
+    };
   }
 
   return apiFetch(`${API}/patients/${patientId}/doctor-record`, {
@@ -113,7 +116,10 @@ export const savePrescription = async (data) => {
       payload: data,
     });
 
-    return offlinePrescription;
+    return {
+      ...offlinePrescription,
+      offline: true,
+    };
   }
 
   return apiFetch(`${API}/prescriptions`, {
@@ -123,12 +129,66 @@ export const savePrescription = async (data) => {
 };
 
 export const markMedicineGiven = async (prescriptionId, itemId) => {
+  // OFFLINE
+  if (isOffline()) {
+    const prescription = await db.prescriptions.get(prescriptionId);
+
+    if (prescription) {
+      prescription.items = prescription.items.map((item) =>
+        item._id === itemId
+          ? {
+              ...item,
+              isGiven: true,
+            }
+          : item,
+      );
+
+      await db.prescriptions.put(prescription);
+    }
+
+    await db.syncQueue.add({
+      type: "MARK_MEDICINE_GIVEN",
+
+      prescriptionId,
+      itemId,
+    });
+
+    return {
+      offline: true,
+    };
+  }
+
   return apiFetch(`${API}/prescriptions/${prescriptionId}/${itemId}`, {
     method: "PATCH",
   });
 };
 
 export const updatePatientStatus = async (patientId, data) => {
+  // OFFLINE
+  if (isOffline()) {
+    const patient = await db.patients.get(patientId);
+
+    if (patient) {
+      await db.patients.put({
+        ...patient,
+        ...data,
+        pendingSync: true,
+      });
+    }
+
+    await db.syncQueue.add({
+      type: "UPDATE_PATIENT_STATUS",
+
+      patientId,
+
+      payload: data,
+    });
+
+    return {
+      offline: true,
+    };
+  }
+
   return apiFetch(`${API}/patients/${patientId}`, {
     method: "PUT",
     body: JSON.stringify(data),

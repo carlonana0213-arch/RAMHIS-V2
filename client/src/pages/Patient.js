@@ -28,7 +28,15 @@ const Patient = () => {
 
   const [currentMission, setCurrentMission] = useState(null);
   const [showAllRecords, setShowAllRecords] = useState(false);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [search]);
   const getAuthHeaders = () => {
     const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
 
@@ -76,7 +84,7 @@ const Patient = () => {
         const [data, summary] = await Promise.all([
           getPatientQueue({
             page: currentPage,
-            search,
+            search: debouncedSearch,
             department: departmentFilter,
             all: useAllRecords,
           }),
@@ -96,7 +104,7 @@ const Patient = () => {
         setLoading(false);
       }
     },
-    [currentPage, search, departmentFilter, showAllRecords]
+    [currentPage, debouncedSearch, departmentFilter, showAllRecords],
   );
 
   useEffect(() => {
@@ -117,7 +125,7 @@ const Patient = () => {
       fetchQueue({ all: false });
 
       alert(
-        `Mission started: ${data.eventTitle}\nPatient list has been reset for new mission.`
+        `Mission started: ${data.eventTitle}\nPatient list has been reset for new mission.`,
       );
     };
 

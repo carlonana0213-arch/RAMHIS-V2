@@ -47,7 +47,10 @@ export const addPatient = async (data) => {
       payload: data,
     });
 
-    return offlinePatient;
+    return {
+      ...offlinePatient,
+      offline: true,
+    };
   }
 
   const patient = await apiFetch(API, {
@@ -108,7 +111,9 @@ export const updatePatient = async (id, data) => {
       payload: data,
     });
 
-    return;
+    return {
+      offline: true,
+    };
   }
 
   return apiFetch(`${API}/${id}`, {
@@ -142,7 +147,7 @@ export const getPatientQueue = async ({
         const searchLower = search.toLowerCase();
 
         patients = patients.filter((p) =>
-          p.generalInfo?.name?.toLowerCase()?.includes(searchLower)
+          p.generalInfo?.name?.toLowerCase()?.includes(searchLower),
         );
       }
 
@@ -290,7 +295,7 @@ export const getDoctorQueue = async ({
         const searchLower = search.toLowerCase();
 
         patients = patients.filter((p) =>
-          p.generalInfo?.name?.toLowerCase()?.includes(searchLower)
+          p.generalInfo?.name?.toLowerCase()?.includes(searchLower),
         );
       }
 
@@ -302,7 +307,7 @@ export const getDoctorQueue = async ({
             (p) =>
               p.isPriority &&
               p.status !== "unconsulted" &&
-              p.status !== "released"
+              p.status !== "released",
           );
         }
 
