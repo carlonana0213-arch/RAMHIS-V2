@@ -109,7 +109,7 @@ function UserManagement() {
     return path;
   }
 
-  const base = "https://ramhis-v2-1.onrender.com";
+ const base = "https://ramhis-v2-1.onrender.com";
 
   if (path.startsWith("/uploads/")) {
     return `${base}${path}`;
