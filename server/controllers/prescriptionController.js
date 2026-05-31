@@ -1,14 +1,31 @@
 const Prescription = require("../models/Prescription");
 const Medicine = require("../models/Medicine");
 const Patient = require("../models/Patient");
+const Event = require("../models/Event");
 const logAudit = require("../utils/auditLogger");
 
 const getMedicineName = (medicine) => {
-  return (
-    medicine?.names?.[0] ||
-    medicine?.name ||
-    "Medicine"
-  );
+  return medicine?.names?.[0] || medicine?.name || "Medicine";
+};
+
+const getCurrentMissionPrescriptionFilter = async () => {
+  const ongoingEvent = await Event.findOne({
+    status: "Ongoing",
+  });
+
+  if (!ongoingEvent) {
+    return {};
+  }
+
+  const missionPatients = await Patient.find({
+    eventId: ongoingEvent._id,
+  }).select("_id");
+
+  return {
+    patient: {
+      $in: missionPatients.map((patient) => patient._id),
+    },
+  };
 };
 
 exports.createPrescription = async (req, res) => {
@@ -39,7 +56,9 @@ exports.createPrescription = async (req, res) => {
     await logAudit(req, {
       module: "Consultation",
       action: "Create Prescription",
-      description: `Created prescription for ${patientRecord.generalInfo?.name || "Unknown Patient"}.`,
+      description: `Created prescription for ${
+        patientRecord.generalInfo?.name || "Unknown Patient"
+      }.`,
       targetId: prescription._id,
       targetName: patientRecord.generalInfo?.name || "Unknown Patient",
       location: patientRecord.location || "System",
@@ -53,13 +72,19 @@ exports.createPrescription = async (req, res) => {
 
     res.status(201).json(prescription);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({
+      message: err.message,
+    });
   }
 };
 
 exports.getPendingPrescriptions = async (req, res) => {
   try {
-    const prescriptions = await Prescription.find()
+    const missionFilter = await getCurrentMissionPrescriptionFilter();
+
+    const prescriptions = await Prescription.find({
+      ...missionFilter,
+    })
       .select(
         `
           patient
@@ -67,39 +92,35 @@ exports.getPendingPrescriptions = async (req, res) => {
           items
           status
           createdAt
-          `,
+        `
       )
-
       .populate({
         path: "patient",
         select: `
-            generalInfo.name
-            generalInfo.age
-            generalInfo.gender
-            generalInfo.sex
-            status
-          `,
+          generalInfo.name
+          generalInfo.age
+          generalInfo.gender
+          generalInfo.sex
+          status
+          eventId
+        `,
       })
-
       .populate({
         path: "doctor",
         select: "name",
       })
-
       .populate({
         path: "items.medicine",
-        select: `       
-            names
-            quantity
-            dosage
-            brand
-          `,
+        select: `
+          names
+          quantity
+          dosage
+          brand
+        `,
       })
-
       .sort({
         createdAt: -1,
       })
-
       .lean();
 
     res.json(prescriptions);
@@ -120,7 +141,11 @@ exports.getPharmacyQueue = async (req, res) => {
 
     const pageLimit = Number(limit);
 
-    const query = {};
+    const missionFilter = await getCurrentMissionPrescriptionFilter();
+
+    const query = {
+      ...missionFilter,
+    };
 
     // status
     if (filter === "Pending") {
@@ -131,21 +156,20 @@ exports.getPharmacyQueue = async (req, res) => {
       query.status = "Completed";
     }
 
-    // search patient name
     // search patient OR medicine
     if (search.trim()) {
-      // patient matches
+      const searchText = search.trim();
+
       const matchingPatients = await Patient.find({
         "generalInfo.name": {
-          $regex: search.trim(),
+          $regex: searchText,
           $options: "i",
         },
       }).select("_id");
 
-      // medicine matches (NEW schema)
       const matchingMedicines = await Medicine.find({
         names: {
-          $regex: search.trim(),
+          $regex: searchText,
           $options: "i",
         },
       }).select("_id");
@@ -166,7 +190,7 @@ exports.getPharmacyQueue = async (req, res) => {
         // OLD SCHEMA fallback
         {
           "items.name": {
-            $regex: search.trim(),
+            $regex: searchText,
             $options: "i",
           },
         },
@@ -180,12 +204,12 @@ exports.getPharmacyQueue = async (req, res) => {
     const prescriptions = await Prescription.find(query)
       .select(
         `
-            patient
-            doctor
-            items
-            status
-            createdAt
-          `,
+          patient
+          doctor
+          items
+          status
+          createdAt
+        `
       )
       .sort({
         createdAt: -1,
@@ -195,12 +219,13 @@ exports.getPharmacyQueue = async (req, res) => {
       .populate({
         path: "patient",
         select: `
-              generalInfo.name
-              generalInfo.age
-              generalInfo.gender
-              generalInfo.sex
-              status
-            `,
+          generalInfo.name
+          generalInfo.age
+          generalInfo.gender
+          generalInfo.sex
+          status
+          eventId
+        `,
       })
       .populate({
         path: "doctor",
@@ -209,27 +234,31 @@ exports.getPharmacyQueue = async (req, res) => {
       .populate({
         path: "items.medicine",
         select: `
-              names
-              quantity
-              dosage
-              brand
-            `,
+          names
+          quantity
+          dosage
+          brand
+        `,
       })
       .lean();
 
-    const grouped = prescriptions.map((prescription) => ({
-      _id: prescription._id,
-      patient: prescription.patient,
-      doctor: prescription.doctor,
-      filteredItems: prescription.items
-        .filter((item) =>
-          filter === "Pending" ? !Boolean(item.isGiven) : Boolean(item.isGiven),
-        )
-        .map((item) => ({
-          ...item,
-          prescriptionId: prescription._id,
-        })),
-    }));
+    const grouped = prescriptions
+      .map((prescription) => ({
+        _id: prescription._id,
+        patient: prescription.patient,
+        doctor: prescription.doctor,
+        filteredItems: prescription.items
+          .filter((item) =>
+            filter === "Pending"
+              ? !Boolean(item.isGiven)
+              : Boolean(item.isGiven)
+          )
+          .map((item) => ({
+            ...item,
+            prescriptionId: prescription._id,
+          })),
+      }))
+      .filter((prescription) => prescription.filteredItems.length > 0);
 
     res.json({
       prescriptions: grouped,
@@ -308,7 +337,9 @@ exports.markAsGiven = async (req, res) => {
     await logAudit(req, {
       module: "Medicine Release",
       action: "Medicine Given",
-      description: `Released ${item.quantity} ${getMedicineName(medicine)} to ${patientRecord?.generalInfo?.name || "Unknown Patient"}.`,
+      description: `Released ${item.quantity} ${getMedicineName(
+        medicine
+      )} to ${patientRecord?.generalInfo?.name || "Unknown Patient"}.`,
       targetId: prescription._id,
       targetName: getMedicineName(medicine),
       location: patientRecord?.location || "Pharmacy",
@@ -332,7 +363,7 @@ exports.markAsGiven = async (req, res) => {
     });
 
     const allCompleted = patientPrescriptions.every(
-      (p) => p.status === "Completed",
+      (p) => p.status === "Completed"
     );
 
     if (allCompleted) {
@@ -372,17 +403,23 @@ exports.getPrescriptionsByPatient = async (req, res) => {
 
     res.json(prescriptions);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({
+      message: err.message,
+    });
   }
 };
 
 exports.getPharmacyStats = async (req, res) => {
   try {
+    const missionFilter = await getCurrentMissionPrescriptionFilter();
+
     const pending = await Prescription.countDocuments({
+      ...missionFilter,
       status: "Pending",
     });
 
     const completed = await Prescription.countDocuments({
+      ...missionFilter,
       status: "Completed",
     });
 
