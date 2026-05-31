@@ -16,7 +16,8 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-const uploadDir = path.join(__dirname, "../uploads/verification");
+const uploadRoot = process.env.UPLOAD_ROOT || path.join(__dirname, "../uploads");
+const uploadDir = path.join(uploadRoot, "verification");
 
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });

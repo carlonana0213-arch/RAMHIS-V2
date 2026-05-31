@@ -51,7 +51,9 @@ app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ limit: "25mb", extended: true }));
 
 // Serve uploaded files
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+const uploadRoot = process.env.UPLOAD_ROOT || path.join(__dirname, "uploads");
+
+app.use("/uploads", express.static(uploadRoot));
 
 app.get("/", (_req, res) => {
   return res.json({
