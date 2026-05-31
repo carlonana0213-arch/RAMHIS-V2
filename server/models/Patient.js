@@ -135,5 +135,7 @@ PatientSchema.index({ createdAt: 1 });
 PatientSchema.index({ missionDate: 1 });
 PatientSchema.index({ department: 1 });
 PatientSchema.index({ status: 1 });
-
+PatientSchema.index({
+  "doctorSheets.diagnosis": 1,
+});
 module.exports = mongoose.model("Patient", PatientSchema);

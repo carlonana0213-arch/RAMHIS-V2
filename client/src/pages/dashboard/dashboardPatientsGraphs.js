@@ -12,7 +12,13 @@ import {
   Legend,
 } from "recharts";
 
-function DashboardPatientGraphs({ patientTrends, diagnosisData }) {
+function DashboardPatientGraphs({
+  patientTrends,
+  diagnosisData,
+  selectedYear,
+  setSelectedYear,
+  currentYear,
+}) {
   const COLORS = ["#3f5fbe", "#5c7cfa", "#91a7ff", "#748ffc", "#bac8ff"];
   const topDiagnoses = [...diagnosisData]
     .sort((a, b) => b.value - a.value)
@@ -28,7 +34,25 @@ function DashboardPatientGraphs({ patientTrends, diagnosisData }) {
         <div className="graph-header">
           <h3>Patients Over Time</h3>
 
-          <span className="graph-date">As of: {currentDate}</span>
+          <div className="graph-controls">
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              className="year-filter"
+            >
+              {Array.from({ length: currentYear - 2023 + 1 }, (_, index) => {
+                const year = currentYear - index;
+
+                return (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                );
+              })}
+            </select>
+
+            <span className="graph-date">As of: {currentDate}</span>
+          </div>
         </div>
         <ResponsiveContainer width="100%" height={350}>
           <BarChart data={patientTrends}>

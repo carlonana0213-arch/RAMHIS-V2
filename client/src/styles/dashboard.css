@@ -321,16 +321,16 @@
 }
 
 .graph-date {
-  font-size: 20px;
+  font-size: 14px;
   color: var(--royal-blue);
 
   background: var(--soft-blue);
 
-  padding: 12px 32px;
-
+  padding: 8px 18px;
   border-radius: 999px;
 
   font-weight: 700;
+  white-space: nowrap;
 }
 
 /* INVENTORY */
@@ -525,4 +525,20 @@
   border: none;
   border-radius: 8px;
   cursor: pointer;
+}
+
+.graph-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.year-filter {
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
 }

@@ -2,8 +2,17 @@ const Patient = require("../models/Patient");
 const User = require("../models/user");
 const Medicine = require("../models/Medicine");
 const Prescription = require("../models/Prescription");
-
+const dashboardCache = {};
+const CACHE_DURATION = 5 * 60 * 1000; // 5 mins
 exports.getDashboardSummary = async (req, res) => {
+  const cacheKey = "summary";
+
+  if (
+    dashboardCache[cacheKey] &&
+    Date.now() - dashboardCache[cacheKey].timestamp < CACHE_DURATION
+  ) {
+    return res.json(dashboardCache[cacheKey].data);
+  }
   try {
     const now = new Date();
 
@@ -23,13 +32,13 @@ exports.getDashboardSummary = async (req, res) => {
       patientStats,
       userStats,
     ] = await Promise.all([
-      Patient.countDocuments(),
+      Patient.estimatedDocumentCount(),
 
       User.countDocuments({
         role: { $in: ["Volunteer", "Doctor"] },
       }),
 
-      Medicine.countDocuments(),
+      Medicine.estimatedDocumentCount(),
 
       Medicine.countDocuments({
         quantity: { $gt: 0, $lte: 50 },
@@ -113,7 +122,7 @@ exports.getDashboardSummary = async (req, res) => {
         (u) => u._id.month === previousMonth && u._id.year === previousYear,
       )?.count || 0;
 
-    res.json({
+    const result = {
       totalPatients,
       totalUsers,
       totalMedicines,
@@ -127,7 +136,14 @@ exports.getDashboardSummary = async (req, res) => {
 
       lowStock,
       outOfStock,
-    });
+    };
+
+    dashboardCache[cacheKey] = {
+      data: result,
+      timestamp: Date.now(),
+    };
+
+    res.json(result);
   } catch (err) {
     res.status(500).json({
       message: err.message,
@@ -137,6 +153,21 @@ exports.getDashboardSummary = async (req, res) => {
 
 exports.getPatientTrends = async (req, res) => {
   try {
+    const currentYear = new Date().getFullYear();
+
+    let selectedYear = parseInt(req.query.year);
+
+    if (!selectedYear || isNaN(selectedYear)) {
+      selectedYear = currentYear;
+    }
+
+    // Safety: block future years
+    if (selectedYear > currentYear) {
+      return res.status(400).json({
+        message: "Future years are not allowed",
+      });
+    }
+
     const months = [
       "Jan",
       "Feb",
@@ -156,16 +187,28 @@ exports.getPatientTrends = async (req, res) => {
       [
         Patient.aggregate([
           {
+            $addFields: {
+              parsedMissionDate: {
+                $cond: [
+                  { $eq: [{ $type: "$missionDate" }, "string"] },
+                  { $dateFromString: { dateString: "$missionDate" } },
+                  "$missionDate",
+                ],
+              },
+            },
+          },
+          {
             $match: {
-              missionDate: {
-                $type: "date",
+              parsedMissionDate: {
+                $gte: new Date(`${selectedYear}-01-01`),
+                $lt: new Date(`${selectedYear + 1}-01-01`),
               },
             },
           },
           {
             $group: {
               _id: {
-                $month: "$missionDate",
+                $month: "$parsedMissionDate",
               },
               count: {
                 $sum: 1,
@@ -178,7 +221,8 @@ exports.getPatientTrends = async (req, res) => {
           {
             $match: {
               createdAt: {
-                $type: "date",
+                $gte: new Date(`${selectedYear}-01-01`),
+                $lt: new Date(`${selectedYear + 1}-01-01`),
               },
             },
           },
@@ -201,7 +245,8 @@ exports.getPatientTrends = async (req, res) => {
                 $in: ["Volunteer", "Doctor"],
               },
               createdAt: {
-                $type: "date",
+                $gte: new Date(`${selectedYear}-01-01`),
+                $lt: new Date(`${selectedYear + 1}-01-01`),
               },
             },
           },
@@ -224,12 +269,9 @@ exports.getPatientTrends = async (req, res) => {
 
       return {
         month,
-
         patients: patientStats.find((p) => p._id === monthNumber)?.count || 0,
-
         prescriptions:
           prescriptionStats.find((p) => p._id === monthNumber)?.count || 0,
-
         volunteers:
           volunteerStats.find((v) => v._id === monthNumber)?.count || 0,
       };
@@ -246,6 +288,14 @@ exports.getPatientTrends = async (req, res) => {
 };
 
 exports.getDiagnosisDistribution = async (req, res) => {
+  const cacheKey = "diagnosisDistribution";
+
+  if (
+    dashboardCache[cacheKey] &&
+    Date.now() - dashboardCache[cacheKey].timestamp < CACHE_DURATION
+  ) {
+    return res.json(dashboardCache[cacheKey].data);
+  }
   try {
     const diagnoses = await Patient.aggregate([
       {
@@ -303,6 +353,11 @@ exports.getDiagnosisDistribution = async (req, res) => {
         : []),
     ];
 
+    dashboardCache[cacheKey] = {
+      data: result,
+      timestamp: Date.now(),
+    };
+
     res.json(result);
   } catch (err) {
     console.error("Diagnosis distribution error:", err);
@@ -313,8 +368,125 @@ exports.getDiagnosisDistribution = async (req, res) => {
   } finally {
   }
 };
-
 exports.getTopMedicines = async (req, res) => {
+  const cacheKey = "topMedicines";
+
+  if (
+    dashboardCache[cacheKey] &&
+    Date.now() - dashboardCache[cacheKey].timestamp < CACHE_DURATION
+  ) {
+    return res.json(dashboardCache[cacheKey].data);
+  }
+  try {
+    const medicines = await Prescription.aggregate([
+      // flatten items array
+      {
+        $unwind: "$items",
+      },
+
+      // skip empty medicine refs
+      {
+        $match: {
+          "items.medicine": {
+            $exists: true,
+            $ne: null,
+          },
+        },
+      },
+
+      // sum quantities per medicine id
+      {
+        $group: {
+          _id: "$items.medicine",
+          count: {
+            $sum: {
+              $ifNull: ["$items.quantity", 1],
+            },
+          },
+        },
+      },
+
+      // highest first
+      {
+        $sort: {
+          count: -1,
+        },
+      },
+
+      // grab top 10
+      {
+        $limit: 10,
+      },
+
+      // join medicine document
+      {
+        $lookup: {
+          from: "medicines",
+          localField: "_id",
+          foreignField: "_id",
+          as: "medicineData",
+        },
+      },
+
+      // flatten lookup
+      {
+        $unwind: {
+          path: "$medicineData",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+
+      // shape final result
+      {
+        $project: {
+          _id: 0,
+
+          medicine: {
+            $ifNull: [
+              {
+                $arrayElemAt: ["$medicineData.names", 0],
+              },
+              "Unknown",
+            ],
+          },
+
+          count: 1,
+        },
+      },
+    ]);
+
+    const topThree = medicines.slice(0, 3);
+
+    const othersTotal = medicines
+      .slice(3)
+      .reduce((sum, item) => sum + item.count, 0);
+
+    const result = [
+      ...topThree,
+
+      ...(othersTotal > 0
+        ? [
+            {
+              medicine: "Others",
+              count: othersTotal,
+            },
+          ]
+        : []),
+    ];
+    dashboardCache[cacheKey] = {
+      data: result,
+      timestamp: Date.now(),
+    };
+    res.json(result);
+  } catch (err) {
+    console.error("Top medicines error:", err);
+
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};
+/*exports.getTopMedicines = async (req, res) => {
   try {
     const prescriptions = await Prescription.find().populate("items.medicine");
 
@@ -373,4 +545,4 @@ exports.getTopMedicines = async (req, res) => {
       message: err.message,
     });
   }
-};
+};*/

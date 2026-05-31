@@ -20,6 +20,9 @@ import "../styles/dashboard.css";
 function Dashboard() {
   const [summary, setSummary] = useState({});
   const [patientTrends, setPatientTrends] = useState([]);
+  const currentYear = new Date().getFullYear();
+
+  const [selectedYear, setSelectedYear] = useState(currentYear);
   const [diagnosisData, setDiagnosisData] = useState([]);
   const [topMedicines, setTopMedicines] = useState([]);
 
@@ -96,7 +99,7 @@ function Dashboard() {
         const [summaryData, trendsData, diagnosisResult, medicinesResult] =
           await Promise.all([
             getDashboardSummary(),
-            getPatientTrends(),
+            getPatientTrends(selectedYear),
             getDiagnosisDistribution(),
             getTopMedicines(),
           ]);
@@ -113,7 +116,7 @@ function Dashboard() {
     };
 
     loadDashboard();
-  }, []);
+  }, [selectedYear]);
 
   return (
     <div className="dashboard-page">
@@ -160,6 +163,9 @@ function Dashboard() {
         <DashboardPatientGraphs
           patientTrends={patientTrends}
           diagnosisData={diagnosisData}
+          selectedYear={selectedYear}
+          setSelectedYear={setSelectedYear}
+          currentYear={currentYear}
         />
       )}
       {showPreview && (
