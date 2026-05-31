@@ -15,13 +15,12 @@ const eventRoutes = require("./routes/eventRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const User = require("./models/user");
 
-const allowedOrigins = ["http://localhost:3000"];
-
 const { initEventController } = require("./controllers/eventController");
 
 connectDB();
 
 const app = express();
+
 const server = http.createServer(app);
 
 const io = new Server(server, {
@@ -48,12 +47,11 @@ app.use(
   }),
 );
 
-app.get("/", (_req, res) => {
-  return res.json({
-    ok: true,
-    message: "RAMHIS API Running",
-  });
-});
+app.use(express.json({ limit: "25mb" }));
+app.use(express.urlencoded({ limit: "25mb", extended: true }));
+
+// Serve uploaded files
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.get("/", (_req, res) => {
   return res.json({
@@ -71,24 +69,16 @@ app.get("/env-test", (_req, res) => {
   });
 });
 
-app.use(express.json({ limit: "25mb" }));
-
-app.use(express.json({ limit: "25mb" }));
-app.use(express.urlencoded({ limit: "25mb", extended: true }));
-
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
 initEventController(io);
 
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/patients", require("./routes/patientRoutes"));
-app.use("/api/events", require("./routes/eventRoutes"));
+app.use("/api/events", eventRoutes);
 app.use("/api/prescriptions", require("./routes/prescriptionRoutes"));
 app.use("/pharmacy", pharmacyRoutes);
 app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/dashboard", dashboardRoutes);
-app.use("/api/events", eventRoutes);
 app.use("/api/predictive-analytics", predictiveAnalyticsRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/users", require("./routes/userRoutes"));

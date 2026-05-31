@@ -15,6 +15,7 @@ import "../styles/admin.css";
 import ConfirmModal from "../components/ConfirmModal";
 import CardsSkeleton from "../components/loading/cardSkeleton";
 import TableSkeleton from "../components/loading/tableSkeleton";
+import DocumentViewerModal from "../components/DocumentViewerModal";
 
 function UserManagement() {
   const [users, setUsers] = useState([]);
@@ -32,8 +33,9 @@ function UserManagement() {
   const [selectedUserId, setSelectedUserId] = useState(null);
 
   const [selectedUser, setSelectedUser] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
+ const [, setIsEditing] = useState(false);
   const [editUser, setEditUser] = useState(null);
+  const [viewingDoc, setViewingDoc] = useState(null);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newUser, setNewUser] = useState({
@@ -99,6 +101,54 @@ function UserManagement() {
       return matchesTab && matchesFilter && matchesSearch;
     });
   }, [users, tab, filter, search]);
+
+  const resolveFileUrl = (path) => {
+  if (!path) return null;
+
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+
+  const base = "https://ramhis-v2-1.onrender.com";
+
+  if (path.startsWith("/uploads/")) {
+    return `${base}${path}`;
+  }
+
+  if (path.startsWith("uploads/")) {
+    return `${base}/${path}`;
+  }
+
+  return `${base}/uploads/verification/${path}`;
+};
+
+const getFileType = (url) => {
+  if (!url) return "unknown";
+
+  const cleanUrl = url.split("?")[0].toLowerCase();
+
+  if (cleanUrl.match(/\.(jpg|jpeg|png|webp|gif)$/)) {
+    return "image";
+  }
+
+  if (cleanUrl.match(/\.pdf$/)) {
+    return "pdf";
+  }
+
+  return "other";
+};
+
+const handleViewDocument = (path, title) => {
+  const url = resolveFileUrl(path);
+
+  if (!url) return;
+
+  setViewingDoc({
+    url,
+    type: getFileType(url),
+    title,
+  });
+};
 
   // 🔹 CREATE USER
   const handleCreateUser = async () => {
@@ -333,32 +383,47 @@ function UserManagement() {
                     ? new Date(user.createdAt).toLocaleDateString()
                     : "N/A"}
                 </td>
+
                 <td>
                   {user.role === "Doctor" && user.doctorInfo?.proofOfLicense ? (
-                    <a
-                      href={user.doctorInfo.proofOfLicense}
-                      target="_blank"
-                      rel="noreferrer"
+                    <button
+                      type="button"
+                      className="view-doc-btn"
+                      onClick={(e) => {
+  e.stopPropagation();
+
+  console.log("License proof path:", user.doctorInfo?.proofOfLicense);
+  console.log("Doctor info:", user.doctorInfo);
+
+  handleViewDocument(user.doctorInfo.proofOfLicense, "License Proof");
+}}
                     >
-                      View
-                    </a>
+                      📄 View
+                    </button>
                   ) : (
-                    "-"
+                    <span title="No document uploaded">-</span>
                   )}
                 </td>
 
                 <td>
                   {user.role === "Doctor" &&
                   user.doctorInfo?.proofOfDoctorate ? (
-                    <a
-                      href={user.doctorInfo.proofOfDoctorate}
-                      target="_blank"
-                      rel="noreferrer"
+                    <button
+                      type="button"
+                      className="view-doc-btn"
+                      onClick={(e) => {
+  e.stopPropagation();
+
+  console.log("Doctorate proof path:", user.doctorInfo?.proofOfDoctorate);
+  console.log("Doctor info:", user.doctorInfo);
+
+  handleViewDocument(user.doctorInfo.proofOfDoctorate, "Doctorate Proof");
+}}
                     >
-                      View
-                    </a>
+                      📄 View
+                    </button>
                   ) : (
-                    "-"
+                    <span title="No document uploaded">-</span>
                   )}
                 </td>
 
@@ -431,6 +496,7 @@ function UserManagement() {
           </tbody>
         </table>
       )}
+
       {confirmAction && (
         <ConfirmModal
           message={confirmMessage}
@@ -446,6 +512,7 @@ function UserManagement() {
           }}
         />
       )}
+
       {/* EDIT MODAL */}
       {selectedUser && (
         <EditUser
@@ -480,10 +547,20 @@ function UserManagement() {
           onSuccess={loadUsers}
         />
       )}
+
       {alertMessage && (
         <AlertModal
           message={alertMessage}
           onClose={() => setAlertMessage("")}
+        />
+      )}
+
+      {viewingDoc && (
+        <DocumentViewerModal
+          url={viewingDoc.url}
+          type={viewingDoc.type}
+          title={viewingDoc.title}
+          onClose={() => setViewingDoc(null)}
         />
       )}
     </div>

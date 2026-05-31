@@ -13,10 +13,44 @@ const {
 const auth = require("../middleware/authMiddleware");
 const bcrypt = require("bcryptjs");
 const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+
+const uploadDir = path.join(__dirname, "../uploads/verification");
+
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+
+  filename: (req, file, cb) => {
+    const safeName = file.originalname.replace(/\s+/g, "-");
+    const uniqueName = `${Date.now()}-${Math.round(
+      Math.random() * 1e9,
+    )}-${safeName}`;
+
+    cb(null, uniqueName);
+  },
+});
 
 const upload = multer({
-  storage: multer.memoryStorage(),
+  storage,
 });
+
+const proofUpload = upload.fields([
+  { name: "proofOfLicense", maxCount: 1 },
+  { name: "proofOfDoctorate", maxCount: 1 },
+  { name: "licenseProof", maxCount: 1 },
+  { name: "doctorateProof", maxCount: 1 },
+  { name: "license_file", maxCount: 1 },
+  { name: "doctorate_file", maxCount: 1 },
+  { name: "license", maxCount: 1 },
+  { name: "doctorate", maxCount: 1 },
+]);
 
 router.get("/someProtectedRoute", auth, (req, res) => {
   res.json({
@@ -27,36 +61,20 @@ router.get("/someProtectedRoute", auth, (req, res) => {
 
 router.put("/me", auth, updateMe);
 
-router.post(
-  "/register",
-  upload.single("license_file"),
-  register,
-);
+router.post("/register", proofUpload, register);
 
-router.post(
-  "/signup",
-  upload.single("license_file"),
-  register,
-);
+router.post("/signup", proofUpload, register);
 
 router.post("/login", login);
 
-router.post(
-  "/forgot-password",
-  forgotPassword,
-);
+router.post("/forgot-password", forgotPassword);
 
-router.post(
-  "/reset-password",
-  resetPassword,
-);
+router.post("/reset-password", resetPassword);
 
 router.get("/reset-password", (req, res) => {
   const { token } = req.query;
 
-  return res.redirect(
-    `ramhis://reset-password?token=${token}`
-  );
+  return res.redirect(`ramhis://reset-password?token=${token}`);
 });
 
 router.get("/me", auth, getMe);

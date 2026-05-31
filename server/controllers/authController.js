@@ -16,7 +16,6 @@ exports.register = async (req, res) => {
     doctorInfo,
     contact_number,
     birthdate,
-
     accepted_terms,
 
     organization,
@@ -37,19 +36,70 @@ exports.register = async (req, res) => {
 
   const normalizedVolunteerType = volunteerType || organization || skills || "";
 
-  const uploadedFileName = req.file?.filename || req.file?.originalname || "";
+  const buildUploadPath = (file) => {
+    if (!file || !file.filename) return "";
+
+    return `/uploads/verification/${file.filename}`;
+  };
+
+  const getUploadedFile = (...fieldNames) => {
+    for (const fieldName of fieldNames) {
+      if (req.files?.[fieldName]?.[0]) {
+        return req.files[fieldName][0];
+      }
+    }
+
+    return null;
+  };
+
+  let parsedDoctorInfo = doctorInfo;
+
+  if (typeof doctorInfo === "string") {
+    try {
+      parsedDoctorInfo = JSON.parse(doctorInfo);
+    } catch {
+      parsedDoctorInfo = {};
+    }
+  }
+
+  const licenseFile = getUploadedFile(
+    "proofOfLicense",
+    "licenseProof",
+    "license_file",
+    "license",
+  );
+
+  const doctorateFile = getUploadedFile(
+    "proofOfDoctorate",
+    "doctorateProof",
+    "doctorate_file",
+    "doctorate",
+  );
+
+  const licensePath = buildUploadPath(licenseFile);
+  const doctoratePath = buildUploadPath(doctorateFile);
 
   const normalizedDoctorInfo =
-    doctorInfo ||
-    (normalizedRole.toLowerCase() === "doctor"
+    normalizedRole.toLowerCase() === "doctor"
       ? {
-          specialization: specialty || "",
-          licenseNumber: prc_license_number || "",
-          hospitalClinic: hospital_clinic || "",
-          proofOfLicense: uploadedFileName || "Submitted via mobile",
-          proofOfDoctorate: uploadedFileName || "Submitted via mobile",
+          ...(parsedDoctorInfo || {}),
+
+          specialization:
+            parsedDoctorInfo?.specialization || specialty || "",
+
+          licenseNumber:
+            parsedDoctorInfo?.licenseNumber || prc_license_number || "",
+
+          hospitalClinic:
+            parsedDoctorInfo?.hospitalClinic || hospital_clinic || "",
+
+          proofOfLicense:
+            licensePath || parsedDoctorInfo?.proofOfLicense || "",
+
+          proofOfDoctorate:
+            doctoratePath || parsedDoctorInfo?.proofOfDoctorate || "",
         }
-      : undefined);
+      : undefined;
 
   const normalizedAcceptedTerms =
     accepted_terms === true || accepted_terms === "true";
