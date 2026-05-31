@@ -187,11 +187,9 @@ exports.createEvent = async (req, res) => {
 
     emitEventsUpdated(event._id);
 
-<<<<<<< HEAD
     if (event.status === "Ongoing") {
       emitMissionStarted(event);
     }
-=======
     await logAudit(req, {
       module: "Events",
       action: "Create Event",
@@ -207,7 +205,6 @@ exports.createEvent = async (req, res) => {
         date: event.date,
       },
     });
->>>>>>> 550bcc5f (AuditLog)
 
     res.status(201).json({
       ok: true,
@@ -245,7 +242,7 @@ exports.updateEvent = async (req, res) => {
 
     if (req.body.status === "Ongoing") {
       const existingOngoingEvent = await checkOngoingEventConflict(
-        req.params.id
+        req.params.id,
       );
 
       if (existingOngoingEvent) {
@@ -266,7 +263,6 @@ exports.updateEvent = async (req, res) => {
 
     emitEventsUpdated(event._id);
 
-<<<<<<< HEAD
     if (req.body.status === "Ongoing" && previousEvent.status !== "Ongoing") {
       emitMissionStarted(event);
     }
@@ -277,7 +273,6 @@ exports.updateEvent = async (req, res) => {
     ) {
       emitMissionCompleted(event);
     }
-=======
     await logAudit(req, {
       module: "Events",
       action: "Update Event",
@@ -293,7 +288,6 @@ exports.updateEvent = async (req, res) => {
         status: event.status,
       },
     });
->>>>>>> 550bcc5f (AuditLog)
 
     res.status(200).json({
       ok: true,
@@ -341,7 +335,7 @@ exports.deleteEvent = async (req, res) => {
       eventId: event._id,
       eventTitle: event.title,
     });
-    
+
     res.status(200).json({
       ok: true,
       message: "Event deleted successfully",
@@ -385,7 +379,7 @@ exports.joinEvent = async (req, res) => {
     }
 
     const alreadyJoined = event.participants.some(
-      (participant) => participant.userId.toString() === userId.toString()
+      (participant) => participant.userId.toString() === userId.toString(),
     );
 
     if (alreadyJoined) {
@@ -445,7 +439,7 @@ exports.leaveEvent = async (req, res) => {
     }
 
     event.participants = event.participants.filter(
-      (participant) => participant.userId.toString() !== userId.toString()
+      (participant) => participant.userId.toString() !== userId.toString(),
     );
 
     await event.save();
@@ -500,7 +494,7 @@ exports.updateParticipantStatus = async (req, res) => {
     }
 
     const participant = event.participants.find(
-      (item) => item.userId.toString() === userId.toString()
+      (item) => item.userId.toString() === userId.toString(),
     );
 
     if (!participant) {

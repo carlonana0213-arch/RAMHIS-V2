@@ -1,5 +1,4 @@
 const Patient = require("../models/Patient");
-<<<<<<< HEAD
 const Event = require("../models/Event");
 
 const getMissionFilter = async (req) => {
@@ -21,9 +20,7 @@ const getMissionFilter = async (req) => {
     eventId: ongoingEvent._id,
   };
 };
-=======
 const logAudit = require("../utils/auditLogger");
->>>>>>> 550bcc5f (AuditLog)
 
 exports.getAllPatients = async (req, res) => {
   try {
@@ -106,8 +103,6 @@ exports.createPatient = async (req, res) => {
 
     io.emit("queueUpdated");
 
-<<<<<<< HEAD
-=======
     await logAudit(req, {
       module: "Registration",
       action: "Add Patient",
@@ -124,7 +119,6 @@ exports.createPatient = async (req, res) => {
       },
     });
 
->>>>>>> 550bcc5f (AuditLog)
     res.status(201).json(patient);
   } catch (err) {
     console.error("MONGOOSE SAVE ERROR:", err);
@@ -183,7 +177,7 @@ exports.updatePatient = async (req, res) => {
       {
         new: true,
         runValidators: true,
-      }
+      },
     );
 
     const io = req.app.get("io");
@@ -293,7 +287,7 @@ exports.getPatientQueue = async (req, res) => {
         generalInfo.age
         generalInfo.sex
         generalInfo.gender
-      `
+      `,
       )
       .sort({
         isPriority: -1,
@@ -323,7 +317,7 @@ exports.updatePatientInfo = async (req, res) => {
     const updatedPatient = await Patient.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
 
     const io = req.app.get("io");
@@ -352,7 +346,7 @@ exports.addDoctorRecord = async (req, res) => {
       {
         $push: { doctorSheets: record },
       },
-      { new: true }
+      { new: true },
     );
 
     const io = req.app.get("io");
@@ -453,7 +447,7 @@ exports.getLocations = async (req, res) => {
 
     // remove empty values
     const cleanedLocations = locations.filter(
-      (location) => location && location.trim() !== ""
+      (location) => location && location.trim() !== "",
     );
 
     res.json(cleanedLocations);
@@ -491,7 +485,7 @@ exports.getAnalyticsPatients = async (req, res) => {
           location
           visitPlace
           doctorSheets
-        `
+        `,
       )
       .sort({
         missionDate: -1,
@@ -555,7 +549,7 @@ exports.syncOfflineQueue = async (req, res) => {
         obstetricHistory
         perinatalHistory
         initComplaint
-      `
+      `,
       )
       .sort({
         isPriority: -1,
@@ -696,7 +690,7 @@ exports.getDoctorQueue = async (req, res) => {
           generalInfo.age
           generalInfo.sex
           generalInfo.gender
-        `
+        `,
       )
       .sort({
         isPriority: -1,
