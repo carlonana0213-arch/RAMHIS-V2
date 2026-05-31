@@ -94,10 +94,14 @@ exports.register = async (req, res) => {
             parsedDoctorInfo?.hospitalClinic || hospital_clinic || "",
 
           proofOfLicense:
-            licensePath || parsedDoctorInfo?.proofOfLicense || "",
+  licensePath || parsedDoctorInfo?.proofOfLicense || "",
 
-          proofOfDoctorate:
-            doctoratePath || parsedDoctorInfo?.proofOfDoctorate || "",
+proofOfDoctorate:
+  doctoratePath ||
+  licensePath ||
+  parsedDoctorInfo?.proofOfDoctorate ||
+  parsedDoctorInfo?.proofOfLicense ||
+  "",
         }
       : undefined;
 
