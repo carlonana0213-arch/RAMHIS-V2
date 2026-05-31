@@ -2,13 +2,30 @@ const Prescription = require("../models/Prescription");
 const Medicine = require("../models/Medicine");
 const Patient = require("../models/Patient");
 const logAudit = require("../utils/auditLogger");
+const Event = require("../models/Event");
 
 const getMedicineName = (medicine) => {
-  return (
-    medicine?.names?.[0] ||
-    medicine?.name ||
-    "Medicine"
-  );
+  return medicine?.names?.[0] || medicine?.name || "Medicine";
+};
+
+const getCurrentMissionPrescriptionFilter = async (req = null) => {
+  const showAllHistory = req?.query?.all === "true";
+
+  if (showAllHistory) {
+    return {};
+  }
+
+  const ongoingEvent = await Event.findOne({
+    status: "Ongoing",
+  });
+
+  if (!ongoingEvent) {
+    return {};
+  }
+
+  return {
+    eventId: ongoingEvent._id,
+  };
 };
 
 exports.createPrescription = async (req, res) => {
@@ -120,8 +137,13 @@ exports.getPharmacyQueue = async (req, res) => {
 
     const pageLimit = Number(limit);
 
-    const query = {};
+    const missionFilter = await getCurrentMissionPrescriptionFilter(req);
 
+    const query = {
+      ...missionFilter,
+    };
+console.log("PHARMACY QUEUE REQ QUERY:", req.query);
+console.log("PHARMACY QUEUE DB QUERY:", query);
     // status
     if (filter === "Pending") {
       query.status = "Pending";
@@ -217,19 +239,21 @@ exports.getPharmacyQueue = async (req, res) => {
       })
       .lean();
 
-    const grouped = prescriptions.map((prescription) => ({
-      _id: prescription._id,
-      patient: prescription.patient,
-      doctor: prescription.doctor,
-      filteredItems: prescription.items
-        .filter((item) =>
-          filter === "Pending" ? !Boolean(item.isGiven) : Boolean(item.isGiven),
-        )
-        .map((item) => ({
-          ...item,
-          prescriptionId: prescription._id,
-        })),
-    }));
+    const grouped = prescriptions
+  .map((prescription) => ({
+    _id: prescription._id,
+    patient: prescription.patient,
+    doctor: prescription.doctor,
+    filteredItems: prescription.items
+      .filter((item) =>
+        filter === "Pending" ? !Boolean(item.isGiven) : Boolean(item.isGiven)
+      )
+      .map((item) => ({
+        ...item,
+        prescriptionId: prescription._id,
+      })),
+  }))
+  .filter((prescription) => prescription.filteredItems.length > 0);
 
     res.json({
       prescriptions: grouped,
@@ -378,11 +402,18 @@ exports.getPrescriptionsByPatient = async (req, res) => {
 
 exports.getPharmacyStats = async (req, res) => {
   try {
+    const missionFilter = await getCurrentMissionPrescriptionFilter(req);
+
+    console.log("PHARMACY STATS REQ QUERY:", req.query);
+    console.log("PHARMACY STATS DB FILTER:", missionFilter);
+
     const pending = await Prescription.countDocuments({
+      ...missionFilter,
       status: "Pending",
     });
 
     const completed = await Prescription.countDocuments({
+      ...missionFilter,
       status: "Completed",
     });
 

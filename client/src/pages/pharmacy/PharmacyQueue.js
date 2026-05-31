@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { FiClock, FiCheckCircle } from "react-icons/fi";
 import { apiFetch } from "../../services/api";
 import { API_BASE_URL } from "../../services/apiConfig";
@@ -25,6 +25,9 @@ function PharmacyQueue() {
   const [confirmState, setConfirmState] = useState(null);
   const [alertMessage, setAlertMessage] = useState("");
 
+  const [currentMission, setCurrentMission] = useState(null);
+  const [showAllHistory, setShowAllHistory] = useState(false);
+
   const [stats, setStats] = useState({
     pending: 0,
     completed: 0,
@@ -32,15 +35,137 @@ function PharmacyQueue() {
 
   const isFetching = useRef(false);
 
-  const loadPrescriptions = async () => {
-    if (isFetching.current) return;
+  const getAuthHeaders = () => {
+    const savedUser = JSON.parse(localStorage.getItem("user") || "{}");
 
-    isFetching.current = true;
-    setLoading(true);
+    const token =
+      localStorage.getItem("token") ||
+      localStorage.getItem("accessToken") ||
+      savedUser.token ||
+      savedUser.accessToken;
 
+    return token
+      ? {
+          Authorization: `Bearer ${token}`,
+        }
+      : {};
+  };
+
+  const loadCurrentMission = useCallback(async () => {
     try {
-      // OFFLINE FIRST
-      if (!navigator.onLine) {
+      const res = await fetch(`${API_BASE_URL}/api/events/current-mission`, {
+        headers: getAuthHeaders(),
+      });
+
+      const data = await res.json();
+
+      if (data?.data?.hasOngoingMission) {
+        setCurrentMission(data.data.event);
+      } else {
+        setCurrentMission(null);
+        setShowAllHistory(false);
+      }
+    } catch (err) {
+      console.error("Failed to load current mission:", err);
+    }
+  }, []);
+
+  const resetPharmacyQueue = () => {
+    setPrescriptions([]);
+    setTotalPrescriptions(0);
+    setTotalPages(1);
+    setCurrentPage(1);
+    setExpandedPatients({});
+    setStats({
+      pending: 0,
+      completed: 0,
+    });
+  };
+
+  const loadPrescriptions = useCallback(
+    async (options = {}) => {
+      if (isFetching.current) return;
+
+      const useAllHistory =
+        typeof options.allHistory === "boolean"
+          ? options.allHistory
+          : showAllHistory;
+
+      isFetching.current = true;
+      setLoading(true);
+
+      try {
+        // OFFLINE FIRST
+        if (!navigator.onLine) {
+          const cached = await db.pharmacyQueue.toArray();
+
+          setPrescriptions(cached);
+
+          setTotalPrescriptions(cached.length);
+
+          setTotalPages(Math.max(1, Math.ceil(cached.length / 15)));
+
+          setStats({
+            pending: cached.length,
+            completed: 0,
+          });
+
+          setLoading(false);
+          isFetching.current = false;
+
+          return;
+        }
+
+        const params = new URLSearchParams({
+          page: currentPage,
+          search,
+          filter,
+        });
+
+        if (useAllHistory) {
+          params.append("all", "true");
+        }
+
+        // ONLINE FETCH
+        const data = await apiFetch(
+          `${API_BASE_URL}/api/prescriptions/queue?${params.toString()}`
+        );
+
+        const queue = data.prescriptions || [];
+
+        setPrescriptions(queue);
+
+        setTotalPrescriptions(data.total || 0);
+
+        setTotalPages(data.totalPages || 1);
+
+        // stats
+        try {
+          const statsQuery = useAllHistory ? "?all=true" : "";
+
+          const pharmacyStats = await apiFetch(
+            `${API_BASE_URL}/api/prescriptions/stats${statsQuery}`
+          );
+
+          setStats({
+            pending: pharmacyStats.pending || 0,
+            completed: pharmacyStats.completed || 0,
+          });
+        } catch {
+          // ignore stats failure
+        }
+
+        // cache queue
+        await db.pharmacyQueue.bulkPut(
+          queue.map((p) => ({
+            ...p,
+            patientId: p.patient?._id,
+          }))
+        );
+      } catch (err) {
+        console.error("Pharmacy queue error:", err);
+
+        // emergency fallback
         const cached = await db.pharmacyQueue.toArray();
 
         setPrescriptions(cached);
@@ -48,89 +173,65 @@ function PharmacyQueue() {
         setTotalPrescriptions(cached.length);
 
         setTotalPages(Math.max(1, Math.ceil(cached.length / 15)));
-
-        setStats({
-          pending: cached.length,
-          completed: 0,
-        });
-
+      } finally {
         setLoading(false);
         isFetching.current = false;
-
-        return;
       }
-
-      // ONLINE FETCH
-      const data = await apiFetch(
-        `${API_BASE_URL}/api/prescriptions/queue?page=${currentPage}&search=${search}&filter=${filter}`,
-      );
-
-      const queue = data.prescriptions || [];
-
-      setPrescriptions(queue);
-
-      setTotalPrescriptions(data.total || 0);
-
-      setTotalPages(data.totalPages || 1);
-
-      // stats
-      try {
-        const pharmacyStats = await apiFetch(
-          `${API_BASE_URL}/api/prescriptions/stats`,
-        );
-
-        setStats({
-          pending: pharmacyStats.pending || 0,
-          completed: pharmacyStats.completed || 0,
-        });
-      } catch {
-        // ignore stats failure
-      }
-
-      // cache queue
-      await db.pharmacyQueue.bulkPut(
-        queue.map((p) => ({
-          ...p,
-          patientId: p.patient?._id,
-        })),
-      );
-    } catch (err) {
-      console.error("Pharmacy queue error:", err);
-
-      // emergency fallback
-      const cached = await db.pharmacyQueue.toArray();
-
-      setPrescriptions(cached);
-
-      setTotalPrescriptions(cached.length);
-
-      setTotalPages(Math.max(1, Math.ceil(cached.length / 15)));
-    } finally {
-      setLoading(false);
-      isFetching.current = false;
-    }
-  };
+    },
+    [currentPage, search, filter, showAllHistory]
+  );
 
   useEffect(() => {
+    loadCurrentMission();
     loadPrescriptions();
 
-    socket.on("queueUpdated", loadPrescriptions);
+    const handleQueueUpdated = () => {
+      loadCurrentMission();
+      loadPrescriptions();
+    };
+
+    const handleMissionStarted = () => {
+      setShowAllHistory(false);
+      resetPharmacyQueue();
+      loadCurrentMission();
+      loadPrescriptions({ allHistory: false });
+    };
+
+    const handleMissionCompleted = () => {
+      setShowAllHistory(false);
+      resetPharmacyQueue();
+      loadCurrentMission();
+      loadPrescriptions({ allHistory: false });
+    };
+
+    socket.on("queueUpdated", handleQueueUpdated);
+    socket.on("mission_started", handleMissionStarted);
+    socket.on("mission_completed", handleMissionCompleted);
 
     const timer = setInterval(() => {
       if (!document.hidden) {
+        loadCurrentMission();
         loadPrescriptions();
       }
     }, 60000);
 
     return () => {
-      socket.off("queueUpdated", loadPrescriptions);
+      socket.off("queueUpdated", handleQueueUpdated);
+      socket.off("mission_started", handleMissionStarted);
+      socket.off("mission_completed", handleMissionCompleted);
       clearInterval(timer);
     };
-  }, [currentPage, search, filter]);
+  }, [loadCurrentMission, loadPrescriptions]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, filter]);
+  }, [search, filter, showAllHistory]);
+
+  const handleToggleHistory = () => {
+    setCurrentPage(1);
+    setExpandedPatients({});
+    setShowAllHistory((prev) => !prev);
+  };
 
   const handleMarkAsGiven = async (prescriptionId, itemIndex) => {
     try {
@@ -149,10 +250,10 @@ function PharmacyQueue() {
                     ...item,
                     isGiven: true,
                   }
-                : item,
+                : item
             ),
           };
-        }),
+        })
       );
 
       // OFFLINE → queue sync
@@ -166,7 +267,7 @@ function PharmacyQueue() {
         });
 
         setAlertMessage(
-          "Medicine marked as given (offline). Will sync automatically.",
+          "Medicine marked as given (offline). Will sync automatically."
         );
 
         return;
@@ -185,13 +286,13 @@ function PharmacyQueue() {
         `${API_BASE_URL}/api/prescriptions/${prescriptionId}/${item._id}`,
         {
           method: "PATCH",
-        },
+        }
       );
 
       setAlertMessage(
         result.patientReleased
           ? "Prescription completed. Patient released."
-          : "Prescription marked as given",
+          : "Prescription marked as given"
       );
 
       loadPrescriptions();
@@ -204,6 +305,52 @@ function PharmacyQueue() {
     }
   };
 
+  const renderMedicineRow = (prescription, item, index, showPatientName) => (
+    <tr key={`${prescription._id}-${index}`}>
+      <td>
+        {showPatientName
+          ? prescription.patient?.generalInfo?.name || "Unknown Patient"
+          : ""}
+      </td>
+
+      <td>{item.name || "Unknown Medicine"}</td>
+
+      <td>{item.dosage || "-"}</td>
+
+      <td>{item.quantity}</td>
+
+      <td>
+        {item.isGiven ? (
+          <span className="given-pill">Given</span>
+        ) : (
+          <span className="stock-pill ready">Pending</span>
+        )}
+      </td>
+
+      <td>
+        {!item.isGiven ? (
+          <button
+            className="mark-given-btn"
+            onClick={() =>
+              setConfirmState({
+                message: "Mark this prescription as given?",
+                onConfirm: async () => {
+                  await handleMarkAsGiven(prescription._id, index);
+
+                  setConfirmState(null);
+                },
+              })
+            }
+          >
+            Mark as Given
+          </button>
+        ) : (
+          <span className="given-pill">Given</span>
+        )}
+      </td>
+    </tr>
+  );
+
   const displayedCount = Math.min(currentPage * 15, totalPrescriptions);
 
   return (
@@ -211,6 +358,34 @@ function PharmacyQueue() {
       <div className="pharmacy-header">
         <h2>Prescription Queue</h2>
       </div>
+
+      {currentMission ? (
+        <div className="mission-status-banner mission-status-ongoing">
+          <div>
+            <strong>🔴 LIVE {currentMission.title} - Ongoing</strong>
+            <p>
+              {showAllHistory
+                ? "Showing all prescription history."
+                : "Prescription queue showing current mission records only. Past records are hidden."}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            className="mission-records-toggle-btn"
+            onClick={handleToggleHistory}
+          >
+            {showAllHistory
+              ? "Show Current Mission Only"
+              : "View All Historical Records"}
+          </button>
+        </div>
+      ) : (
+        <div className="mission-status-banner mission-status-all">
+          <strong>📋 Showing all prescription records</strong>
+          <p>No active mission currently.</p>
+        </div>
+      )}
 
       <div className="queue-stats-grid">
         <div className="queue-stat-card pending">
@@ -281,73 +456,53 @@ function PharmacyQueue() {
               </thead>
 
               <tbody>
-                {prescriptions.map((p) => (
-                  <React.Fragment key={p._id}>
-                    <tr
-                      className="expandable-row"
-                      onClick={() =>
-                        setExpandedPatients((prev) => ({
-                          ...prev,
-                          [p._id]: !prev[p._id],
-                        }))
-                      }
-                    >
-                      <td>
-                        {expandedPatients[p._id] ? "▼" : "▶"}{" "}
-                        {p.patient?.generalInfo?.name || "Unknown Patient"}
-                      </td>
+                {prescriptions.map((p) => {
+                  const items = p.filteredItems || [];
+                  const hasMultipleMedicines = items.length > 1;
+                  const hasOneMedicine = items.length === 1;
 
-                      <td colSpan="5">
-                        {p.filteredItems?.length || 0} medicine(s)
-                      </td>
-                    </tr>
+                  if (hasOneMedicine) {
+                    return renderMedicineRow(p, items[0], 0, true);
+                  }
 
-                    {expandedPatients[p._id] &&
-                      (p.filteredItems || []).map((item, index) => (
-                        <tr key={`${p._id}-${index}`}>
-                          <td></td>
+                  return (
+                    <React.Fragment key={p._id}>
+                      <tr
+                        className="expandable-row"
+                        onClick={() =>
+                          setExpandedPatients((prev) => ({
+                            ...prev,
+                            [p._id]: !prev[p._id],
+                          }))
+                        }
+                      >
+                        <td>
+                          {hasMultipleMedicines &&
+                            (expandedPatients[p._id] ? "▼" : "▶")}{" "}
+                          {p.patient?.generalInfo?.name || "Unknown Patient"}
+                        </td>
 
-                          <td>{item.name || "Unknown Medicine"}</td>
+                        <td colSpan="5">{items.length || 0} medicine(s)</td>
+                      </tr>
 
-                          <td>{item.dosage || "-"}</td>
-
-                          <td>{item.quantity}</td>
-
-                          <td>
-                            {item.isGiven ? (
-                              <span className="given-pill">Given</span>
-                            ) : (
-                              <span className="stock-pill ready">Pending</span>
-                            )}
-                          </td>
-
-                          <td>
-                            {!item.isGiven ? (
-                              <button
-                                className="mark-given-btn"
-                                onClick={() =>
-                                  setConfirmState({
-                                    message: "Mark this prescription as given?",
-                                    onConfirm: async () => {
-                                      await handleMarkAsGiven(p._id, index);
-
-                                      setConfirmState(null);
-                                    },
-                                  })
-                                }
-                              >
-                                Mark as Given
-                              </button>
-                            ) : (
-                              <span className="given-pill">Given</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                  </React.Fragment>
-                ))}
+                      {hasMultipleMedicines &&
+                        expandedPatients[p._id] &&
+                        items.map((item, index) =>
+                          renderMedicineRow(p, item, index, false)
+                        )}
+                    </React.Fragment>
+                  );
+                })}
               </tbody>
             </table>
+
+            {prescriptions.length === 0 && (
+              <div className="empty-queue-message">
+                {showAllHistory
+                  ? "No prescription history found."
+                  : "No prescriptions in queue for the current mission."}
+              </div>
+            )}
 
             {totalPrescriptions > 0 && (
               <div className="pharmacy-pagination">
