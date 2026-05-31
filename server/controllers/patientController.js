@@ -1,11 +1,41 @@
 const Patient = require("../models/Patient");
+const Event = require("../models/Event");
+
+const getMissionFilter = async (req) => {
+  const showAll = req.query.all === "true";
+
+  if (showAll) {
+    return {};
+  }
+
+  const ongoingEvent = await Event.findOne({
+    status: "Ongoing",
+  });
+
+  if (!ongoingEvent) {
+    return {};
+  }
+
+  return {
+    eventId: ongoingEvent._id,
+  };
+};
 
 exports.getAllPatients = async (req, res) => {
   try {
-    const patients = await Patient.find().sort({ createdAt: -1 });
+    const missionFilter = await getMissionFilter(req);
+
+    const patients = await Patient.find(missionFilter).sort({
+      createdAt: -1,
+    });
+
     res.json(patients);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("GET ALL PATIENTS ERROR:", err);
+
+    res.status(500).json({
+      error: err.message,
+    });
   }
 };
 
@@ -25,20 +55,27 @@ exports.createPatient = async (req, res) => {
       missionDate,
     } = req.body;
 
-    if (!location || !missionDate) {
+    if (!location) {
       return res.status(400).json({
-        error: "Missing mission data (location or missionDate)",
+        error: "Missing location",
+      });
+    }
+
+    if (!generalInfo || !generalInfo.name) {
+      return res.status(400).json({
+        error: "Invalid patient data",
       });
     }
 
     if (generalInfo.sex && !generalInfo.gender) {
       generalInfo.gender = generalInfo.sex;
     }
-    if (!generalInfo || !generalInfo.name) {
-      return res.status(400).json({ error: "Invalid patient data" });
-    }
 
-    const patient = new Patient({
+    const ongoingEvent = await Event.findOne({
+      status: "Ongoing",
+    });
+
+    const patientData = {
       generalInfo,
       medicalHistory,
       familyHistory,
@@ -49,8 +86,15 @@ exports.createPatient = async (req, res) => {
       initComplaint,
       isPriority,
       location,
-      missionDate,
-    });
+      missionDate: missionDate || null,
+    };
+
+    if (ongoingEvent) {
+      patientData.eventId = ongoingEvent._id;
+      patientData.missionDate = ongoingEvent.date || null;
+    }
+
+    const patient = new Patient(patientData);
 
     await patient.save();
 
@@ -59,11 +103,12 @@ exports.createPatient = async (req, res) => {
     io.emit("queueUpdated");
 
     res.status(201).json(patient);
-
-    res.status(201).json(patient);
   } catch (err) {
     console.error("MONGOOSE SAVE ERROR:", err);
-    res.status(500).json({ error: err.message });
+
+    res.status(500).json({
+      error: err.message,
+    });
   }
 };
 
@@ -115,7 +160,7 @@ exports.updatePatient = async (req, res) => {
       {
         new: true,
         runValidators: true,
-      },
+      }
     );
 
     const io = req.app.get("io");
@@ -145,7 +190,10 @@ exports.getPatientQueue = async (req, res) => {
     const pageNumber = Number(page);
     const pageLimit = Number(limit);
 
+    const missionFilter = await getMissionFilter(req);
+
     const filter = {
+      ...missionFilter,
       status: { $nin: ["released"] },
     };
 
@@ -176,7 +224,7 @@ exports.getPatientQueue = async (req, res) => {
         generalInfo.age
         generalInfo.sex
         generalInfo.gender
-      `,
+      `
       )
       .sort({
         isPriority: -1,
@@ -206,7 +254,7 @@ exports.updatePatientInfo = async (req, res) => {
     const updatedPatient = await Patient.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true, runValidators: true },
+      { new: true, runValidators: true }
     );
 
     const io = req.app.get("io");
@@ -215,7 +263,9 @@ exports.updatePatientInfo = async (req, res) => {
 
     res.json(updatedPatient);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({
+      message: err.message,
+    });
   }
 };
 
@@ -233,7 +283,7 @@ exports.addDoctorRecord = async (req, res) => {
       {
         $push: { doctorSheets: record },
       },
-      { new: true },
+      { new: true }
     );
 
     const io = req.app.get("io");
@@ -242,7 +292,9 @@ exports.addDoctorRecord = async (req, res) => {
 
     res.json(updated);
   } catch (err) {
-    res.status(500).json({ msg: "Error adding record" });
+    res.status(500).json({
+      msg: "Error adding record",
+    });
   }
 };
 
@@ -254,13 +306,17 @@ exports.deleteDoctorRecord = async (req, res) => {
     const patient = await Patient.findById(id);
 
     if (!patient) {
-      return res.status(404).json({ message: "Patient not found" });
+      return res.status(404).json({
+        message: "Patient not found",
+      });
     }
 
     const record = patient.doctorSheets.id(recordId);
 
     if (!record) {
-      return res.status(404).json({ message: "Record not found" });
+      return res.status(404).json({
+        message: "Record not found",
+      });
     }
 
     patient.deletedDoctorRecords = patient.deletedDoctorRecords || [];
@@ -282,7 +338,10 @@ exports.deleteDoctorRecord = async (req, res) => {
     res.json(patient);
   } catch (err) {
     console.error("Delete doctor record error:", err);
-    res.status(500).json({ message: "Server error" });
+
+    res.status(500).json({
+      message: "Server error",
+    });
   }
 };
 
@@ -292,7 +351,7 @@ exports.getLocations = async (req, res) => {
 
     // remove empty values
     const cleanedLocations = locations.filter(
-      (location) => location && location.trim() !== "",
+      (location) => location && location.trim() !== ""
     );
 
     res.json(cleanedLocations);
@@ -330,7 +389,7 @@ exports.getAnalyticsPatients = async (req, res) => {
           location
           visitPlace
           doctorSheets
-        `,
+        `
       )
       .sort({
         missionDate: -1,
@@ -373,7 +432,10 @@ exports.getAnalyticsPatients = async (req, res) => {
 
 exports.syncOfflineQueue = async (req, res) => {
   try {
+    const missionFilter = await getMissionFilter(req);
+
     const patients = await Patient.find({
+      ...missionFilter,
       status: { $ne: "released" },
     })
       .select(
@@ -391,7 +453,7 @@ exports.syncOfflineQueue = async (req, res) => {
         obstetricHistory
         perinatalHistory
         initComplaint
-      `,
+      `
       )
       .sort({
         isPriority: -1,
@@ -411,9 +473,12 @@ exports.syncOfflineQueue = async (req, res) => {
 
 exports.getQueueSummary = async (req, res) => {
   try {
+    const missionFilter = await getMissionFilter(req);
+
     const summary = await Patient.aggregate([
       {
         $match: {
+          ...missionFilter,
           status: {
             $ne: "released",
           },
@@ -468,7 +533,10 @@ exports.getDoctorQueue = async (req, res) => {
 
     const pageLimit = Number(limit);
 
+    const missionFilter = await getMissionFilter(req);
+
     const filter = {
+      ...missionFilter,
       status: {
         $ne: "released",
       },
@@ -526,7 +594,7 @@ exports.getDoctorQueue = async (req, res) => {
           generalInfo.age
           generalInfo.sex
           generalInfo.gender
-        `,
+        `
       )
       .sort({
         isPriority: -1,

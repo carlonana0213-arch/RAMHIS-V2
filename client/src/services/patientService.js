@@ -2,13 +2,18 @@ import { apiFetch } from "./api";
 
 import { API_BASE_URL } from "./apiConfig";
 import db from "./localDB";
+
 const API = `${API_BASE_URL}/api/patients`;
+
 const isOffline = () => !navigator.onLine;
-export const getPatients = async () => {
+
+export const getPatients = async ({ all = false } = {}) => {
   try {
     const token = localStorage.getItem("token");
 
-    const res = await fetch(API, {
+    const query = all ? "?all=true" : "";
+
+    const res = await fetch(`${API}${query}`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
@@ -54,7 +59,6 @@ export const addPatient = async (data) => {
 };
 
 export const searchPatients = async (name, birthdate) => {
-  // offline
   // offline
   if (isOffline()) {
     const patients = await db.patients.toArray();
@@ -123,6 +127,7 @@ export const getPatientQueue = async ({
   limit = 15,
   search = "",
   department = "All",
+  all = false,
 } = {}) => {
   try {
     // OFFLINE MODE
@@ -137,7 +142,7 @@ export const getPatientQueue = async ({
         const searchLower = search.toLowerCase();
 
         patients = patients.filter((p) =>
-          p.generalInfo?.name?.toLowerCase()?.includes(searchLower),
+          p.generalInfo?.name?.toLowerCase()?.includes(searchLower)
         );
       }
 
@@ -177,10 +182,14 @@ export const getPatientQueue = async ({
       department,
     });
 
+    if (all) {
+      params.append("all", "true");
+    }
+
     const data = await apiFetch(`${API}/queue?${params.toString()}`);
 
     // keep offline cache fresh
-    syncOfflineQueue();
+    syncOfflineQueue({ all });
 
     return data;
   } catch (err) {
@@ -197,11 +206,14 @@ export const getPatientQueue = async ({
     };
   }
 };
-export const syncOfflineQueue = async () => {
+
+export const syncOfflineQueue = async ({ all = false } = {}) => {
   try {
     if (isOffline()) return;
 
-    const fullQueue = await apiFetch(`${API}/queue-sync`);
+    const query = all ? "?all=true" : "";
+
+    const fullQueue = await apiFetch(`${API}/queue-sync${query}`);
 
     await db.patients.clear();
 
@@ -210,7 +222,8 @@ export const syncOfflineQueue = async () => {
     console.error("Offline sync failed", err);
   }
 };
-export const getQueueSummary = async () => {
+
+export const getQueueSummary = async ({ all = false } = {}) => {
   try {
     // offline
     if (isOffline()) {
@@ -233,7 +246,9 @@ export const getQueueSummary = async () => {
       };
     }
 
-    return apiFetch(`${API}/queue-summary`);
+    const query = all ? "?all=true" : "";
+
+    return apiFetch(`${API}/queue-summary${query}`);
   } catch (err) {
     console.error(err);
 
@@ -255,6 +270,7 @@ export const getDoctorQueue = async ({
   queueFilter = "all",
   department = "General",
   role = "doctor",
+  all = false,
 } = {}) => {
   try {
     // OFFLINE MODE
@@ -274,20 +290,19 @@ export const getDoctorQueue = async ({
         const searchLower = search.toLowerCase();
 
         patients = patients.filter((p) =>
-          p.generalInfo?.name?.toLowerCase()?.includes(searchLower),
+          p.generalInfo?.name?.toLowerCase()?.includes(searchLower)
         );
       }
 
       // queue filters
       // ONLY apply if no search
-
       if (!search.trim()) {
         if (queueFilter === "priority") {
           patients = patients.filter(
             (p) =>
               p.isPriority &&
               p.status !== "unconsulted" &&
-              p.status !== "released",
+              p.status !== "released"
           );
         }
 
@@ -332,6 +347,10 @@ export const getDoctorQueue = async ({
       department,
       role,
     });
+
+    if (all) {
+      params.append("all", "true");
+    }
 
     return apiFetch(`${API}/doctor-queue?${params.toString()}`);
   } catch (err) {

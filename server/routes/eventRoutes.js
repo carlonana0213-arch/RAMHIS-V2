@@ -3,6 +3,7 @@ const router = express.Router();
 
 const {
   getAllEvents,
+  getCurrentMission,
   getEventById,
   createEvent,
   updateEvent,
@@ -16,6 +17,7 @@ const protect = require("../middleware/protect");
 
 // Public event viewing
 router.get("/", getAllEvents);
+router.get("/current-mission", getCurrentMission);
 router.get("/:id", getEventById);
 
 // Admin event management

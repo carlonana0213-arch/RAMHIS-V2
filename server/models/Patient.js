@@ -84,6 +84,7 @@ const PatientSchema = new mongoose.Schema(
       enum: ["waiting", "beingSeen", "forPharmacy", "released", "unconsulted"],
       default: "waiting",
     },
+
     needsFurtherTreatment: {
       type: Boolean,
       default: false,
@@ -98,10 +99,12 @@ const PatientSchema = new mongoose.Schema(
       type: String,
       enum: ["Pediatrics", "Ortho", "Opta", "Dental", "Cardio", "General"],
     },
+
     isPriority: {
       type: Boolean,
       default: false,
     },
+
     deletedDoctorRecords: [
       {
         examination: Object,
@@ -117,10 +120,18 @@ const PatientSchema = new mongoose.Schema(
         deletedAt: Date,
       },
     ],
+
+    eventId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Event",
+      default: null,
+    },
+
     missionDate: {
       type: Date,
-      default: Date.now,
+      default: null,
     },
+
     location: {
       type: String,
       required: true,
@@ -129,15 +140,19 @@ const PatientSchema = new mongoose.Schema(
 
   {
     timestamps: true,
-  },
+  }
 );
+
 PatientSchema.index({ createdAt: 1 });
+PatientSchema.index({ eventId: 1 });
 PatientSchema.index({ missionDate: 1 });
 PatientSchema.index({ department: 1 });
 PatientSchema.index({ status: 1 });
+
 PatientSchema.index({
   "doctorSheets.diagnosis": 1,
 });
+
 PatientSchema.index({
   status: 1,
   createdAt: -1,
@@ -148,4 +163,5 @@ PatientSchema.index({
   department: 1,
   createdAt: -1,
 });
+
 module.exports = mongoose.model("Patient", PatientSchema);

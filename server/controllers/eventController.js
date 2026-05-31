@@ -13,6 +13,39 @@ const emitEventsUpdated = (eventId = null) => {
   }
 };
 
+const checkOngoingEventConflict = async (excludeEventId = null) => {
+  const query = {
+    status: "Ongoing",
+  };
+
+  if (excludeEventId) {
+    query._id = {
+      $ne: excludeEventId,
+    };
+  }
+
+  return Event.findOne(query);
+};
+
+const emitMissionStarted = (event) => {
+  if (io) {
+    io.emit("mission_started", {
+      eventId: event._id,
+      eventTitle: event.title,
+      message: "New mission started. Patient list has been reset.",
+    });
+  }
+};
+
+const emitMissionCompleted = (event) => {
+  if (io) {
+    io.emit("mission_completed", {
+      eventId: event._id,
+      eventTitle: event.title,
+    });
+  }
+};
+
 // GET /api/events
 exports.getAllEvents = async (req, res) => {
   try {
@@ -30,6 +63,31 @@ exports.getAllEvents = async (req, res) => {
     res.status(500).json({
       ok: false,
       message: "Failed to fetch events",
+      error: error.message,
+    });
+  }
+};
+
+// GET /api/events/current-mission
+exports.getCurrentMission = async (req, res) => {
+  try {
+    const ongoingEvent = await Event.findOne({
+      status: "Ongoing",
+    })
+      .populate("createdBy", "name email role")
+      .populate("participants.userId", "name email role");
+
+    res.status(200).json({
+      ok: true,
+      data: {
+        event: ongoingEvent || null,
+        hasOngoingMission: !!ongoingEvent,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      message: "Failed to fetch current mission",
       error: error.message,
     });
   }
@@ -87,22 +145,30 @@ exports.createEvent = async (req, res) => {
       });
     }
 
+    if (status === "Ongoing") {
+      const existingOngoingEvent = await checkOngoingEventConflict();
+
+      if (existingOngoingEvent) {
+        return res.status(400).json({
+          ok: false,
+          message:
+            "Another event is already ongoing. Complete it first before starting a new one.",
+        });
+      }
+    }
+
     const event = await Event.create({
       title,
       description,
       location,
 
       latitude:
-        latitude !== null &&
-        latitude !== undefined &&
-        latitude !== ""
+        latitude !== null && latitude !== undefined && latitude !== ""
           ? Number(latitude)
           : null,
 
       longitude:
-        longitude !== null &&
-        longitude !== undefined &&
-        longitude !== ""
+        longitude !== null && longitude !== undefined && longitude !== ""
           ? Number(longitude)
           : null,
 
@@ -120,12 +186,24 @@ exports.createEvent = async (req, res) => {
 
     emitEventsUpdated(event._id);
 
+    if (event.status === "Ongoing") {
+      emitMissionStarted(event);
+    }
+
     res.status(201).json({
       ok: true,
       message: "Event created successfully",
       data: event,
     });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({
+        ok: false,
+        message:
+          "Another event is already ongoing. Complete it first before starting a new one.",
+      });
+    }
+
     res.status(500).json({
       ok: false,
       message: "Failed to create event",
@@ -137,25 +215,48 @@ exports.createEvent = async (req, res) => {
 // PUT /api/events/:id
 exports.updateEvent = async (req, res) => {
   try {
-    const event = await Event.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      {
-        new: true,
-        runValidators: true,
-      }
-    )
-      .populate("createdBy", "name email role")
-      .populate("participants.userId", "name email role");
+    const previousEvent = await Event.findById(req.params.id);
 
-    if (!event) {
+    if (!previousEvent) {
       return res.status(404).json({
         ok: false,
         message: "Event not found",
       });
     }
 
+    if (req.body.status === "Ongoing") {
+      const existingOngoingEvent = await checkOngoingEventConflict(
+        req.params.id
+      );
+
+      if (existingOngoingEvent) {
+        return res.status(400).json({
+          ok: false,
+          message:
+            "Another event is already ongoing. Complete it first before starting a new one.",
+        });
+      }
+    }
+
+    const event = await Event.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    })
+      .populate("createdBy", "name email role")
+      .populate("participants.userId", "name email role");
+
     emitEventsUpdated(event._id);
+
+    if (req.body.status === "Ongoing" && previousEvent.status !== "Ongoing") {
+      emitMissionStarted(event);
+    }
+
+    if (
+      req.body.status === "Completed" &&
+      previousEvent.status !== "Completed"
+    ) {
+      emitMissionCompleted(event);
+    }
 
     res.status(200).json({
       ok: true,
@@ -163,6 +264,14 @@ exports.updateEvent = async (req, res) => {
       data: event,
     });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({
+        ok: false,
+        message:
+          "Another event is already ongoing. Complete it first before starting a new one.",
+      });
+    }
+
     res.status(500).json({
       ok: false,
       message: "Failed to update event",
@@ -228,8 +337,7 @@ exports.joinEvent = async (req, res) => {
     }
 
     const alreadyJoined = event.participants.some(
-      (participant) =>
-        participant.userId.toString() === userId.toString()
+      (participant) => participant.userId.toString() === userId.toString()
     );
 
     if (alreadyJoined) {
@@ -278,8 +386,7 @@ exports.leaveEvent = async (req, res) => {
     }
 
     event.participants = event.participants.filter(
-      (participant) =>
-        participant.userId.toString() !== userId.toString()
+      (participant) => participant.userId.toString() !== userId.toString()
     );
 
     await event.save();
@@ -338,8 +445,7 @@ exports.updateParticipantStatus = async (req, res) => {
     await event.save();
 
     if (status === "Approved") {
-      const adminId =
-        event.createdBy || req.user?._id || req.user?.id;
+      const adminId = event.createdBy || req.user?._id || req.user?.id;
 
       let groupChat = await ChatThread.findOne({
         eventId: event._id,
@@ -357,18 +463,15 @@ exports.updateParticipantStatus = async (req, res) => {
           lastMessageAt: new Date(),
         });
       } else {
-        await ChatThread.findByIdAndUpdate(
-          groupChat._id,
-          {
-            $addToSet: {
-              members: userId,
-              participants: {
-                $each: [adminId, userId].filter(Boolean),
-              },
+        await ChatThread.findByIdAndUpdate(groupChat._id, {
+          $addToSet: {
+            members: userId,
+            participants: {
+              $each: [adminId, userId].filter(Boolean),
             },
-            lastMessageAt: new Date(),
-          }
-        );
+          },
+          lastMessageAt: new Date(),
+        });
       }
 
       if (io) {

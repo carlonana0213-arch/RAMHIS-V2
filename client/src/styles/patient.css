@@ -267,3 +267,45 @@
   font-weight: 600;
   color: #64748b;
 }
+.mission-status-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+}
+
+.mission-status-banner p {
+  margin: 4px 0 0;
+  font-size: 14px;
+}
+
+.mission-status-ongoing {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  color: #9a3412;
+}
+
+.mission-status-all {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1e3a8a;
+}
+
+.mission-records-toggle-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-weight: 600;
+  cursor: pointer;
+  background: #f97316;
+  color: white;
+  white-space: nowrap;
+}
+
+.mission-records-toggle-btn:hover {
+  opacity: 0.9;
+}

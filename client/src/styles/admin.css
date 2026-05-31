@@ -619,6 +619,12 @@ td {
   padding: 8px 14px;
   font-size: 13px;
   font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.doc-download-link:hover {
+  background: #2f3f99;
 }
 
 .doc-open-link {

@@ -7,11 +7,13 @@ const participantSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+
     status: {
       type: String,
       enum: ["Pending", "Approved", "Rejected"],
       default: "Pending",
     },
+
     joinedAt: {
       type: Date,
       default: Date.now,
@@ -27,41 +29,49 @@ const eventSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+
     description: {
       type: String,
       trim: true,
     },
+
     location: {
       type: String,
       required: true,
       trim: true,
     },
-    latitude: {
-  type: Number,
-  default: null,
-},
 
-longitude: {
-  type: Number,
-  default: null,
-},
-googleMapsUrl: {
-  type: String,
-  trim: true,
-  default: "",
-},
+    latitude: {
+      type: Number,
+      default: null,
+    },
+
+    longitude: {
+      type: Number,
+      default: null,
+    },
+
+    googleMapsUrl: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
     date: {
       type: Date,
       required: true,
     },
+
     startTime: {
       type: String,
       trim: true,
     },
+
     endTime: {
       type: String,
       trim: true,
     },
+
     type: {
       type: String,
       enum: [
@@ -73,23 +83,38 @@ googleMapsUrl: {
       ],
       required: true,
     },
+
     status: {
       type: String,
       enum: ["Upcoming", "Ongoing", "Completed", "Cancelled"],
       default: "Upcoming",
     },
+
     imageUrl: {
       type: String,
       trim: true,
     },
+
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
+
     participants: [participantSchema],
   },
   { timestamps: true }
+);
+
+eventSchema.index(
+  { status: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      status: "Ongoing",
+    },
+    name: "only_one_ongoing_event",
+  }
 );
 
 module.exports = mongoose.model("Event", eventSchema);

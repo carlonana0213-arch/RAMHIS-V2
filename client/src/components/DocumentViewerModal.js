@@ -3,6 +3,44 @@ import React from "react";
 function DocumentViewerModal({ url, type, title, onClose }) {
   if (!url) return null;
 
+  const getFileNameFromUrl = (fileUrl) => {
+    try {
+      const cleanUrl = fileUrl.split("?")[0];
+      const fileName = cleanUrl.substring(cleanUrl.lastIndexOf("/") + 1);
+
+      return fileName || "document";
+    } catch {
+      return "document";
+    }
+  };
+
+  const handleDownload = async () => {
+    try {
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error("Failed to download file");
+      }
+
+      const blob = await response.blob();
+      const objectUrl = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = getFileNameFromUrl(url);
+      document.body.appendChild(link);
+      link.click();
+
+      link.remove();
+      window.URL.revokeObjectURL(objectUrl);
+    } catch (error) {
+      console.error("DOWNLOAD ERROR:", error);
+
+      // fallback if browser blocks blob download
+      window.open(url, "_blank", "noreferrer");
+    }
+  };
+
   return (
     <div className="doc-modal-overlay" onClick={onClose}>
       <div
@@ -67,15 +105,13 @@ function DocumentViewerModal({ url, type, title, onClose }) {
             🔗 Open in new tab
           </a>
 
-          <a
-            href={url}
-            download
-            target="_blank"
-            rel="noreferrer"
+          <button
+            type="button"
+            onClick={handleDownload}
             className="doc-download-link"
           >
             ⬇ Download
-          </a>
+          </button>
         </div>
       </div>
     </div>
