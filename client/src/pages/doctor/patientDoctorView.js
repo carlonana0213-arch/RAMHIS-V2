@@ -266,7 +266,7 @@ function PatientDoctorView({ patient, onClose, refreshQueue }) {
 
   const handleRelease = async () => {
     try {
-      await updatePatientStatus(patient._id, {
+      const result = await updatePatientStatus(patient._id, {
         status: "released",
       });
 
@@ -288,7 +288,7 @@ function PatientDoctorView({ patient, onClose, refreshQueue }) {
 
   const handleForPharmacy = async () => {
     try {
-      await updatePatientStatus(patient._id, {
+      const result = await updatePatientStatus(patient._id, {
         status: "forPharmacy",
       });
 
@@ -333,11 +333,17 @@ function PatientDoctorView({ patient, onClose, refreshQueue }) {
 
       // MOVE PATIENT TO NEW DEPARTMENT
 
-      await updatePatientStatus(patient._id, {
+      const result = await updatePatientStatus(patient._id, {
         department: referralDept,
 
         status: "waiting",
       });
+
+      setAlertMessage(
+        result?.offline
+          ? `Referral saved offline (${referralDept}). Will sync automatically.`
+          : `Patient referred to ${referralDept}`,
+      );
 
       setAlertMessage(
         result?.offline
