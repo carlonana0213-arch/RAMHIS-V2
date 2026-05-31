@@ -392,9 +392,6 @@ const handleViewDocument = (path, title) => {
                       onClick={(e) => {
   e.stopPropagation();
 
-  console.log("License proof path:", user.doctorInfo?.proofOfLicense);
-  console.log("Doctor info:", user.doctorInfo);
-
   handleViewDocument(user.doctorInfo.proofOfLicense, "License Proof");
 }}
                     >
