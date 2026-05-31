@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import "../styles/doctor.css";
 import { updatePatientStatus } from "../services/doctorService";
-import { getPatientQueue, getPatientById } from "../services/patientService";
+import { getDoctorQueue, getPatientById } from "../services/patientService";
 import ConfirmModal from "../components/ConfirmModal";
 
 import DoctorQueue from "./doctor/doctorQueue";
@@ -17,6 +17,11 @@ function Doctor() {
   const doctorDepartment = storedUser?.doctorInfo?.specialization || "General";
 
   const [patients, setPatients] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const [totalPatients, setTotalPatients] = useState(0);
+
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
 
   const [selectedPatient, setSelectedPatient] = useState(null);
@@ -33,11 +38,21 @@ function Doctor() {
         setLoading(true);
       }
 
-      const queue = await getPatientQueue();
+      const queue = await getDoctorQueue({
+        page: currentPage,
+        search,
+        queueFilter,
 
-      const activePatients = queue.filter((p) => p.status !== "released");
+        department: doctorDepartment,
 
-      setPatients(activePatients);
+        role: storedUser?.role,
+      });
+
+      setPatients(queue.patients);
+
+      setTotalPatients(queue.total);
+
+      setTotalPages(queue.totalPages);
 
       hasLoadedRef.current = true;
     } catch (err) {
@@ -84,78 +99,23 @@ function Doctor() {
 
       socket.off("queueUpdated");
     };
-  }, []);
-
-  const filteredPatients = useMemo(() => {
-    let filtered = [...patients];
-
-    // ADMIN SEES EVERYTHING
-    if (storedUser?.role !== "admin") {
-      // NORMAL VIEW = OWN DEPARTMENT ONLY
-      if (search.trim() === "") {
-        filtered = filtered.filter((p) => p.department === doctorDepartment);
-      }
-    }
-
-    // SEARCH ALL PATIENTS
-    if (search.trim() !== "") {
-      filtered = filtered.filter((p) =>
-        p.generalInfo?.name?.toLowerCase().includes(search.toLowerCase()),
-      );
-    }
-
-    // PRIORITY FILTER
-    if (queueFilter === "priority") {
-      filtered = filtered.filter(
-        (p) => p.isPriority && p.status !== "unconsulted",
-      );
-    }
-    // ALL TAB = exclude unconsulted
-    if (queueFilter === "all") {
-      filtered = filtered.filter((p) => p.status !== "unconsulted");
-    }
-    // UNCONSULTED FILTER
-    if (queueFilter === "unconsulted") {
-      filtered = filtered.filter((p) => p.status === "unconsulted");
-    }
-
-    if (currentPatient) {
-      const currentIndex = filtered.findIndex(
-        (p) => p._id === currentPatient._id,
-      );
-
-      if (currentIndex > 0) {
-        const [selected] = filtered.splice(currentIndex, 1);
-
-        filtered.unshift(selected);
-      }
-    }
-    return filtered;
-  }, [
-    patients,
-    search,
-    queueFilter,
-    doctorDepartment,
-    storedUser?.role,
-    currentPatient,
-  ]);
+  }, [currentPage, search, queueFilter]);
 
   useEffect(() => {
-    if (filteredPatients.length === 0) {
+    if (patients.length === 0) {
       setCurrentPatient(null);
+
       return;
     }
 
     setCurrentPatient((prev) => {
-      // if patient is already top row, preserve it
-      if (prev && filteredPatients[0]?._id === prev._id) {
+      if (prev && patients[0]?._id === prev._id) {
         return prev;
       }
 
-      // otherwise follow top row
-      return filteredPatients[0];
+      return patients[0];
     });
-  }, [filteredPatients]);
+  }, [patients]);
 
   const openDoctorView = async (patient) => {
     try {
@@ -238,11 +198,15 @@ function Doctor() {
           <TableSkeleton rows={8} columns={6} />
         ) : (
           <DoctorQueue
-            patients={filteredPatients}
+            patients={patients}
             search={search}
             setSearch={setSearch}
             queueFilter={queueFilter}
             setQueueFilter={setQueueFilter}
+            currentPage={currentPage}
+            setCurrentPage={setCurrentPage}
+            totalPatients={totalPatients}
+            totalPages={totalPages}
             onOpenDoctorView={openDoctorView}
             setCurrentPatient={setCurrentPatient}
           />

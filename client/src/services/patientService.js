@@ -118,25 +118,233 @@ export const deletePatient = (id) =>
     method: "DELETE",
   });
 
-export const getPatientQueue = async () => {
+export const getPatientQueue = async ({
+  page = 1,
+  limit = 15,
+  search = "",
+  department = "All",
+} = {}) => {
   try {
-    // offline
+    // OFFLINE MODE
     if (isOffline()) {
-      return await db.patients.toArray();
+      let patients = await db.patients.toArray();
+
+      // remove released
+      patients = patients.filter((p) => p.status !== "released");
+
+      // search
+      if (search.trim()) {
+        const searchLower = search.toLowerCase();
+
+        patients = patients.filter((p) =>
+          p.generalInfo?.name?.toLowerCase()?.includes(searchLower),
+        );
+      }
+
+      // department filter
+      if (department !== "All") {
+        patients = patients.filter((p) => p.department === department);
+      }
+
+      // priority sort
+      patients.sort((a, b) => {
+        if (a.isPriority && !b.isPriority) return -1;
+
+        if (!a.isPriority && b.isPriority) return 1;
+
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      });
+
+      const total = patients.length;
+
+      const startIndex = (page - 1) * limit;
+
+      const paginated = patients.slice(startIndex, startIndex + limit);
+
+      return {
+        patients: paginated,
+        total,
+        totalPages: Math.ceil(total / limit),
+        currentPage: page,
+      };
     }
 
-    // online
-    const data = await apiFetch(`${API}/queue`);
+    // ONLINE MODE
+    const params = new URLSearchParams({
+      page,
+      limit,
+      search,
+      department,
+    });
 
-    await db.patients.clear();
+    const data = await apiFetch(`${API}/queue?${params.toString()}`);
 
-    await db.patients.bulkPut(data);
+    // keep offline cache fresh
+    syncOfflineQueue();
 
     return data;
   } catch (err) {
-    console.error("Queue fetch failed, using cache", err);
+    console.error("Queue fetch failed", err);
 
-    return await db.patients.toArray();
+    // fallback cache if request fails
+    const cachedPatients = await db.patients.toArray();
+
+    return {
+      patients: cachedPatients,
+      total: cachedPatients.length,
+      totalPages: 1,
+      currentPage: 1,
+    };
+  }
+};
+export const syncOfflineQueue = async () => {
+  try {
+    if (isOffline()) return;
+
+    const fullQueue = await apiFetch(`${API}/queue-sync`);
+
+    await db.patients.clear();
+
+    await db.patients.bulkPut(fullQueue);
+  } catch (err) {
+    console.error("Offline sync failed", err);
+  }
+};
+export const getQueueSummary = async () => {
+  try {
+    // offline
+    if (isOffline()) {
+      const patients = await db.patients.toArray();
+
+      const active = patients.filter((p) => p.status !== "released");
+
+      return {
+        Pediatrics: active.filter((p) => p.department === "Pediatrics").length,
+
+        Ortho: active.filter((p) => p.department === "Ortho").length,
+
+        Opta: active.filter((p) => p.department === "Opta").length,
+
+        Dental: active.filter((p) => p.department === "Dental").length,
+
+        Cardio: active.filter((p) => p.department === "Cardio").length,
+
+        General: active.filter((p) => p.department === "General").length,
+      };
+    }
+
+    return apiFetch(`${API}/queue-summary`);
+  } catch (err) {
+    console.error(err);
+
+    return {
+      Pediatrics: 0,
+      Ortho: 0,
+      Opta: 0,
+      Dental: 0,
+      Cardio: 0,
+      General: 0,
+    };
+  }
+};
+
+export const getDoctorQueue = async ({
+  page = 1,
+  limit = 15,
+  search = "",
+  queueFilter = "all",
+  department = "General",
+  role = "doctor",
+} = {}) => {
+  try {
+    // OFFLINE MODE
+    if (isOffline()) {
+      let patients = await db.patients.toArray();
+
+      // remove released
+      patients = patients.filter((p) => p.status !== "released");
+
+      // department logic
+      if (role !== "admin" && !search.trim()) {
+        patients = patients.filter((p) => p.department === department);
+      }
+
+      // search
+      if (search.trim()) {
+        const searchLower = search.toLowerCase();
+
+        patients = patients.filter((p) =>
+          p.generalInfo?.name?.toLowerCase()?.includes(searchLower),
+        );
+      }
+
+      // queue filters
+      // ONLY apply if no search
+
+      if (!search.trim()) {
+        if (queueFilter === "priority") {
+          patients = patients.filter(
+            (p) =>
+              p.isPriority &&
+              p.status !== "unconsulted" &&
+              p.status !== "released",
+          );
+        }
+
+        if (queueFilter === "all") {
+          patients = patients.filter((p) => p.status !== "unconsulted");
+        }
+
+        if (queueFilter === "unconsulted") {
+          patients = patients.filter((p) => p.status === "unconsulted");
+        }
+      }
+
+      // sort
+      patients.sort((a, b) => {
+        if (a.isPriority && !b.isPriority) return -1;
+
+        if (!a.isPriority && b.isPriority) return 1;
+
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      });
+
+      const total = patients.length;
+
+      const startIndex = (page - 1) * limit;
+
+      const paginated = patients.slice(startIndex, startIndex + limit);
+
+      return {
+        patients: paginated,
+        total,
+        totalPages: Math.ceil(total / limit),
+        currentPage: page,
+      };
+    }
+
+    // ONLINE MODE
+    const params = new URLSearchParams({
+      page,
+      limit,
+      search,
+      queueFilter,
+      department,
+      role,
+    });
+
+    return apiFetch(`${API}/doctor-queue?${params.toString()}`);
+  } catch (err) {
+    console.error("Doctor queue failed", err);
+
+    const cached = await db.patients.toArray();
+
+    return {
+      patients: cached,
+      total: cached.length,
+      totalPages: 1,
+      currentPage: 1,
+    };
   }
 };
 

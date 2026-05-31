@@ -7,9 +7,13 @@ function DoctorQueue({
   queueFilter,
   setQueueFilter,
   setCurrentPatient,
+
+  currentPage,
+  setCurrentPage,
+
+  totalPatients,
+  totalPages,
 }) {
-  const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 15;
   const statusColors = {
     waiting: "#facc15",
     beingSeen: "#38bdf8",
@@ -20,17 +24,11 @@ function DoctorQueue({
     beingSeen: "Being Served",
     forPharmacy: "For Pharmacy",
   };
-  const totalPatients = patients.length;
+  const displayedPatients = patients;
 
-  const totalPages = Math.ceil(totalPatients / ITEMS_PER_PAGE);
+  const displayedCount = Math.min(currentPage * 15, totalPatients);
 
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-
-  const endIndex = startIndex + ITEMS_PER_PAGE;
-
-  const displayedPatients = patients.slice(startIndex, endIndex);
-
-  const displayedCount = Math.min(endIndex, totalPatients);
+  const startIndex = (currentPage - 1) * 15;
   useEffect(() => {
     setCurrentPage(1);
   }, [search, queueFilter]);

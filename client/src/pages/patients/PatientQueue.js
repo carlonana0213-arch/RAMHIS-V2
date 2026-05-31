@@ -22,12 +22,23 @@ const statusLabels = {
   beingSeen: "Being Served",
   forPharmacy: "For Pharmacy",
 };
-const PatientQueue = ({ patients, loading, onSelectPatient }) => {
-  const [search, setSearch] = useState("");
-  const [departmentFilter, setDepartmentFilter] = useState("All");
-  const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 15;
+const PatientQueue = ({
+  patients,
+  loading,
+  onSelectPatient,
 
+  search,
+  setSearch,
+
+  departmentFilter,
+  setDepartmentFilter,
+
+  currentPage,
+  setCurrentPage,
+
+  totalPatients,
+  totalPages,
+}) => {
   useEffect(() => {
     setCurrentPage(1);
   }, [search, departmentFilter]);
@@ -36,30 +47,12 @@ const PatientQueue = ({ patients, loading, onSelectPatient }) => {
     return <TableSkeleton rows={8} columns={6} />;
   }
 
-  const activePatients = patients.filter((p) => p.status !== "released");
+  const displayedPatients = patients;
 
-  const filteredPatients = activePatients
-    .filter((p) =>
-      p.generalInfo.name.toLowerCase().includes(search.toLowerCase()),
-    )
-    .filter((p) =>
-      departmentFilter === "All" ? true : p.department === departmentFilter,
-    )
-    .sort((a, b) => {
-      if (a.isPriority && !b.isPriority) return -1;
-      if (!a.isPriority && b.isPriority) return 1;
-      return 0;
-    });
-  const totalPatients = filteredPatients.length;
+  const displayedCount = Math.min(currentPage * 15, totalPatients);
 
-  const totalPages = Math.ceil(totalPatients / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * 15;
 
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
-
-  const displayedPatients = filteredPatients.slice(startIndex, endIndex);
-
-  const displayedCount = Math.min(endIndex, totalPatients);
   const openPatient = (patient) => {
     onSelectPatient(patient);
   };
@@ -102,7 +95,7 @@ const PatientQueue = ({ patients, loading, onSelectPatient }) => {
           <span>Status</span>
         </div>
 
-        {filteredPatients.length === 0 ? (
+        {displayedPatients.length === 0 ? (
           <div className="queue-empty">No patients in this department</div>
         ) : (
           displayedPatients.map((patient, index) => (

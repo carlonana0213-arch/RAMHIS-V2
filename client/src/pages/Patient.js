@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getPatientQueue } from "../services/patientService";
+import { getPatientQueue, getQueueSummary } from "../services/patientService";
 import PatientQueue from "./patients/PatientQueue";
 import PatientDashboard from "./patients/PatientDashboard";
 import AddPatientModal from "./patients/AddPatientModal";
@@ -11,6 +11,17 @@ import socket from "../services/socket";
 
 const Patient = () => {
   const [patients, setPatients] = useState([]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const [search, setSearch] = useState("");
+
+  const [departmentFilter, setDepartmentFilter] = useState("All");
+
+  const [totalPatients, setTotalPatients] = useState(0);
+
+  const [totalPages, setTotalPages] = useState(1);
+  const [queueSummary, setQueueSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
 
@@ -25,9 +36,18 @@ const Patient = () => {
       console.time("queue-load");
 
       try {
-        const data = await getPatientQueue();
-
-        setPatients(data);
+        const [data, summary] = await Promise.all([
+          getPatientQueue({
+            page: currentPage,
+            search,
+            department: departmentFilter,
+          }),
+          getQueueSummary(),
+        ]);
+        setPatients(data.patients);
+        setTotalPatients(data.total);
+        setTotalPages(data.totalPages);
+        setQueueSummary(summary);
       } catch (err) {
         console.error(err);
       } finally {
@@ -54,7 +74,7 @@ const Patient = () => {
       clearInterval(fallbackTimer);
       socket.off("queueUpdated");
     };
-  }, []);
+  }, [currentPage, search, departmentFilter]);
   return (
     <div className="patient-page">
       {/* HEADER */}
@@ -71,12 +91,20 @@ const Patient = () => {
 
       {/* MAIN CONTENT */}
       <div className="patient-content">
-        <PatientDashboard patients={patients} loading={loading} />
+        <PatientDashboard summary={queueSummary} loading={loading} />
 
         <PatientQueue
           patients={patients}
           loading={loading}
           onSelectPatient={setSelectedPatient}
+          search={search}
+          setSearch={setSearch}
+          departmentFilter={departmentFilter}
+          setDepartmentFilter={setDepartmentFilter}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+          totalPatients={totalPatients}
+          totalPages={totalPages}
         />
       </div>
 

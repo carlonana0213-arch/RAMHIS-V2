@@ -32,7 +32,25 @@ router.get(
   checkPermission("queue"),
   patientController.getPatientQueue,
 );
+router.get(
+  "/queue-sync",
+  auth,
+  checkPermission("queue"),
+  patientController.syncOfflineQueue,
+);
+router.get(
+  "/queue-summary",
+  auth,
+  checkPermission("queue"),
+  patientController.getQueueSummary,
+);
 
+router.get(
+  "/doctor-queue",
+  auth,
+  checkPermission("doctorSheet"),
+  patientController.getDoctorQueue,
+);
 router.get("/:id", auth, checkPermission("registry"), async (req, res) => {
   try {
     const patient = await Patient.findById(req.params.id);

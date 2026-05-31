@@ -26,13 +26,7 @@ const departmentIcons = {
   Cardio: <FaHeartbeat />,
   General: <FaStethoscope />,
 };
-const PatientDashboard = ({ patients, loading }) => {
-  const activePatients = patients.filter((p) => p.status !== "released");
-
-  const getDepartmentCount = (department) => {
-    return activePatients.filter((p) => p.department === department).length;
-  };
-
+const PatientDashboard = ({ summary, loading }) => {
   return loading ? (
     <CardsSkeleton count={6} />
   ) : (
@@ -43,7 +37,7 @@ const PatientDashboard = ({ patients, loading }) => {
 
           <div className="patient-card-content">
             <h4>{dept}</h4>
-            <p>{getDepartmentCount(dept)}</p>
+            <p>{summary?.[dept] ?? 0}</p>
           </div>
         </div>
       ))}

@@ -140,9 +140,31 @@ exports.deletePatient = async (req, res) => {
 
 exports.getPatientQueue = async (req, res) => {
   try {
-    const patients = await Patient.find({
-      status: { $ne: "released" },
-    })
+    const { page = 1, limit = 15, search = "", department = "All" } = req.query;
+
+    const pageNumber = Number(page);
+    const pageLimit = Number(limit);
+
+    const filter = {
+      status: { $nin: ["released"] },
+    };
+
+    // department filter
+    if (department !== "All") {
+      filter.department = department;
+    }
+
+    // search filter
+    if (search.trim()) {
+      filter["generalInfo.name"] = {
+        $regex: search.trim(),
+        $options: "i",
+      };
+    }
+
+    const total = await Patient.countDocuments(filter);
+
+    const patients = await Patient.find(filter)
       .select(
         `
         _id
@@ -154,12 +176,22 @@ exports.getPatientQueue = async (req, res) => {
         generalInfo.age
         generalInfo.sex
         generalInfo.gender
-        `,
+      `,
       )
-      .sort({ createdAt: -1 })
+      .sort({
+        isPriority: -1,
+        createdAt: -1,
+      })
+      .skip((pageNumber - 1) * pageLimit)
+      .limit(pageLimit)
       .lean();
 
-    res.json(patients);
+    res.json({
+      patients,
+      total,
+      totalPages: Math.ceil(total / pageLimit),
+      currentPage: pageNumber,
+    });
   } catch (err) {
     console.error(err);
 
@@ -335,6 +367,186 @@ exports.getAnalyticsPatients = async (req, res) => {
 
     res.status(500).json({
       message: err.message,
+    });
+  }
+};
+
+exports.syncOfflineQueue = async (req, res) => {
+  try {
+    const patients = await Patient.find({
+      status: { $ne: "released" },
+    })
+      .select(
+        `
+        _id
+        status
+        department
+        isPriority
+        createdAt
+        location
+        generalInfo
+        examination
+        medicalHistory
+        familyHistory
+        obstetricHistory
+        perinatalHistory
+        initComplaint
+      `,
+      )
+      .sort({
+        isPriority: -1,
+        createdAt: -1,
+      })
+      .lean();
+
+    res.json(patients);
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      msg: "Failed to sync queue",
+    });
+  }
+};
+
+exports.getQueueSummary = async (req, res) => {
+  try {
+    const summary = await Patient.aggregate([
+      {
+        $match: {
+          status: {
+            $ne: "released",
+          },
+        },
+      },
+
+      {
+        $group: {
+          _id: "$department",
+          count: {
+            $sum: 1,
+          },
+        },
+      },
+    ]);
+
+    const formatted = {
+      Pediatrics: 0,
+      Ortho: 0,
+      Opta: 0,
+      Dental: 0,
+      Cardio: 0,
+      General: 0,
+    };
+
+    summary.forEach((item) => {
+      formatted[item._id] = item.count;
+    });
+
+    res.json(formatted);
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      msg: "Failed to fetch queue summary",
+    });
+  }
+};
+
+exports.getDoctorQueue = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 15,
+      search = "",
+      queueFilter = "all",
+      department = "General",
+      role = "doctor",
+    } = req.query;
+
+    const pageNumber = Number(page);
+
+    const pageLimit = Number(limit);
+
+    const filter = {
+      status: {
+        $ne: "released",
+      },
+    };
+
+    // non-admin doctors
+    if (role !== "admin" && !search.trim()) {
+      filter.department = department;
+    }
+
+    // search all
+    if (search.trim()) {
+      filter["generalInfo.name"] = {
+        $regex: search.trim(),
+        $options: "i",
+      };
+    }
+
+    // queue filters
+    // ONLY apply when not searching
+
+    if (!search.trim()) {
+      if (queueFilter === "priority") {
+        filter.isPriority = true;
+
+        filter.status = {
+          $nin: ["released", "unconsulted"],
+        };
+      }
+
+      if (queueFilter === "all") {
+        filter.status = {
+          $nin: ["released", "unconsulted"],
+        };
+      }
+
+      if (queueFilter === "unconsulted") {
+        filter.status = "unconsulted";
+      }
+    }
+
+    const total = await Patient.countDocuments(filter);
+
+    const patients = await Patient.find(filter)
+      .select(
+        `
+          _id
+          status
+          department
+          isPriority
+          createdAt
+          initComplaint
+          doctorSheets
+          generalInfo.name
+          generalInfo.age
+          generalInfo.sex
+          generalInfo.gender
+        `,
+      )
+      .sort({
+        isPriority: -1,
+        createdAt: -1,
+      })
+      .skip((pageNumber - 1) * pageLimit)
+      .limit(pageLimit)
+      .lean();
+
+    res.json({
+      patients,
+      total,
+      totalPages: Math.ceil(total / pageLimit),
+      currentPage: pageNumber,
+    });
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      msg: "Failed to load doctor queue",
     });
   }
 };
