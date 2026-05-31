@@ -17,7 +17,7 @@ export const loadPatientPrescriptions = async (patientId) => {
     .toArray();
 
   for (const item of cached) {
-    await db.prescriptions.delete(item.id);
+    await db.prescriptions.delete(item._id);
   }
 
   await db.prescriptions.bulkPut(data);

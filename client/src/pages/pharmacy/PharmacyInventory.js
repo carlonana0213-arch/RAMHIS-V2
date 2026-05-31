@@ -94,7 +94,7 @@ function PharmacyInventory() {
   }, [search, filter]);
   const handleAdd = async () => {
     try {
-      await addMedicine({
+      const result = await addMedicine({
         names: names
           .split(",")
           .map((n) => n.trim())
@@ -115,7 +115,11 @@ function PharmacyInventory() {
       setQuantity("");
       setDosage("");
 
-      setAlertMessage("Medicine added successfully");
+      setAlertMessage(
+        result?.offline
+          ? "Medicine added offline. Will sync automatically."
+          : "Medicine added successfully",
+      );
 
       setShowModal(false);
 
@@ -129,12 +133,16 @@ function PharmacyInventory() {
 
   const handleUpdate = async (id) => {
     try {
-      await updateMedicine(id, { quantity: editQuantity });
+      const result = await updateMedicine(id, { quantity: editQuantity });
 
       setEditingId(null);
       setEditQuantity("");
 
-      setAlertMessage("Medicine quantity updated successfully");
+      setAlertMessage(
+        result?.offline
+          ? "Medicine updated offline. Will sync automatically."
+          : "Medicine quantity updated successfully",
+      );
 
       loadMedicines();
     } catch (err) {

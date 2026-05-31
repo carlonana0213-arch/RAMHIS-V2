@@ -319,3 +319,26 @@ exports.getPrescriptionsByPatient = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+exports.getPharmacyStats = async (req, res) => {
+  try {
+    const pending = await Prescription.countDocuments({
+      status: "Pending",
+    });
+
+    const completed = await Prescription.countDocuments({
+      status: "Completed",
+    });
+
+    res.json({
+      pending,
+      completed,
+    });
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      message: "Failed to load pharmacy stats",
+    });
+  }
+};

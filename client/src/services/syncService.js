@@ -55,6 +55,41 @@ export const syncOfflineTransactions = async () => {
             break;
           }
 
+          case "ADD_MEDICINE": {
+            await apiFetch(
+              `${process.env.REACT_APP_API_URL}/api/pharmacy/add`,
+              {
+                method: "POST",
+                body: JSON.stringify(item.payload),
+              },
+            );
+
+            break;
+          }
+
+          case "UPDATE_MEDICINE": {
+            await apiFetch(
+              `${process.env.REACT_APP_API_URL}/api/pharmacy/update/${item.medicineId}`,
+              {
+                method: "PUT",
+                body: JSON.stringify(item.payload),
+              },
+            );
+
+            break;
+          }
+
+          case "DELETE_MEDICINE": {
+            await apiFetch(
+              `${process.env.REACT_APP_API_URL}/api/pharmacy/delete/${item.medicineId}`,
+              {
+                method: "DELETE",
+              },
+            );
+
+            break;
+          }
+
           default:
             break;
         }

@@ -17,6 +17,13 @@ router.get(
   checkPermission("pharmacy"),
   controller.getPendingPrescriptions,
 );
+
+router.get(
+  "/stats",
+  auth,
+  checkPermission("pharmacy"),
+  controller.getPharmacyStats,
+);
 router.get(
   "/queue",
   auth,
