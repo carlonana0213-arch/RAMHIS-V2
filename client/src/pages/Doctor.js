@@ -89,6 +89,7 @@ function Doctor() {
           department: doctorDepartment,
           role: storedUser?.role,
           all: useAllRecords,
+          currentMission,
         });
 
         setPatients(queue.patients || []);
@@ -111,7 +112,7 @@ function Doctor() {
       doctorDepartment,
       storedUser?.role,
       showAllRecords,
-    ]
+    ],
   );
 
   useEffect(() => {
@@ -148,7 +149,7 @@ function Doctor() {
       safeLoadQueue({ all: false });
 
       alert(
-        `Mission started: ${data.eventTitle}\nDoctor queue has been reset for the new mission.`
+        `Mission started: ${data.eventTitle}\nDoctor queue has been reset for the new mission.`,
       );
     };
 
@@ -209,7 +210,17 @@ function Doctor() {
     try {
       const fullPatient = await getPatientById(patient._id);
 
-      setCurrentPatient(fullPatient || patient);
+      const selected = fullPatient || patient;
+
+      // fill patient card
+      setCurrentPatient(selected);
+
+      // move consulted patient to top of queue
+      setPatients((prev) => {
+        const remaining = prev.filter((p) => p._id !== patient._id);
+
+        return [selected, ...remaining];
+      });
     } catch (err) {
       console.error(err);
     }

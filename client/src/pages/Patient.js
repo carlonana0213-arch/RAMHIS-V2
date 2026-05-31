@@ -87,6 +87,7 @@ const Patient = () => {
             search: debouncedSearch,
             department: departmentFilter,
             all: useAllRecords,
+            currentMission,
           }),
           getQueueSummary({
             all: useAllRecords,

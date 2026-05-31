@@ -133,6 +133,7 @@ export const getPatientQueue = async ({
   search = "",
   department = "All",
   all = false,
+  currentMission = null,
 } = {}) => {
   try {
     // OFFLINE MODE
@@ -141,6 +142,13 @@ export const getPatientQueue = async ({
 
       // remove released
       patients = patients.filter((p) => p.status !== "released");
+
+      // mission filter (offline)
+      if (!all && currentMission?._id) {
+        patients = patients.filter((p) => {
+          return p.eventId === currentMission._id;
+        });
+      }
 
       // search
       if (search.trim()) {
@@ -194,7 +202,7 @@ export const getPatientQueue = async ({
     const data = await apiFetch(`${API}/queue?${params.toString()}`);
 
     // keep offline cache fresh
-    syncOfflineQueue({ all });
+    syncOfflineQueue({ all: true });
 
     return data;
   } catch (err) {
@@ -276,6 +284,7 @@ export const getDoctorQueue = async ({
   department = "General",
   role = "doctor",
   all = false,
+  currentMission = null,
 } = {}) => {
   try {
     // OFFLINE MODE
@@ -284,6 +293,11 @@ export const getDoctorQueue = async ({
 
       // remove released
       patients = patients.filter((p) => p.status !== "released");
+
+      // mission filter
+      if (!all && currentMission?._id) {
+        patients = patients.filter((p) => p.eventId === currentMission._id);
+      }
 
       // department logic
       if (role !== "admin" && !search.trim()) {
