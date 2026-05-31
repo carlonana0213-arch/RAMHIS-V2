@@ -32,18 +32,6 @@ function PharmacyQueue() {
 
   const isFetching = useRef(false);
 
-  const resetPharmacyQueue = () => {
-    setPrescriptions([]);
-    setTotalPrescriptions(0);
-    setTotalPages(1);
-    setCurrentPage(1);
-    setExpandedPatients({});
-    setStats({
-      pending: 0,
-      completed: 0,
-    });
-  };
-
   const loadPrescriptions = async () => {
     if (isFetching.current) return;
 
@@ -74,7 +62,7 @@ function PharmacyQueue() {
 
       // ONLINE FETCH
       const data = await apiFetch(
-        `${API_BASE_URL}/api/prescriptions/queue?page=${currentPage}&search=${search}&filter=${filter}`
+        `${API_BASE_URL}/api/prescriptions/queue?page=${currentPage}&search=${search}&filter=${filter}`,
       );
 
       const queue = data.prescriptions || [];
@@ -88,7 +76,7 @@ function PharmacyQueue() {
       // stats
       try {
         const pharmacyStats = await apiFetch(
-          `${API_BASE_URL}/api/prescriptions/stats`
+          `${API_BASE_URL}/api/prescriptions/stats`,
         );
 
         setStats({
@@ -104,7 +92,7 @@ function PharmacyQueue() {
         queue.map((p) => ({
           ...p,
           patientId: p.patient?._id,
-        }))
+        })),
       );
     } catch (err) {
       console.error("Pharmacy queue error:", err);
@@ -126,23 +114,7 @@ function PharmacyQueue() {
   useEffect(() => {
     loadPrescriptions();
 
-    const handleQueueUpdated = () => {
-      loadPrescriptions();
-    };
-
-    const handleMissionStarted = () => {
-      resetPharmacyQueue();
-      loadPrescriptions();
-    };
-
-    const handleMissionCompleted = () => {
-      resetPharmacyQueue();
-      loadPrescriptions();
-    };
-
-    socket.on("queueUpdated", handleQueueUpdated);
-    socket.on("mission_started", handleMissionStarted);
-    socket.on("mission_completed", handleMissionCompleted);
+    socket.on("queueUpdated", loadPrescriptions);
 
     const timer = setInterval(() => {
       if (!document.hidden) {
@@ -151,9 +123,7 @@ function PharmacyQueue() {
     }, 60000);
 
     return () => {
-      socket.off("queueUpdated", handleQueueUpdated);
-      socket.off("mission_started", handleMissionStarted);
-      socket.off("mission_completed", handleMissionCompleted);
+      socket.off("queueUpdated", loadPrescriptions);
       clearInterval(timer);
     };
   }, [currentPage, search, filter]);
@@ -179,10 +149,10 @@ function PharmacyQueue() {
                     ...item,
                     isGiven: true,
                   }
-                : item
+                : item,
             ),
           };
-        })
+        }),
       );
 
       // OFFLINE → queue sync
@@ -196,7 +166,7 @@ function PharmacyQueue() {
         });
 
         setAlertMessage(
-          "Medicine marked as given (offline). Will sync automatically."
+          "Medicine marked as given (offline). Will sync automatically.",
         );
 
         return;
@@ -215,13 +185,13 @@ function PharmacyQueue() {
         `${API_BASE_URL}/api/prescriptions/${prescriptionId}/${item._id}`,
         {
           method: "PATCH",
-        }
+        },
       );
 
       setAlertMessage(
         result.patientReleased
           ? "Prescription completed. Patient released."
-          : "Prescription marked as given"
+          : "Prescription marked as given",
       );
 
       loadPrescriptions();
@@ -378,12 +348,6 @@ function PharmacyQueue() {
                 ))}
               </tbody>
             </table>
-
-            {prescriptions.length === 0 && (
-              <div className="empty-queue-message">
-                No prescriptions in queue for the current mission.
-              </div>
-            )}
 
             {totalPrescriptions > 0 && (
               <div className="pharmacy-pagination">
