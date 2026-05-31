@@ -1,19 +1,55 @@
 const Prescription = require("../models/Prescription");
 const Medicine = require("../models/Medicine");
 const Patient = require("../models/Patient");
+const logAudit = require("../utils/auditLogger");
+
+const getMedicineName = (medicine) => {
+  return (
+    medicine?.names?.[0] ||
+    medicine?.name ||
+    "Medicine"
+  );
+};
+
 exports.createPrescription = async (req, res) => {
   try {
     const { patient, doctor, items } = req.body;
+
+    const patientRecord = await Patient.findById(patient);
+
+    if (!patientRecord) {
+      return res.status(404).json({
+        message: "Patient not found",
+      });
+    }
+
     const prescription = await Prescription.create({
       patient,
       doctor,
       items,
       status: "Pending",
+      eventId: patientRecord.eventId || null,
+      eventTitle: patientRecord.eventTitle || "",
     });
 
     const io = req.app.get("io");
 
     io.emit("queueUpdated");
+
+    await logAudit(req, {
+      module: "Consultation",
+      action: "Create Prescription",
+      description: `Created prescription for ${patientRecord.generalInfo?.name || "Unknown Patient"}.`,
+      targetId: prescription._id,
+      targetName: patientRecord.generalInfo?.name || "Unknown Patient",
+      location: patientRecord.location || "System",
+      eventId: patientRecord.eventId,
+      eventTitle: patientRecord.eventTitle,
+      metadata: {
+        itemCount: items?.length || 0,
+        status: prescription.status,
+      },
+    });
 
     res.status(201).json(prescription);
   } catch (err) {
@@ -266,6 +302,26 @@ exports.markAsGiven = async (req, res) => {
     }
 
     await prescription.save();
+
+    const patientRecord = await Patient.findById(prescription.patient);
+
+    await logAudit(req, {
+      module: "Medicine Release",
+      action: "Medicine Given",
+      description: `Released ${item.quantity} ${getMedicineName(medicine)} to ${patientRecord?.generalInfo?.name || "Unknown Patient"}.`,
+      targetId: prescription._id,
+      targetName: getMedicineName(medicine),
+      location: patientRecord?.location || "Pharmacy",
+      eventId: patientRecord?.eventId || prescription.eventId,
+      eventTitle: patientRecord?.eventTitle || prescription.eventTitle,
+      metadata: {
+        medicineId: medicine._id,
+        medicineName: getMedicineName(medicine),
+        quantityGiven: item.quantity,
+        remainingStock: medicine.quantity,
+        prescriptionStatus: prescription.status,
+      },
+    });
 
     // =====================
     // CHECK ALL PRESCRIPTIONS

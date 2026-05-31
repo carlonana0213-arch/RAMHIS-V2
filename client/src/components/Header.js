@@ -16,6 +16,7 @@ import {
   FaUserCircle,
   FaClock,
   FaBoxes,
+  FaHistory,
 } from "react-icons/fa";
 import { MdOutlineAnalytics } from "react-icons/md";
 
@@ -89,6 +90,20 @@ function Header({ collapsed, toggleSidebar }) {
             <span className="nav-item">
               <FaUserShield className="nav-icon" />
               {!collapsed && "  User Management"}
+            </span>
+          </NavLink>
+        )}
+
+        {hasAccess("admin") && (
+          <NavLink
+            to="/audit-log"
+            className={({ isActive }) =>
+              isActive ? "nav-link active" : "nav-link"
+            }
+          >
+            <span className="nav-item">
+              <FaHistory className="nav-icon" />
+              {!collapsed && "  Audit Log"}
             </span>
           </NavLink>
         )}

@@ -1,4 +1,5 @@
 const Patient = require("../models/Patient");
+<<<<<<< HEAD
 const Event = require("../models/Event");
 
 const getMissionFilter = async (req) => {
@@ -20,6 +21,9 @@ const getMissionFilter = async (req) => {
     eventId: ongoingEvent._id,
   };
 };
+=======
+const logAudit = require("../utils/auditLogger");
+>>>>>>> 550bcc5f (AuditLog)
 
 exports.getAllPatients = async (req, res) => {
   try {
@@ -102,6 +106,25 @@ exports.createPatient = async (req, res) => {
 
     io.emit("queueUpdated");
 
+<<<<<<< HEAD
+=======
+    await logAudit(req, {
+      module: "Registration",
+      action: "Add Patient",
+      description: `Added patient ${patient.generalInfo?.name || "Unknown Patient"} to the queue.`,
+      targetId: patient._id,
+      targetName: patient.generalInfo?.name || "Unknown Patient",
+      location: patient.location,
+      eventId: patient.eventId,
+      eventTitle: patient.eventTitle,
+      metadata: {
+        department: patient.department,
+        status: patient.status,
+        isPriority: patient.isPriority,
+      },
+    });
+
+>>>>>>> 550bcc5f (AuditLog)
     res.status(201).json(patient);
   } catch (err) {
     console.error("MONGOOSE SAVE ERROR:", err);
@@ -167,6 +190,24 @@ exports.updatePatient = async (req, res) => {
 
     io.emit("queueUpdated");
 
+    if (updated) {
+      await logAudit(req, {
+        module: "Registration",
+        action: req.body.status ? "Update Patient Status" : "Update Patient",
+        description: `Updated patient ${updated.generalInfo?.name || "Unknown Patient"}.`,
+        targetId: updated._id,
+        targetName: updated.generalInfo?.name || "Unknown Patient",
+        location: updated.location,
+        eventId: updated.eventId,
+        eventTitle: updated.eventTitle,
+        metadata: {
+          updatedFields: Object.keys(req.body || {}),
+          status: updated.status,
+          department: updated.department,
+        },
+      });
+    }
+
     res.json(updated);
   } catch (err) {
     console.error(err);
@@ -178,9 +219,37 @@ exports.updatePatient = async (req, res) => {
 };
 
 exports.deletePatient = async (req, res) => {
-  const { id } = req.params;
-  await Patient.findByIdAndDelete(id);
-  res.json({ msg: "Patient deleted" });
+  try {
+    const { id } = req.params;
+
+    const patient = await Patient.findById(id);
+
+    if (!patient) {
+      return res.status(404).json({
+        message: "Patient not found",
+      });
+    }
+
+    await Patient.findByIdAndDelete(id);
+
+    await logAudit(req, {
+      module: "Registration",
+      action: "Delete Patient",
+      description: `Deleted patient ${patient.generalInfo?.name || "Unknown Patient"}.`,
+      targetId: patient._id,
+      targetName: patient.generalInfo?.name || "Unknown Patient",
+      location: patient.location,
+      eventId: patient.eventId,
+      eventTitle: patient.eventTitle,
+    });
+
+    res.json({ msg: "Patient deleted" });
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to delete patient",
+      error: err.message,
+    });
+  }
 };
 
 exports.getPatientQueue = async (req, res) => {
@@ -290,6 +359,24 @@ exports.addDoctorRecord = async (req, res) => {
 
     io.emit("queueUpdated");
 
+    if (updated) {
+      await logAudit(req, {
+        module: "Consultation",
+        action: "Add Doctor Record",
+        description: `Added doctor record for ${updated.generalInfo?.name || "Unknown Patient"}.`,
+        targetId: updated._id,
+        targetName: updated.generalInfo?.name || "Unknown Patient",
+        location: updated.location,
+        eventId: updated.eventId,
+        eventTitle: updated.eventTitle,
+        metadata: {
+          doctorName: req.body.doctorName,
+          department: req.body.department,
+          diagnosis: req.body.diagnosis,
+        },
+      });
+    }
+
     res.json(updated);
   } catch (err) {
     res.status(500).json({
@@ -334,6 +421,21 @@ exports.deleteDoctorRecord = async (req, res) => {
     const io = req.app.get("io");
 
     io.emit("queueUpdated");
+
+    await logAudit(req, {
+      module: "Consultation",
+      action: "Delete Doctor Record",
+      description: `Deleted doctor record for ${patient.generalInfo?.name || "Unknown Patient"}.`,
+      targetId: patient._id,
+      targetName: patient.generalInfo?.name || "Unknown Patient",
+      location: patient.location,
+      eventId: patient.eventId,
+      eventTitle: patient.eventTitle,
+      metadata: {
+        deletedBy,
+        deletedAt,
+      },
+    });
 
     res.json(patient);
   } catch (err) {

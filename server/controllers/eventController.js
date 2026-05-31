@@ -1,5 +1,6 @@
 const Event = require("../models/Event");
 const ChatThread = require("../models/ChatThread");
+const logAudit = require("../utils/auditLogger");
 
 let io = null;
 
@@ -186,9 +187,27 @@ exports.createEvent = async (req, res) => {
 
     emitEventsUpdated(event._id);
 
+<<<<<<< HEAD
     if (event.status === "Ongoing") {
       emitMissionStarted(event);
     }
+=======
+    await logAudit(req, {
+      module: "Events",
+      action: "Create Event",
+      description: `Created event ${event.title}.`,
+      targetId: event._id,
+      targetName: event.title,
+      location: event.location,
+      eventId: event._id,
+      eventTitle: event.title,
+      metadata: {
+        type: event.type,
+        status: event.status,
+        date: event.date,
+      },
+    });
+>>>>>>> 550bcc5f (AuditLog)
 
     res.status(201).json({
       ok: true,
@@ -247,6 +266,7 @@ exports.updateEvent = async (req, res) => {
 
     emitEventsUpdated(event._id);
 
+<<<<<<< HEAD
     if (req.body.status === "Ongoing" && previousEvent.status !== "Ongoing") {
       emitMissionStarted(event);
     }
@@ -257,6 +277,23 @@ exports.updateEvent = async (req, res) => {
     ) {
       emitMissionCompleted(event);
     }
+=======
+    await logAudit(req, {
+      module: "Events",
+      action: "Update Event",
+      description: `Updated event ${event.title}.`,
+      targetId: event._id,
+      targetName: event.title,
+      location: event.location,
+      eventId: event._id,
+      eventTitle: event.title,
+      metadata: {
+        updatedFields: Object.keys(req.body || {}),
+        type: event.type,
+        status: event.status,
+      },
+    });
+>>>>>>> 550bcc5f (AuditLog)
 
     res.status(200).json({
       ok: true,
@@ -294,6 +331,17 @@ exports.deleteEvent = async (req, res) => {
 
     emitEventsUpdated(event._id);
 
+    await logAudit(req, {
+      module: "Events",
+      action: "Delete Event",
+      description: `Deleted event ${event.title}.`,
+      targetId: event._id,
+      targetName: event.title,
+      location: event.location,
+      eventId: event._id,
+      eventTitle: event.title,
+    });
+    
     res.status(200).json({
       ok: true,
       message: "Event deleted successfully",
@@ -357,6 +405,17 @@ exports.joinEvent = async (req, res) => {
 
     emitEventsUpdated(event._id);
 
+    await logAudit(req, {
+      module: "Events",
+      action: "Join Event",
+      description: `Submitted join request for ${event.title}.`,
+      targetId: event._id,
+      targetName: event.title,
+      location: event.location,
+      eventId: event._id,
+      eventTitle: event.title,
+    });
+
     res.status(200).json({
       ok: true,
       message: "Join request submitted successfully",
@@ -392,6 +451,17 @@ exports.leaveEvent = async (req, res) => {
     await event.save();
 
     emitEventsUpdated(event._id);
+
+    await logAudit(req, {
+      module: "Events",
+      action: "Leave Event",
+      description: `Cancelled join request for ${event.title}.`,
+      targetId: event._id,
+      targetName: event.title,
+      location: event.location,
+      eventId: event._id,
+      eventTitle: event.title,
+    });
 
     res.status(200).json({
       ok: true,
@@ -505,6 +575,21 @@ exports.updateParticipantStatus = async (req, res) => {
       .populate("participants.userId", "name email role");
 
     emitEventsUpdated(eventId);
+
+    await logAudit(req, {
+      module: "Events",
+      action: `${status} Event Participant`,
+      description: `Marked participant as ${status} for ${event.title}.`,
+      targetId: event._id,
+      targetName: event.title,
+      location: event.location,
+      eventId: event._id,
+      eventTitle: event.title,
+      metadata: {
+        participantId: userId,
+        participantStatus: status,
+      },
+    });
 
     res.status(200).json({
       ok: true,

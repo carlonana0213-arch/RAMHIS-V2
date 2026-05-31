@@ -16,6 +16,7 @@ import Dashboard from "./pages/Dashboard.js";
 import Doctor from "./pages/Doctor.js";
 import EventManagement from "./pages/EventManagement";
 import ConnectionStatus from "./components/ConnectionStatus";
+import AuditLog from "./pages/AuditLog";
 function App() {
   return (
     <Router>
@@ -150,6 +151,16 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+  path="/audit-log"
+  element={
+    <ProtectedRoute>
+      <AppLayout>
+        <AuditLog />
+      </AppLayout>
+    </ProtectedRoute>
+  }
+/>
       </Routes>
     </Router>
   );

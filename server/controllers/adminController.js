@@ -1,6 +1,7 @@
 const User = require("../models/user");
 const nodemailer = require("nodemailer");
 const bcrypt = require("bcryptjs");
+const logAudit = require("../utils/auditLogger");
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -54,6 +55,20 @@ exports.approveUser = async (req, res) => {
   `,
     });
 
+    await logAudit(req, {
+      module: "Accounts",
+      action: "Approve User",
+      description: `Approved user ${user.name || user.email}.`,
+      targetId: user._id,
+      targetName: user.name || user.email,
+      location: "Account Management",
+      metadata: {
+        email: user.email,
+        role: user.role,
+        verificationStatus: user.verificationStatus,
+      },
+    });
+
     res.json({ msg: "User approved and email sent", user });
   } catch (err) {
     res.status(500).json({ msg: "Server error" });
@@ -79,6 +94,20 @@ exports.rejectUser = async (req, res) => {
         msg: "User not found",
       });
     }
+
+    await logAudit(req, {
+      module: "Accounts",
+      action: "Reject User",
+      description: `Rejected user ${user.name || user.email}.`,
+      targetId: user._id,
+      targetName: user.name || user.email,
+      location: "Account Management",
+      metadata: {
+        email: user.email,
+        role: user.role,
+        verificationStatus: user.verificationStatus,
+      },
+    });
 
     res.json({
       ok: true,
@@ -124,6 +153,20 @@ exports.updateUser = async (req, res) => {
       updates,
       { new: true }
     );
+
+    await logAudit(req, {
+      module: "Accounts",
+      action: "Reject User",
+      description: `Rejected user ${user.name || user.email}.`,
+      targetId: user._id,
+      targetName: user.name || user.email,
+      location: "Account Management",
+      metadata: {
+        email: user.email,
+        role: user.role,
+        verificationStatus: user.verificationStatus,
+      },
+    });
 
     res.json({
       ok: true,
@@ -185,6 +228,28 @@ exports.updateUserStatus = async (req, res) => {
       { new: true }
     );
 
+    if (user) {
+      await logAudit(req, {
+        module: "Accounts",
+        action:
+          verificationStatus === "Approved"
+            ? "Reactivate User"
+            : verificationStatus === "Deactivated"
+              ? "Deactivate User"
+              : "Update User Status",
+        description: `Changed ${user.name || user.email} status to ${verificationStatus}.`,
+        targetId: user._id,
+        targetName: user.name || user.email,
+        location: "Account Management",
+        metadata: {
+          verificationStatus,
+          status,
+          is_verified,
+          isActive,
+        },
+      });
+    }
+
     res.json({
       ok: true,
       data: user,
@@ -215,6 +280,19 @@ exports.resetUserPassword = async (req, res) => {
         <p><b>Email:</b> ${user.email}</p>
         <p><b>New Temporary Password:</b> ${tempPassword}</p>
       `,
+    });
+
+    await logAudit(req, {
+      module: "Accounts",
+      action: "Reset User Password",
+      description: `Reset password for ${user.name || user.email}.`,
+      targetId: user._id,
+      targetName: user.name || user.email,
+      location: "Account Management",
+      metadata: {
+        email: user.email,
+        role: user.role,
+      },
     });
 
     res.json({

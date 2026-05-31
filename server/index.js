@@ -79,11 +79,13 @@ app.use("/api/events", eventRoutes);
 app.use("/api/prescriptions", require("./routes/prescriptionRoutes"));
 app.use("/pharmacy", pharmacyRoutes);
 app.use("/api/admin", require("./routes/adminRoutes"));
+app.use("/api/audit-logs", require("./routes/auditLogRoutes"));
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/predictive-analytics", predictiveAnalyticsRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/users", require("./routes/userRoutes"));
+
 
 const PORT = process.env.PORT || 5000;
 

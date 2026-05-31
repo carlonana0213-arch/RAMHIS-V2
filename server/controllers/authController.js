@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const sgMail = require("@sendgrid/mail");
+const logAudit = require("../utils/auditLogger");
 
 exports.register = async (req, res) => {
   const {
@@ -153,6 +154,24 @@ proofOfDoctorate:
 
     await user.save();
 
+    const logAudit = require("../utils/auditLogger");
+    await logAudit(req, {
+      userId: user._id,
+      userName: user.name || user.full_name || user.email,
+      userRole: user.role,
+      module: "Authentication",
+      action: "Sign Up",
+      description: `${user.name || user.email} signed up and is awaiting admin approval.`,
+      targetId: user._id,
+      targetName: user.name || user.email,
+      location: "System",
+      metadata: {
+        email: user.email,
+        role: user.role,
+        verificationStatus: user.verificationStatus,
+      },
+    });
+
     return res.json({
       ok: true,
       userId: user._id,
@@ -210,6 +229,22 @@ exports.login = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "30d" },
     );
+
+    await logAudit(req, {
+      userId: user._id,
+      userName: user.name || user.full_name || user.email,
+      userRole: user.role,
+      module: "Authentication",
+      action: "Login",
+      description: `${user.name || user.email} logged in.`,
+      targetId: user._id,
+      targetName: user.name || user.email,
+      location: "System",
+      metadata: {
+        email: user.email,
+        role: user.role,
+      },
+    });
 
     res.json({
       ok: true,
