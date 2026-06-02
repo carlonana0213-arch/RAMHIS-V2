@@ -287,7 +287,7 @@ exports.getPatientQueue = async (req, res) => {
         generalInfo.age
         generalInfo.sex
         generalInfo.gender
-      `,
+      `
       )
       .sort({
         isPriority: -1,
@@ -317,7 +317,7 @@ exports.updatePatientInfo = async (req, res) => {
     const updatedPatient = await Patient.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true, runValidators: true },
+      { new: true, runValidators: true }
     );
 
     const io = req.app.get("io");
@@ -346,7 +346,7 @@ exports.addDoctorRecord = async (req, res) => {
       {
         $push: { doctorSheets: record },
       },
-      { new: true },
+      { new: true }
     );
 
     const io = req.app.get("io");
@@ -447,7 +447,7 @@ exports.getLocations = async (req, res) => {
 
     // remove empty values
     const cleanedLocations = locations.filter(
-      (location) => location && location.trim() !== "",
+      (location) => location && location.trim() !== ""
     );
 
     res.json(cleanedLocations);
@@ -485,7 +485,7 @@ exports.getAnalyticsPatients = async (req, res) => {
           location
           visitPlace
           doctorSheets
-        `,
+        `
       )
       .sort({
         missionDate: -1,
@@ -549,7 +549,7 @@ exports.syncOfflineQueue = async (req, res) => {
         obstetricHistory
         perinatalHistory
         initComplaint
-      `,
+      `
       )
       .sort({
         isPriority: -1,
@@ -690,7 +690,7 @@ exports.getDoctorQueue = async (req, res) => {
           generalInfo.age
           generalInfo.sex
           generalInfo.gender
-        `,
+        `
       )
       .sort({
         isPriority: -1,
