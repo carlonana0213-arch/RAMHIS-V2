@@ -346,35 +346,48 @@ exports.addDoctorRecord = async (req, res) => {
       {
         $push: { doctorSheets: record },
       },
-      { new: true }
+      {
+        new: true,
+        runValidators: true,
+      },
     );
+
+    if (!updated) {
+      return res.status(404).json({
+        msg: "Patient not found",
+      });
+    }
 
     const io = req.app.get("io");
 
     io.emit("queueUpdated");
 
-    if (updated) {
-      await logAudit(req, {
-        module: "Consultation",
-        action: "Add Doctor Record",
-        description: `Added doctor record for ${updated.generalInfo?.name || "Unknown Patient"}.`,
-        targetId: updated._id,
-        targetName: updated.generalInfo?.name || "Unknown Patient",
-        location: updated.location,
-        eventId: updated.eventId,
-        eventTitle: updated.eventTitle,
-        metadata: {
-          doctorName: req.body.doctorName,
-          department: req.body.department,
-          diagnosis: req.body.diagnosis,
-        },
-      });
-    }
+    await logAudit(req, {
+      module: "Consultation",
+      action: "Add Doctor Record",
+      description: `Added doctor record for ${
+        updated.generalInfo?.name || "Unknown Patient"
+      }.`,
+      targetId: updated._id,
+      targetName:
+        updated.generalInfo?.name || "Unknown Patient",
+      location: updated.location,
+      eventId: updated.eventId,
+      eventTitle: updated.eventTitle,
+      metadata: {
+        doctorName: req.body.doctorName,
+        department: req.body.department,
+        diagnosis: req.body.diagnosis,
+      },
+    });
 
     res.json(updated);
   } catch (err) {
+    console.error("ADD DOCTOR RECORD ERROR:", err);
+
     res.status(500).json({
       msg: "Error adding record",
+      error: err.message,
     });
   }
 };
