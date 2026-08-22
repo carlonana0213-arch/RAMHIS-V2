@@ -656,18 +656,18 @@ exports.getDoctorQueue = async (req, res) => {
 
     if (!search.trim()) {
       if (queueFilter === "priority") {
-        filter.isPriority = true;
+  filter.isPriority = true;
 
-        filter.status = {
-          $nin: ["released", "unconsulted"],
-        };
-      }
+  filter.status = {
+    $in: ["waiting", "beingSeen"],
+  };
+}
 
-      if (queueFilter === "all") {
-        filter.status = {
-          $nin: ["released", "unconsulted"],
-        };
-      }
+if (queueFilter === "all") {
+  filter.status = {
+    $in: ["waiting", "beingSeen"],
+  };
+}
 
       if (queueFilter === "unconsulted") {
         filter.status = "unconsulted";
