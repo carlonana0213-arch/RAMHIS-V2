@@ -37,9 +37,11 @@ app.disable("x-powered-by");
 app.use(
   cors({
     origin: [
+      "http://localhost:5173",
       "http://localhost:3000",
       "http://localhost:3001",
       "https://ramhis-v2-2.onrender.com",
+      "https://ramhis-v3.onrender.com",
     ],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -85,7 +87,6 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/predictive-analytics", predictiveAnalyticsRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/users", require("./routes/userRoutes"));
-
 
 const PORT = process.env.PORT || 5000;
 
