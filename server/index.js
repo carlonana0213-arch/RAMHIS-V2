@@ -41,6 +41,8 @@ app.use(
       "http://localhost:3001",
       "http://localhost:5173",
       "https://ramhis-v2-2.onrender.com",
+      "https://ramhis-v3.onrender.com",
+
     ],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
