@@ -335,7 +335,7 @@ exports.deleteEvent = async (req, res) => {
       eventId: event._id,
       eventTitle: event.title,
     });
-
+    
     res.status(200).json({
       ok: true,
       message: "Event deleted successfully",
@@ -379,7 +379,7 @@ exports.joinEvent = async (req, res) => {
     }
 
     const alreadyJoined = event.participants.some(
-      (participant) => participant.userId.toString() === userId.toString(),
+      (participant) => participant.userId.toString() === userId.toString()
     );
 
     if (alreadyJoined) {
@@ -439,7 +439,7 @@ exports.leaveEvent = async (req, res) => {
     }
 
     event.participants = event.participants.filter(
-      (participant) => participant.userId.toString() !== userId.toString(),
+      (participant) => participant.userId.toString() !== userId.toString()
     );
 
     await event.save();
@@ -494,7 +494,7 @@ exports.updateParticipantStatus = async (req, res) => {
     }
 
     const participant = event.participants.find(
-      (item) => item.userId.toString() === userId.toString(),
+      (item) => item.userId.toString() === userId.toString()
     );
 
     if (!participant) {

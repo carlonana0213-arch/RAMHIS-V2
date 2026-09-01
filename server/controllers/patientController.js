@@ -287,7 +287,7 @@ exports.getPatientQueue = async (req, res) => {
         generalInfo.age
         generalInfo.sex
         generalInfo.gender
-      `,
+      `
       )
       .sort({
         isPriority: -1,
@@ -317,7 +317,7 @@ exports.updatePatientInfo = async (req, res) => {
     const updatedPatient = await Patient.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true, runValidators: true },
+      { new: true, runValidators: true }
     );
 
     const io = req.app.get("io");
@@ -346,35 +346,48 @@ exports.addDoctorRecord = async (req, res) => {
       {
         $push: { doctorSheets: record },
       },
-      { new: true },
+      {
+        new: true,
+        runValidators: true,
+      },
     );
+
+    if (!updated) {
+      return res.status(404).json({
+        msg: "Patient not found",
+      });
+    }
 
     const io = req.app.get("io");
 
     io.emit("queueUpdated");
 
-    if (updated) {
-      await logAudit(req, {
-        module: "Consultation",
-        action: "Add Doctor Record",
-        description: `Added doctor record for ${updated.generalInfo?.name || "Unknown Patient"}.`,
-        targetId: updated._id,
-        targetName: updated.generalInfo?.name || "Unknown Patient",
-        location: updated.location,
-        eventId: updated.eventId,
-        eventTitle: updated.eventTitle,
-        metadata: {
-          doctorName: req.body.doctorName,
-          department: req.body.department,
-          diagnosis: req.body.diagnosis,
-        },
-      });
-    }
+    await logAudit(req, {
+      module: "Consultation",
+      action: "Add Doctor Record",
+      description: `Added doctor record for ${
+        updated.generalInfo?.name || "Unknown Patient"
+      }.`,
+      targetId: updated._id,
+      targetName:
+        updated.generalInfo?.name || "Unknown Patient",
+      location: updated.location,
+      eventId: updated.eventId,
+      eventTitle: updated.eventTitle,
+      metadata: {
+        doctorName: req.body.doctorName,
+        department: req.body.department,
+        diagnosis: req.body.diagnosis,
+      },
+    });
 
     res.json(updated);
   } catch (err) {
+    console.error("ADD DOCTOR RECORD ERROR:", err);
+
     res.status(500).json({
       msg: "Error adding record",
+      error: err.message,
     });
   }
 };
@@ -447,7 +460,7 @@ exports.getLocations = async (req, res) => {
 
     // remove empty values
     const cleanedLocations = locations.filter(
-      (location) => location && location.trim() !== "",
+      (location) => location && location.trim() !== ""
     );
 
     res.json(cleanedLocations);
@@ -485,7 +498,7 @@ exports.getAnalyticsPatients = async (req, res) => {
           location
           visitPlace
           doctorSheets
-        `,
+        `
       )
       .sort({
         missionDate: -1,
@@ -549,7 +562,7 @@ exports.syncOfflineQueue = async (req, res) => {
         obstetricHistory
         perinatalHistory
         initComplaint
-      `,
+      `
       )
       .sort({
         isPriority: -1,
@@ -656,18 +669,18 @@ exports.getDoctorQueue = async (req, res) => {
 
     if (!search.trim()) {
       if (queueFilter === "priority") {
-        filter.isPriority = true;
+  filter.isPriority = true;
 
-        filter.status = {
-          $nin: ["released", "unconsulted"],
-        };
-      }
+  filter.status = {
+    $in: ["waiting", "beingSeen"],
+  };
+}
 
-      if (queueFilter === "all") {
-        filter.status = {
-          $nin: ["released", "unconsulted"],
-        };
-      }
+if (queueFilter === "all") {
+  filter.status = {
+    $in: ["waiting", "beingSeen"],
+  };
+}
 
       if (queueFilter === "unconsulted") {
         filter.status = "unconsulted";
@@ -690,7 +703,7 @@ exports.getDoctorQueue = async (req, res) => {
           generalInfo.age
           generalInfo.sex
           generalInfo.gender
-        `,
+        `
       )
       .sort({
         isPriority: -1,
