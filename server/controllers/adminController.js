@@ -1,5 +1,6 @@
 const User = require("../models/user");
 const nodemailer = require("nodemailer");
+const sgMail = require("@sendgrid/mail");
 const bcrypt = require("bcryptjs");
 const logAudit = require("../utils/auditLogger");
 
