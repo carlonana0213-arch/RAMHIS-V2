@@ -3,18 +3,31 @@ const nodemailer = require("nodemailer");
 const bcrypt = require("bcryptjs");
 const logAudit = require("../utils/auditLogger");
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-
 const generateTempPassword = () => {
   return Math.random().toString(36).slice(-8);
 };
 
+const sendEmail = async ({ to, subject, html }) => {
+  if (!process.env.SENDGRID_API_KEY) {
+    throw new Error("SENDGRID_API_KEY is missing in runtime environment.");
+  }
+
+  if (!process.env.SENDGRID_FROM_EMAIL) {
+    throw new Error("SENDGRID_FROM_EMAIL is missing in runtime environment.");
+  }
+
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+  await sgMail.send({
+    to,
+    from: {
+      email: process.env.SENDGRID_FROM_EMAIL,
+      name: "RAMHIS",
+    },
+    subject,
+    html,
+  });
+};
 exports.getPendingUsers = async (req, res) => {
   try {
     const users = await User.find({ verificationStatus: "Pending" }).select(
@@ -50,17 +63,39 @@ exports.approveUser = async (req, res) => {
       { new: true },
     );
 
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+    await sendEmail({
       to: user.email,
       subject: "RAMHIS Account Approved",
       html: `
-        <h3>Your account has been approved</h3>
-        <p><b>Email:</b> ${user.email}</p>
-        <p><b>Temporary Password:</b> ${tempPassword}</p>
-        <p>Please log in and change your password immediately.</p>
-        <p>RAMHIS: https://ramhis-v2-2.onrender.com </P>
-      `,
+    <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+      <h2>RAMHIS Account Approved</h2>
+
+      <p>Hello ${user.name || "User"},</p>
+
+      <p>
+        Your RAMHIS account has been approved by an administrator.
+      </p>
+
+      <p><strong>Login Email:</strong> ${user.email}</p>
+
+      <p><strong>Temporary Password:</strong> ${tempPassword}</p>
+
+      <p>
+        Please log in using the temporary password above and change your
+        password immediately.
+      </p>
+
+      <p>
+        <strong>RAMHIS:</strong>
+        https://ramhis-v3.onrender.com
+      </p>
+
+      <p>
+        If you did not expect this account approval, please contact the
+        RAMHIS administrator.
+      </p>
+    </div>
+  `,
     });
 
     res.json({
@@ -264,23 +299,49 @@ exports.resetUserPassword = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
 
+    if (!user) {
+      return res.status(404).json({
+        ok: false,
+        message: "User not found",
+      });
+    }
+
     const tempPassword = generateTempPassword();
     const hashed = await bcrypt.hash(tempPassword, 10);
 
     user.password = hashed;
     user.tempPassword = tempPassword;
     user.mustChangePassword = true;
+
     await user.save();
 
-    // SEND EMAIL AGAIN
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+    await sendEmail({
       to: user.email,
-      subject: "Password Reset - RAMHIS",
+      subject: "RAMHIS Password Reset",
       html: `
-        <h3>Your password has been reset</h3>
-        <p><b>Email:</b> ${user.email}</p>
-        <p><b>New Temporary Password:</b> ${tempPassword}</p>
+        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+          <h2>RAMHIS Password Reset</h2>
+
+          <p>Hello ${user.name || "User"},</p>
+
+          <p>
+            An administrator has reset your RAMHIS password.
+          </p>
+
+          <p><strong>Login Email:</strong> ${user.email}</p>
+
+          <p><strong>Temporary Password:</strong> ${tempPassword}</p>
+
+          <p>
+            Please log in using this temporary password and change your
+            password immediately.
+          </p>
+
+          <p>
+            If you did not request this password reset, please contact
+            the RAMHIS administrator.
+          </p>
+        </div>
       `,
     });
 
@@ -299,8 +360,8 @@ exports.resetUserPassword = async (req, res) => {
 
     res.json({
       ok: true,
-      msg: "Password reset successful",
-      message: "Password reset successful",
+      msg: "Password reset successful and email sent",
+      message: "Password reset successful and email sent",
     });
   } catch (err) {
     console.error("RESET EMAIL ERROR:", err);
@@ -308,6 +369,7 @@ exports.resetUserPassword = async (req, res) => {
     res.status(500).json({
       ok: false,
       msg: err.message,
+      message: err.message,
     });
   }
 };
