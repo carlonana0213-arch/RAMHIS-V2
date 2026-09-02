@@ -79,6 +79,7 @@ initEventController(io);
 
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/patients", require("./routes/patientRoutes"));
+app.use("/api/sync-conflicts", require("./routes/syncConflictRoutes"));
 app.use("/api/events", eventRoutes);
 app.use("/api/prescriptions", require("./routes/prescriptionRoutes"));
 app.use("/pharmacy", pharmacyRoutes);
@@ -147,5 +148,5 @@ io.on("connection", (socket) => {
 });
 
 server.listen(PORT, () =>
-  console.log(`🚀 Server running with Socket.IO on port ${PORT}`),
+  console.log(`Server running with Socket.IO on port ${PORT}`),
 );
