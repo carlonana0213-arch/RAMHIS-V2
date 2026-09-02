@@ -1,6 +1,6 @@
 const Patient = require("../models/Patient");
 const Event = require("../models/Event");
-
+const { createOrAppendConflict } = require("./SyncConflictController");
 const getMissionFilter = async (req) => {
   const showAll = req.query.all === "true";
 
@@ -287,7 +287,7 @@ exports.getPatientQueue = async (req, res) => {
         generalInfo.age
         generalInfo.sex
         generalInfo.gender
-      `
+      `,
       )
       .sort({
         isPriority: -1,
@@ -317,7 +317,7 @@ exports.updatePatientInfo = async (req, res) => {
     const updatedPatient = await Patient.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
 
     const io = req.app.get("io");
@@ -336,27 +336,158 @@ exports.addDoctorRecord = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const record = {
-      ...req.body,
-      date: new Date(),
-    };
+    // ---------------------------------------------------------
+    // Offline synchronization metadata
+    // ---------------------------------------------------------
+    const syncMetadata = req.body?._sync || {};
 
-    const updated = await Patient.findByIdAndUpdate(
-      id,
-      {
-        $push: { doctorSheets: record },
-      },
-      {
-        new: true,
-        runValidators: true,
-      },
-    );
+    const { operationId = null, baseUpdatedAt = null } = syncMetadata;
 
-    if (!updated) {
+    // Remove synchronization metadata from the actual
+    // doctor record.
+    const { _sync, ...doctorRecordData } = req.body;
+
+    // ---------------------------------------------------------
+    // Get the CURRENT patient
+    // ---------------------------------------------------------
+    const currentPatient = await Patient.findById(id);
+
+    if (!currentPatient) {
       return res.status(404).json({
         msg: "Patient not found",
       });
     }
+
+    // ---------------------------------------------------------
+    // SERVER-SIDE CONFLICT DETECTION
+    // ---------------------------------------------------------
+    if (baseUpdatedAt) {
+      const clientBaseDate = new Date(baseUpdatedAt);
+      const serverUpdatedAt = currentPatient.updatedAt;
+
+      if (Number.isNaN(clientBaseDate.getTime()) || !serverUpdatedAt) {
+        return res.status(400).json({
+          msg: "Invalid synchronization version",
+          conflict: false,
+        });
+      }
+
+      const clientVersion = clientBaseDate.getTime();
+      const serverVersion = new Date(serverUpdatedAt).getTime();
+
+      // -----------------------------------------------------
+      // STALE VERSION = CONFLICT
+      // -----------------------------------------------------
+      if (clientVersion !== serverVersion) {
+        console.warn(
+          "[SYNC CONFLICT] Doctor record is based on an older patient version",
+          {
+            patientId: id,
+            operationId,
+            baseUpdatedAt,
+            serverUpdatedAt,
+          },
+        );
+
+        // ---------------------------------------------------
+        // Build the server candidate.
+        //
+        // This represents the version that was already
+        // accepted by the server.
+        // ---------------------------------------------------
+        const serverCandidate = {
+          ownerKey:
+            currentPatient.doctorSheets?.length > 0 &&
+            currentPatient.doctorSheets[currentPatient.doctorSheets.length - 1]
+              ?.doctorId
+              ? currentPatient.doctorSheets[
+                  currentPatient.doctorSheets.length - 1
+                ].doctorId
+              : req.user?.id,
+
+          operationId: `server-${currentPatient._id}-${serverUpdatedAt.getTime()}`,
+
+          data: currentPatient,
+
+          baseUpdatedAt: serverUpdatedAt,
+
+          source: "server",
+
+          createdAt: serverUpdatedAt,
+        };
+
+        // ---------------------------------------------------
+        // Build the incoming offline candidate.
+        // ---------------------------------------------------
+        const incomingCandidate = {
+          ownerKey: req.user?.id,
+
+          operationId: operationId || `offline-${Date.now()}`,
+
+          data: doctorRecordData,
+
+          baseUpdatedAt: clientBaseDate,
+
+          source: "offline",
+
+          createdAt: new Date(),
+        };
+
+        // ---------------------------------------------------
+        // Store the conflict.
+        // ---------------------------------------------------
+        const conflict = await createOrAppendConflict({
+          patientId: currentPatient._id,
+          entityType: "doctorRecord",
+          entityKey: id,
+          baseUpdatedAt: clientBaseDate,
+
+          incomingCandidate,
+
+          serverCandidate,
+        });
+
+        // ---------------------------------------------------
+        // Return conflict information to the client.
+        // ---------------------------------------------------
+        return res.status(409).json({
+          msg: "Sync conflict detected",
+
+          conflict: true,
+
+          conflictId: conflict._id,
+
+          entityType: "doctorRecord",
+
+          entityKey: id,
+
+          patientId: id,
+
+          operationId,
+
+          baseUpdatedAt,
+
+          serverUpdatedAt,
+
+          candidates: conflict.candidates,
+
+          serverData: currentPatient,
+        });
+      }
+    }
+
+    // ---------------------------------------------------------
+    // NO CONFLICT
+    // ---------------------------------------------------------
+
+    const record = {
+      ...doctorRecordData,
+      date: new Date(),
+    };
+
+    currentPatient.doctorSheets.push(record);
+
+    await currentPatient.save();
 
     const io = req.app.get("io");
 
@@ -366,22 +497,22 @@ exports.addDoctorRecord = async (req, res) => {
       module: "Consultation",
       action: "Add Doctor Record",
       description: `Added doctor record for ${
-        updated.generalInfo?.name || "Unknown Patient"
+        currentPatient.generalInfo?.name || "Unknown Patient"
       }.`,
-      targetId: updated._id,
-      targetName:
-        updated.generalInfo?.name || "Unknown Patient",
-      location: updated.location,
-      eventId: updated.eventId,
-      eventTitle: updated.eventTitle,
+      targetId: currentPatient._id,
+      targetName: currentPatient.generalInfo?.name || "Unknown Patient",
+      location: currentPatient.location,
+      eventId: currentPatient.eventId,
+      eventTitle: currentPatient.eventTitle,
       metadata: {
-        doctorName: req.body.doctorName,
-        department: req.body.department,
-        diagnosis: req.body.diagnosis,
+        doctorName: doctorRecordData.doctorName,
+        department: doctorRecordData.department,
+        diagnosis: doctorRecordData.diagnosis,
+        operationId,
       },
     });
 
-    res.json(updated);
+    res.json(currentPatient);
   } catch (err) {
     console.error("ADD DOCTOR RECORD ERROR:", err);
 
@@ -460,7 +591,7 @@ exports.getLocations = async (req, res) => {
 
     // remove empty values
     const cleanedLocations = locations.filter(
-      (location) => location && location.trim() !== ""
+      (location) => location && location.trim() !== "",
     );
 
     res.json(cleanedLocations);
@@ -498,7 +629,7 @@ exports.getAnalyticsPatients = async (req, res) => {
           location
           visitPlace
           doctorSheets
-        `
+        `,
       )
       .sort({
         missionDate: -1,
@@ -562,7 +693,7 @@ exports.syncOfflineQueue = async (req, res) => {
         obstetricHistory
         perinatalHistory
         initComplaint
-      `
+      `,
       )
       .sort({
         isPriority: -1,
@@ -669,18 +800,18 @@ exports.getDoctorQueue = async (req, res) => {
 
     if (!search.trim()) {
       if (queueFilter === "priority") {
-  filter.isPriority = true;
+        filter.isPriority = true;
 
-  filter.status = {
-    $in: ["waiting", "beingSeen"],
-  };
-}
+        filter.status = {
+          $in: ["waiting", "beingSeen"],
+        };
+      }
 
-if (queueFilter === "all") {
-  filter.status = {
-    $in: ["waiting", "beingSeen"],
-  };
-}
+      if (queueFilter === "all") {
+        filter.status = {
+          $in: ["waiting", "beingSeen"],
+        };
+      }
 
       if (queueFilter === "unconsulted") {
         filter.status = "unconsulted";
@@ -703,7 +834,7 @@ if (queueFilter === "all") {
           generalInfo.age
           generalInfo.sex
           generalInfo.gender
-        `
+        `,
       )
       .sort({
         isPriority: -1,
