@@ -84,6 +84,11 @@ const UserSchema = new mongoose.Schema({
     default: "",
   },
 
+  validIdUrl: {
+  type: String,
+  default: "",
+},
+
   profileImageUrl: {
     type: String,
     default: "",

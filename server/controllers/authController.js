@@ -79,6 +79,7 @@ exports.register = async (req, res) => {
 
   const licensePath = buildUploadPath(licenseFile);
   const doctoratePath = buildUploadPath(doctorateFile);
+  const validIdPath = licensePath;
 
   const normalizedDoctorInfo =
     normalizedRole.toLowerCase() === "doctor"
