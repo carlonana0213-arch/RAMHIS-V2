@@ -140,7 +140,7 @@ const PatientSchema = new mongoose.Schema(
 
   {
     timestamps: true,
-  }
+  },
 );
 
 PatientSchema.index({ createdAt: 1 });

@@ -53,11 +53,29 @@ exports.createOrAppendConflict = async ({
       (candidate) => candidate.operationId === incomingCandidate.operationId,
     );
 
+    // -----------------------------------------------------
+    // Keep the server candidate current.
+    // -----------------------------------------------------
+    if (serverCandidate) {
+      const serverIndex = conflict.candidates.findIndex(
+        (candidate) => candidate.source === "server",
+      );
+
+      if (serverIndex >= 0) {
+        conflict.candidates[serverIndex] = serverCandidate;
+      } else {
+        conflict.candidates.unshift(serverCandidate);
+      }
+    }
+
+    // -----------------------------------------------------
+    // Add the new offline candidate.
+    // -----------------------------------------------------
     if (!alreadyExists) {
       conflict.candidates.push(incomingCandidate);
-
-      await conflict.save();
     }
+
+    await conflict.save();
 
     return conflict;
   } catch (err) {
