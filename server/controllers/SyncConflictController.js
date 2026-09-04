@@ -96,6 +96,10 @@ exports.getPatientConflicts = async (req, res) => {
       patientId,
       status: "pending",
     })
+      .populate({
+        path: "candidates.ownerKey",
+        select: "name full_name role",
+      })
       .sort({ createdAt: -1 })
       .lean();
 
@@ -117,7 +121,12 @@ exports.getConflict = async (req, res) => {
   try {
     const { conflictId } = req.params;
 
-    const conflict = await SyncConflict.findById(conflictId).lean();
+    const conflict = await SyncConflict.findById(conflictId)
+      .populate({
+        path: "candidates.ownerKey",
+        select: "name full_name role",
+      })
+      .lean();
 
     if (!conflict) {
       return res.status(404).json({
