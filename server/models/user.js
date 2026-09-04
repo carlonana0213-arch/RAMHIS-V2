@@ -161,6 +161,23 @@ const UserSchema = new mongoose.Schema({
     default: "",
   },
 
+  volunteerInfo: {
+  organization: {
+    type: String,
+    default: "",
+  },
+
+  skills: {
+    type: String,
+    default: "",
+  },
+
+  proofOfId: {
+    type: String,
+    default: "",
+  },
+},
+
   otp_code: {
     type: String,
     default: null,

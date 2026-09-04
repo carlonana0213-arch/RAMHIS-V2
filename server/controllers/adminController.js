@@ -135,18 +135,18 @@ exports.rejectUser = async (req, res) => {
     }
 
     await logAudit(req, {
-      module: "Accounts",
-      action: "Reject User",
-      description: `Rejected user ${user.name || user.email}.`,
-      targetId: user._id,
-      targetName: user.name || user.email,
-      location: "Account Management",
-      metadata: {
-        email: user.email,
-        role: user.role,
-        verificationStatus: user.verificationStatus,
-      },
-    });
+  module: "Accounts",
+  action: "Update User",
+  description: `Updated user ${user.name || user.email}.`,
+  targetId: user._id,
+  targetName: user.name || user.email,
+  location: "Account Management",
+  metadata: {
+    email: user.email,
+    role: user.role,
+    verificationStatus: user.verificationStatus,
+  },
+});
 
     res.json({
       ok: true,
@@ -192,18 +192,18 @@ exports.updateUser = async (req, res) => {
     });
 
     await logAudit(req, {
-      module: "Accounts",
-      action: "Reject User",
-      description: `Rejected user ${user.name || user.email}.`,
-      targetId: user._id,
-      targetName: user.name || user.email,
-      location: "Account Management",
-      metadata: {
-        email: user.email,
-        role: user.role,
-        verificationStatus: user.verificationStatus,
-      },
-    });
+  module: "Accounts",
+  action: "Update User",
+  description: `Updated user ${user.name || user.email}.`,
+  targetId: user._id,
+  targetName: user.name || user.email,
+  location: "Account Management",
+  metadata: {
+    email: user.email,
+    role: user.role,
+    verificationStatus: user.verificationStatus,
+  },
+});
 
     res.json({
       ok: true,

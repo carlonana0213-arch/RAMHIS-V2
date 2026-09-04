@@ -82,30 +82,41 @@ exports.register = async (req, res) => {
   const validIdPath = licensePath;
 
   const normalizedDoctorInfo =
-    normalizedRole.toLowerCase() === "doctor"
-      ? {
-          ...(parsedDoctorInfo || {}),
+  normalizedRole.toLowerCase() === "doctor"
+    ? {
+        ...(parsedDoctorInfo || {}),
 
-          specialization:
-            parsedDoctorInfo?.specialization || specialty || "",
+        specialization:
+          parsedDoctorInfo?.specialization || specialty || "",
 
-          licenseNumber:
-            parsedDoctorInfo?.licenseNumber || prc_license_number || "",
+        licenseNumber:
+          parsedDoctorInfo?.licenseNumber || prc_license_number || "",
 
-          hospitalClinic:
-            parsedDoctorInfo?.hospitalClinic || hospital_clinic || "",
+        hospitalClinic:
+          parsedDoctorInfo?.hospitalClinic || hospital_clinic || "",
 
-          proofOfLicense:
-  licensePath || parsedDoctorInfo?.proofOfLicense || "",
+        proofOfLicense:
+          licensePath ||
+          parsedDoctorInfo?.proofOfLicense ||
+          "",
 
-proofOfDoctorate:
-  doctoratePath ||
-  licensePath ||
-  parsedDoctorInfo?.proofOfDoctorate ||
-  parsedDoctorInfo?.proofOfLicense ||
-  "",
-        }
-      : undefined;
+        proofOfDoctorate:
+          doctoratePath ||
+          licensePath ||
+          parsedDoctorInfo?.proofOfDoctorate ||
+          parsedDoctorInfo?.proofOfLicense ||
+          "",
+      }
+    : undefined;
+
+const normalizedVolunteerInfo =
+  normalizedRole.toLowerCase() === "volunteer"
+    ? {
+        organization: organization || "",
+        skills: skills || "",
+        proofOfId: validIdPath || "",
+      }
+    : undefined;
 
   const normalizedAcceptedTerms =
     accepted_terms === true || accepted_terms === "true";
