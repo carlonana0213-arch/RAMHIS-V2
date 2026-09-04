@@ -97,7 +97,19 @@ const PatientSchema = new mongoose.Schema(
 
     department: {
       type: String,
-      enum: ["Pediatrics", "Ortho", "Opta", "Dental", "Cardio", "General"],
+      enum: [
+        "Pediatrics",
+        "Neurology",
+        "Pathology",
+        "Circumcision",
+        "Surgery",
+        "PT",
+        "OBGyn",
+        "Dental",
+        "Ophthalmology",
+        "Dermatology",
+        "AdultMed",
+      ],
     },
 
     isPriority: {

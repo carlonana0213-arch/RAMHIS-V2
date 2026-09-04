@@ -737,11 +737,16 @@ exports.getQueueSummary = async (req, res) => {
 
     const formatted = {
       Pediatrics: 0,
-      Ortho: 0,
-      Opta: 0,
+      Neurology: 0,
+      Pathology: 0,
+      Circumcision: 0,
+      Surgery: 0,
+      PT: 0,
+      OBGyn: 0,
       Dental: 0,
-      Cardio: 0,
-      General: 0,
+      Ophthalmology: 0,
+      Dermatology: 0,
+      AdultMed: 0,
     };
 
     summary.forEach((item) => {
