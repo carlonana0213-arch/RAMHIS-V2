@@ -142,27 +142,28 @@ const normalizedVolunteerInfo =
     const hashedPassword = await bcrypt.hash(tempPassword, salt);
 
     user = new User({
-      name: normalizedName,
-      full_name: normalizedName,
+  name: normalizedName,
+  full_name: normalizedName,
 
-      email,
-      password: hashedPassword,
+  email,
+  password: hashedPassword,
 
-      role: normalizedRole,
-      account_type: normalizedRole,
+  role: normalizedRole,
+  account_type: normalizedRole,
 
-      volunteerType: normalizedVolunteerType,
-      doctorInfo: normalizedDoctorInfo,
+  volunteerType: normalizedVolunteerType,
+  volunteerInfo: normalizedVolunteerInfo,
+  doctorInfo: normalizedDoctorInfo,
 
-      contact_number,
-      birthdate,
-      birthday: birthdate,
-      bdate: birthdate,
-      accepted_terms: normalizedAcceptedTerms,
+  contact_number,
+  birthdate,
+  birthday: birthdate,
+  bdate: birthdate,
+  accepted_terms: normalizedAcceptedTerms,
 
-      tempPassword: password ? undefined : tempPassword,
-      mustChangePassword: password ? false : true,
-    });
+  tempPassword: password ? undefined : tempPassword,
+  mustChangePassword: password ? false : true,
+});
 
     await user.save();
 
