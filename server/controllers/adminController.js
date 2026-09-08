@@ -135,18 +135,18 @@ exports.rejectUser = async (req, res) => {
     }
 
     await logAudit(req, {
-  module: "Accounts",
-  action: "Update User",
-  description: `Updated user ${user.name || user.email}.`,
-  targetId: user._id,
-  targetName: user.name || user.email,
-  location: "Account Management",
-  metadata: {
-    email: user.email,
-    role: user.role,
-    verificationStatus: user.verificationStatus,
-  },
-});
+      module: "Accounts",
+      action: "Update User",
+      description: `Updated user ${user.name || user.email}.`,
+      targetId: user._id,
+      targetName: user.name || user.email,
+      location: "Account Management",
+      metadata: {
+        email: user.email,
+        role: user.role,
+        verificationStatus: user.verificationStatus,
+      },
+    });
 
     res.json({
       ok: true,
@@ -183,27 +183,175 @@ exports.getAllUsers = async (req, res) => {
 
 exports.updateUser = async (req, res) => {
   try {
-    const updates = { ...req.body };
+    const {
+      name,
+      email,
+      role,
+      age,
+      birthday,
+      birthdate,
+      verificationStatus,
+      department,
+      doctorInfo,
+      volunteerType,
+      volunteerInfo,
+    } = req.body;
 
-    delete updates.createdAt;
+    const updates = {
+      name,
+      email,
+      role,
+      age,
+      birthday,
+      birthdate,
+      verificationStatus,
+    };
 
-    const user = await User.findByIdAndUpdate(req.params.id, updates, {
-      new: true,
-    });
+    if (role === "Doctor") {
+      if (!department) {
+        return res.status(400).json({
+          ok: false,
+          message: "Department is required for doctors.",
+        });
+      }
+
+      updates.department = department;
+      updates.doctorInfo = doctorInfo;
+    } else {
+      // Remove department/doctor information when
+      // the account is no longer a doctor.
+      updates.department = undefined;
+      updates.doctorInfo = undefined;
+    }
+
+    if (role === "Volunteer") {
+      updates.volunteerType = volunteerType;
+      updates.volunteerInfo = volunteerInfo;
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { $set: updates },
+      {
+        new: true,
+        runValidators: true,
+      },
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        ok: false,
+        message: "User not found",
+      });
+    }
 
     await logAudit(req, {
-  module: "Accounts",
-  action: "Update User",
-  description: `Updated user ${user.name || user.email}.`,
-  targetId: user._id,
-  targetName: user.name || user.email,
-  location: "Account Management",
-  metadata: {
-    email: user.email,
-    role: user.role,
-    verificationStatus: user.verificationStatus,
-  },
-});
+      module: "Accounts",
+      action: "Update User",
+      description: `Updated user ${user.name || user.email}.`,
+      targetId: user._id,
+      targetName: user.name || user.email,
+      location: "Account Management",
+      metadata: {
+        email: user.email,
+        role: user.role,
+        department: user.department,
+        verificationStatus: user.verificationStatus,
+      },
+    });
+
+    res.json({
+      ok: true,
+      data: user,
+    });
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      ok: false,
+      message: "Update failed",
+      error: err.message,
+    });
+  }
+};
+exports.updateUser = async (req, res) => {
+  try {
+    const {
+      name,
+      email,
+      role,
+      age,
+      birthday,
+      birthdate,
+      verificationStatus,
+      department,
+      doctorInfo,
+      volunteerType,
+      volunteerInfo,
+    } = req.body;
+
+    const updates = {
+      name,
+      email,
+      role,
+      age,
+      birthday,
+      birthdate,
+      verificationStatus,
+    };
+
+    if (role === "Doctor") {
+      if (!department) {
+        return res.status(400).json({
+          ok: false,
+          message: "Department is required for doctors.",
+        });
+      }
+
+      updates.department = department;
+      updates.doctorInfo = doctorInfo;
+    } else {
+      // Remove department/doctor information when
+      // the account is no longer a doctor.
+      updates.department = undefined;
+      updates.doctorInfo = undefined;
+    }
+
+    if (role === "Volunteer") {
+      updates.volunteerType = volunteerType;
+      updates.volunteerInfo = volunteerInfo;
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { $set: updates },
+      {
+        new: true,
+        runValidators: true,
+      },
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        ok: false,
+        message: "User not found",
+      });
+    }
+
+    await logAudit(req, {
+      module: "Accounts",
+      action: "Update User",
+      description: `Updated user ${user.name || user.email}.`,
+      targetId: user._id,
+      targetName: user.name || user.email,
+      location: "Account Management",
+      metadata: {
+        email: user.email,
+        role: user.role,
+        department: user.department,
+        verificationStatus: user.verificationStatus,
+      },
+    });
 
     res.json({
       ok: true,

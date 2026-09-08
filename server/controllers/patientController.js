@@ -1,5 +1,7 @@
 const Patient = require("../models/Patient");
+const User = require("../models/user");
 const Event = require("../models/Event");
+
 const { createOrAppendConflict } = require("./SyncConflictController");
 const getMissionFilter = async (req) => {
   const showAll = req.query.all === "true";
@@ -770,13 +772,38 @@ exports.getDoctorQueue = async (req, res) => {
       limit = 15,
       search = "",
       queueFilter = "all",
-      department = "General",
       role = "doctor",
     } = req.query;
 
     const pageNumber = Number(page);
 
     const pageLimit = Number(limit);
+
+    let doctorDepartment = null;
+
+    if (role !== "admin") {
+      const doctor = await User.findById(req.user.id).select("role department");
+
+      if (!doctor) {
+        return res.status(404).json({
+          msg: "Doctor account not found",
+        });
+      }
+
+      if (doctor.role !== "Doctor") {
+        return res.status(403).json({
+          msg: "Only doctors can access the doctor queue",
+        });
+      }
+
+      if (!doctor.department) {
+        return res.status(400).json({
+          msg: "Doctor has no department assigned",
+        });
+      }
+
+      doctorDepartment = doctor.department;
+    }
 
     const missionFilter = await getMissionFilter(req);
 
@@ -788,8 +815,8 @@ exports.getDoctorQueue = async (req, res) => {
     };
 
     // non-admin doctors
-    if (role !== "admin" && !search.trim()) {
-      filter.department = department;
+    if (role !== "admin") {
+      filter.department = doctorDepartment;
     }
 
     // search all
