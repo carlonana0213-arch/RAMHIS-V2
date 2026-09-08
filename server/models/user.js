@@ -85,9 +85,9 @@ const UserSchema = new mongoose.Schema({
   },
 
   validIdUrl: {
-  type: String,
-  default: "",
-},
+    type: String,
+    default: "",
+  },
 
   profileImageUrl: {
     type: String,
@@ -162,21 +162,21 @@ const UserSchema = new mongoose.Schema({
   },
 
   volunteerInfo: {
-  organization: {
-    type: String,
-    default: "",
-  },
+    organization: {
+      type: String,
+      default: "",
+    },
 
-  skills: {
-    type: String,
-    default: "",
-  },
+    skills: {
+      type: String,
+      default: "",
+    },
 
-  proofOfId: {
-    type: String,
-    default: "",
+    proofOfId: {
+      type: String,
+      default: "",
+    },
   },
-},
 
   otp_code: {
     type: String,
@@ -201,7 +201,25 @@ const UserSchema = new mongoose.Schema({
   /* =========================
      DOCTOR INFO
   ========================= */
-
+  department: {
+    type: String,
+    enum: [
+      "Pediatrics",
+      "Neurology",
+      "Pathology",
+      "Circumcision",
+      "Surgery",
+      "PT",
+      "OBGyn",
+      "Dental",
+      "Ophthalmology",
+      "Dermatology",
+      "AdultMed",
+    ],
+    required: function () {
+      return this.role === "Doctor";
+    },
+  },
   doctorInfo: {
     specialization: {
       type: String,
@@ -236,6 +254,4 @@ const UserSchema = new mongoose.Schema({
 UserSchema.index({ role: 1 });
 UserSchema.index({ createdAt: 1 });
 
-module.exports =
-  mongoose.models.User ||
-  mongoose.model("User", UserSchema);
+module.exports = mongoose.models.User || mongoose.model("User", UserSchema);

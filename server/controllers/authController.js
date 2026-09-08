@@ -15,13 +15,12 @@ exports.register = async (req, res) => {
     account_type,
     volunteerType,
     doctorInfo,
+    department,
     contact_number,
     birthdate,
     accepted_terms,
-
     organization,
     skills,
-
     prc_license_number,
     specialty,
     hospital_clinic,
@@ -82,41 +81,37 @@ exports.register = async (req, res) => {
   const validIdPath = licensePath;
 
   const normalizedDoctorInfo =
-  normalizedRole.toLowerCase() === "doctor"
-    ? {
-        ...(parsedDoctorInfo || {}),
+    normalizedRole.toLowerCase() === "doctor"
+      ? {
+          ...(parsedDoctorInfo || {}),
 
-        specialization:
-          parsedDoctorInfo?.specialization || specialty || "",
+          specialization: parsedDoctorInfo?.specialization || specialty || "",
 
-        licenseNumber:
-          parsedDoctorInfo?.licenseNumber || prc_license_number || "",
+          licenseNumber:
+            parsedDoctorInfo?.licenseNumber || prc_license_number || "",
 
-        hospitalClinic:
-          parsedDoctorInfo?.hospitalClinic || hospital_clinic || "",
+          hospitalClinic:
+            parsedDoctorInfo?.hospitalClinic || hospital_clinic || "",
 
-        proofOfLicense:
-          licensePath ||
-          parsedDoctorInfo?.proofOfLicense ||
-          "",
+          proofOfLicense: licensePath || parsedDoctorInfo?.proofOfLicense || "",
 
-        proofOfDoctorate:
-          doctoratePath ||
-          licensePath ||
-          parsedDoctorInfo?.proofOfDoctorate ||
-          parsedDoctorInfo?.proofOfLicense ||
-          "",
-      }
-    : undefined;
+          proofOfDoctorate:
+            doctoratePath ||
+            licensePath ||
+            parsedDoctorInfo?.proofOfDoctorate ||
+            parsedDoctorInfo?.proofOfLicense ||
+            "",
+        }
+      : undefined;
 
-const normalizedVolunteerInfo =
-  normalizedRole.toLowerCase() === "volunteer"
-    ? {
-        organization: organization || "",
-        skills: skills || "",
-        proofOfId: validIdPath || "",
-      }
-    : undefined;
+  const normalizedVolunteerInfo =
+    normalizedRole.toLowerCase() === "volunteer"
+      ? {
+          organization: organization || "",
+          skills: skills || "",
+          proofOfId: validIdPath || "",
+        }
+      : undefined;
 
   const normalizedAcceptedTerms =
     accepted_terms === true || accepted_terms === "true";
@@ -142,28 +137,31 @@ const normalizedVolunteerInfo =
     const hashedPassword = await bcrypt.hash(tempPassword, salt);
 
     user = new User({
-  name: normalizedName,
-  full_name: normalizedName,
+      name: normalizedName,
+      full_name: normalizedName,
 
-  email,
-  password: hashedPassword,
+      email,
+      password: hashedPassword,
 
-  role: normalizedRole,
-  account_type: normalizedRole,
+      role: normalizedRole,
+      account_type: normalizedRole,
 
-  volunteerType: normalizedVolunteerType,
-  volunteerInfo: normalizedVolunteerInfo,
-  doctorInfo: normalizedDoctorInfo,
+      department:
+        normalizedRole.toLowerCase() === "doctor" ? department : undefined,
 
-  contact_number,
-  birthdate,
-  birthday: birthdate,
-  bdate: birthdate,
-  accepted_terms: normalizedAcceptedTerms,
+      volunteerType: normalizedVolunteerType,
+      volunteerInfo: normalizedVolunteerInfo,
+      doctorInfo: normalizedDoctorInfo,
 
-  tempPassword: password ? undefined : tempPassword,
-  mustChangePassword: password ? false : true,
-});
+      contact_number,
+      birthdate,
+      birthday: birthdate,
+      bdate: birthdate,
+      accepted_terms: normalizedAcceptedTerms,
+
+      tempPassword: password ? undefined : tempPassword,
+      mustChangePassword: password ? false : true,
+    });
 
     await user.save();
 
@@ -278,6 +276,7 @@ exports.login = async (req, res) => {
         account_type: user.account_type || user.role,
 
         verificationStatus: user.verificationStatus,
+        department: user.department,
         doctorInfo: user.doctorInfo,
 
         birthdate: user.birthdate || user.birthday || user.bdate || "",
