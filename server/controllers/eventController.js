@@ -51,9 +51,9 @@ const emitMissionCompleted = (event) => {
 exports.getAllEvents = async (req, res) => {
   try {
     const events = await Event.find()
-  .populate("createdBy", "name email role")
-  .populate("participants.userId", "name email role")
-  .sort({ createdAt: 1 });
+      .populate("createdBy", "name email role")
+      .populate("participants.userId", "name email role")
+      .sort({ createdAt: -1 });
 
     res.status(200).json({
       ok: true,
