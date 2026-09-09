@@ -100,13 +100,13 @@ io.on("connection", (socket) => {
     try {
       if (!userId) return;
 
+      socket.userId = userId;
+
       await User.findByIdAndUpdate(userId, {
         isOnline: true,
         lastSeen: null,
         socketId: socket.id,
       });
-
-      socket.userId = userId;
 
       socket.broadcast.emit("user_status_changed", {
         userId,
@@ -126,21 +126,38 @@ io.on("connection", (socket) => {
     if (!socket.userId) return;
 
     try {
+      const userId = socket.userId;
+
+      const remainingSockets = await io.fetchSockets();
+
+      const userStillConnected = remainingSockets.some(
+        (connectedSocket) =>
+          connectedSocket.id !== socket.id &&
+          connectedSocket.userId === userId
+      );
+
+      if (userStillConnected) {
+        console.log(
+          `ℹ️ User ${userId} still has another active connection`
+        );
+        return;
+      }
+
       const lastSeen = new Date();
 
-      await User.findByIdAndUpdate(socket.userId, {
+      await User.findByIdAndUpdate(userId, {
         isOnline: false,
         lastSeen,
         socketId: null,
       });
 
       io.emit("user_status_changed", {
-        userId: socket.userId,
+        userId,
         isOnline: false,
         lastSeen,
       });
 
-      console.log(`❌ User ${socket.userId} offline`);
+      console.log(`❌ User ${userId} offline`);
     } catch (error) {
       console.error("disconnect error:", error);
     }
