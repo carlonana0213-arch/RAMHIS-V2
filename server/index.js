@@ -14,7 +14,7 @@ const predictiveAnalyticsRoutes = require("./routes/predictiveAnalyticsRoutes");
 const eventRoutes = require("./routes/eventRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const User = require("./models/user");
-
+const analyticsReportRoutes = require("./routes/analyticsReportRoutes");
 const { initEventController } = require("./controllers/eventController");
 
 connectDB();
@@ -90,7 +90,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/predictive-analytics", predictiveAnalyticsRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/users", require("./routes/userRoutes"));
-
+app.use("/api/analytics-reports", analyticsReportRoutes);
 const PORT = process.env.PORT || 5000;
 
 io.on("connection", (socket) => {
@@ -132,14 +132,11 @@ io.on("connection", (socket) => {
 
       const userStillConnected = remainingSockets.some(
         (connectedSocket) =>
-          connectedSocket.id !== socket.id &&
-          connectedSocket.userId === userId
+          connectedSocket.id !== socket.id && connectedSocket.userId === userId,
       );
 
       if (userStillConnected) {
-        console.log(
-          `ℹ️ User ${userId} still has another active connection`
-        );
+        console.log(`ℹ️ User ${userId} still has another active connection`);
         return;
       }
 
