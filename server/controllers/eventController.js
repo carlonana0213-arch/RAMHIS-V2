@@ -159,37 +159,53 @@ exports.createEvent = async (req, res) => {
     }
 
     const event = await Event.create({
-      title,
-      description,
-      location,
+  title,
+  description,
+  location,
 
-      latitude:
-        latitude !== null && latitude !== undefined && latitude !== ""
-          ? Number(latitude)
-          : null,
+  latitude:
+    latitude !== null && latitude !== undefined && latitude !== ""
+      ? Number(latitude)
+      : null,
 
-      longitude:
-        longitude !== null && longitude !== undefined && longitude !== ""
-          ? Number(longitude)
-          : null,
+  longitude:
+    longitude !== null && longitude !== undefined && longitude !== ""
+      ? Number(longitude)
+      : null,
 
-      googleMapsUrl: googleMapsUrl || "",
+  googleMapsUrl: googleMapsUrl || "",
 
-      date,
-      startTime,
-      endTime,
-      type,
-      status,
-      imageUrl,
-      createdBy: req.user?._id || req.user?.id,
-      participants: [],
-    });
+  date,
+  startTime,
+  endTime,
+  type,
+  status,
+  imageUrl,
+  createdBy: req.user?._id || req.user?.id,
+  participants: [],
+});
 
-    emitEventsUpdated(event._id);
+emitEventsUpdated(event._id);
 
-    if (event.status === "Ongoing") {
-      emitMissionStarted(event);
-    }
+if (io) {
+  console.log(
+    "🟢 SOCKET event_created:",
+    event._id.toString(),
+    event.title
+  );
+
+  io.emit("event_created", {
+    event: event.toObject(),
+  });
+} else {
+  console.log(
+    "🔴 Socket.IO instance is not initialized"
+  );
+}
+
+if (event.status === "Ongoing") {
+  emitMissionStarted(event);
+}
     await logAudit(req, {
       module: "Events",
       action: "Create Event",
