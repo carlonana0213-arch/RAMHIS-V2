@@ -125,10 +125,14 @@ router.put("/change-password", authMiddleware, async (req, res) => {
     }
 
     const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword, salt);
-    user.mustChangePassword = false;
+const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    await user.save();
+await User.findByIdAndUpdate(userId, {
+  $set: {
+    password: hashedPassword,
+    mustChangePassword: false,
+  },
+});
 
     return res.status(200).json({
       ok: true,
