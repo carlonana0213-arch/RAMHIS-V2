@@ -458,11 +458,20 @@ exports.resetUserPassword = async (req, res) => {
     const tempPassword = generateTempPassword();
     const hashed = await bcrypt.hash(tempPassword, 10);
 
-    user.password = hashed;
-    user.tempPassword = tempPassword;
-    user.mustChangePassword = true;
-
-    await user.save();
+    await User.findByIdAndUpdate(
+      req.params.id,
+      {
+        $set: {
+          password: hashed,
+          tempPassword,
+          mustChangePassword: true,
+        },
+      },
+      {
+        new: true,
+        runValidators: false,
+      },
+    );
 
     await sendEmail({
       to: user.email,
