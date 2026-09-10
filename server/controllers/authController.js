@@ -411,11 +411,18 @@ exports.forgotPassword = async (req, res) => {
       .update(resetToken)
       .digest("hex");
 
-    user.resetPasswordToken = hashedToken;
+    const resetPasswordExpire =
+  Date.now() + 1000 * 60 * 15;
 
-    user.resetPasswordExpire = Date.now() + 1000 * 60 * 15;
-
-    await user.save();
+await User.updateOne(
+  { _id: user._id },
+  {
+    $set: {
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: resetPasswordExpire,
+    },
+  },
+);
 
     // MOBILE DEEP LINK
     const resetLink = `https://ramhis-v2-1.onrender.com/api/auth/reset-password?token=${resetToken}`;
