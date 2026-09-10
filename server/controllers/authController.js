@@ -506,7 +506,17 @@ exports.resetPassword = async (req, res) => {
 
     const finalPassword = newPassword || password;
 
-    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+    if (!finalPassword) {
+      return res.status(400).json({
+        ok: false,
+        message: "Password is required",
+      });
+    }
+
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
 
     const user = await User.findOne({
       resetPasswordToken: hashedToken,
@@ -522,24 +532,28 @@ exports.resetPassword = async (req, res) => {
       });
     }
 
-    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(finalPassword, 10);
 
-    user.password = await bcrypt.hash(finalPassword, salt);
-
-    user.resetPasswordToken = undefined;
-
-    user.resetPasswordExpire = undefined;
-
-    user.mustChangePassword = false;
-
-    await user.save();
+    await User.updateOne(
+      { _id: user._id },
+      {
+        $set: {
+          password: hashedPassword,
+          mustChangePassword: false,
+        },
+        $unset: {
+          resetPasswordToken: 1,
+          resetPasswordExpire: 1,
+        },
+      }
+    );
 
     res.json({
       ok: true,
       message: "Password reset successful",
     });
   } catch (error) {
-    console.error(error);
+    console.error("RESET PASSWORD ERROR:", error);
 
     res.status(500).json({
       ok: false,
