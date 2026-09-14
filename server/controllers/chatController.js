@@ -298,6 +298,64 @@ exports.sendMessage = async (req, res) => {
   }
 };
 
+exports.sendFileMessage = async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    const { threadId } = req.params;
+
+    if (!req.file) {
+      return res.status(400).json({
+        message: "File is required",
+      });
+    }
+
+    const thread = await ChatThread.findOne({
+      _id: threadId,
+      $or: [
+        { participants: userId },
+        { members: userId },
+      ],
+    });
+
+    if (!thread) {
+      return res.status(404).json({
+        message: "Thread not found",
+      });
+    }
+
+    const fileUrl = `/uploads/chat/${req.file.filename}`;
+
+    const newMessage = await ChatMessage.create({
+      thread: threadId,
+      sender: userId,
+      message: req.file.originalname,
+      messageType: "file",
+      fileUrl,
+      fileName: req.file.originalname,
+      fileType: req.file.mimetype,
+      fileSize: req.file.size,
+      readBy: [userId],
+    });
+
+    thread.lastMessage = req.file.originalname;
+    thread.lastMessageAt = new Date();
+    await thread.save();
+
+    const populatedMessage = await ChatMessage.findById(newMessage._id)
+      .populate("sender", "full_name name email");
+
+    return res.status(201).json(
+      formatMessage(populatedMessage, userId)
+    );
+  } catch (error) {
+    console.error("sendFileMessage error:", error);
+
+    res.status(500).json({
+      message: "Failed to send file",
+    });
+  }
+};
+
 exports.deleteGroupChat = async (req, res) => {
   try {
     const { threadId } = req.params;
