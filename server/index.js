@@ -2,6 +2,7 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
 const http = require("http");
 const path = require("path");
 const { Server } = require("socket.io");
@@ -20,7 +21,42 @@ const { initEventController } = require("./controllers/eventController");
 connectDB();
 
 const app = express();
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        baseUri: ["'self'"],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'none'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "blob:"],
+        fontSrc: ["'self'", "data:"],
+        connectSrc: ["'self'", "https:", "wss:"],
+      },
+    },
 
+    frameguard: {
+      action: "deny",
+    },
+
+    referrerPolicy: {
+      policy: "strict-origin-when-cross-origin",
+    },
+
+    permissionsPolicy: {
+      features: {
+        camera: [],
+        microphone: [],
+        geolocation: [],
+        payment: [],
+        usb: [],
+        bluetooth: [],
+      },
+    },
+  }),
+);
 const server = http.createServer(app);
 
 const io = new Server(server, {
