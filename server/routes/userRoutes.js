@@ -75,6 +75,34 @@ router.get("/online", authMiddleware, async (req, res) => {
   }
 });
 
+router.get("/:id", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select(
+      "full_name name email role account_type isOnline lastSeen"
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        ok: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      ok: true,
+      user,
+    });
+  } catch (error) {
+    console.error("Get user by ID error:", error);
+
+    return res.status(500).json({
+      ok: false,
+      message: "Failed to fetch user",
+      error: error.message,
+    });
+  }
+});
+
 // PUT /api/users/change-password
 router.put("/change-password", authMiddleware, async (req, res) => {
   try {
