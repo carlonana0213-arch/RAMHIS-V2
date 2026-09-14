@@ -8,6 +8,7 @@ const router = express.Router();
 
 const chatController = require("../controllers/chatController");
 const authMiddleware = require("../middleware/authMiddleware");
+const authorize = require("../middleware/roleMiddleware");
 
 const uploadDir = path.join(__dirname, "../uploads/chat");
 
@@ -102,6 +103,13 @@ router.post(
   },
   upload.single("file"),
   chatController.sendFileMessage
+);
+
+router.delete(
+  "/threads/:threadId",
+  authMiddleware,
+  authorize(["Admin"]),
+  chatController.deleteGroupChat
 );
 
 module.exports = router;

@@ -287,90 +287,67 @@ exports.sendMessage = async (req, res) => {
     const populatedMessage = await ChatMessage.findById(newMessage._id)
       .populate("sender", "full_name name email");
 
-    res.status(201).json(
-      formatMessage(populatedMessage, userId)
-    );
-  } catch (error) {
-    console.error("sendMessage error:", error);
-    res.status(500).json({
-      message: "Failed to send message",
-    });
-  }
-};
-
-exports.sendFileMessage = async (req, res) => {
-  try {
-    const userId = getUserId(req);
-    const { threadId } = req.params;
-    const { message = "" } = req.body;
-
-    if (!req.file) {
-      return res.status(400).json({
-        message: "File is required",
-      });
-    }
-
-    const thread = await ChatThread.findOne({
-      _id: threadId,
-      $or: [
-        { participants: userId },
-        { members: userId },
-      ],
-    });
-
-    if (!thread) {
-      return res.status(404).json({
-        message: "Thread not found",
-      });
-    }
-
-    const normalizedPath = req.file.path
-      .replace(/\\/g, "/")
-      .replace(/^.*uploads\//, "uploads/");
-
-    const fileUrl =
-      `${req.protocol}://${req.get("host")}/${normalizedPath}`;
-
-    const originalName =
-      (req.file.originalname || "").toLowerCase();
-
-    const isImage =
-      req.file.mimetype?.startsWith("image/") ||
-      originalName.endsWith(".jpg") ||
-      originalName.endsWith(".jpeg") ||
-      originalName.endsWith(".png") ||
-      originalName.endsWith(".gif") ||
-      originalName.endsWith(".webp");
-
-    const newMessage = await ChatMessage.create({
-      thread: threadId,
-      sender: userId,
-      message: message.trim(),
-      messageType: isImage ? "image" : "file",
-      fileUrl,
-      fileName: req.file.originalname,
-      fileType: req.file.mimetype,
-      fileSize: req.file.size,
-      readBy: [userId],
-    });
-
-    thread.lastMessage = isImage
-      ? `📷 ${req.file.originalname}`
-      : `📎 ${req.file.originalname}`;
-
-    thread.lastMessageAt = new Date();
-    await thread.save();
-
-    const populatedMessage = await ChatMessage.findById(newMessage._id)
-      .populate("sender", "full_name name email");
-
-    res.status(201).json(
+       res.status(201).json(
       formatMessage(populatedMessage, userId)
     );
   } catch (error) {
     console.error("sendFileMessage error:", error);
     res.status(500).json({
       message: "Failed to send file",
+    });
+  }
+};
+
+exports.deleteGroupChat = async (req, res) => {
+  try {
+    const { threadId } = req.params;
+
+    const thread = await ChatThread.findById(threadId);
+
+    if (!thread) {
+      return res.status(404).json({
+        message: "Chat thread not found",
+      });
+    }
+
+    if (thread.type !== "group") {
+      return res.status(400).json({
+        message: "Only group chats can be deleted",
+      });
+    }
+
+    const participantIds = [
+      ...(thread.participants || []),
+      ...(thread.members || []),
+    ].map((id) => id.toString());
+
+    await ChatMessage.deleteMany({
+      thread: threadId,
+    });
+
+    await ChatThread.deleteOne({
+      _id: threadId,
+    });
+
+    const io = req.app.get("io");
+
+    if (io) {
+      for (const participantId of participantIds) {
+        io.to(`user:${participantId}`).emit("chat_thread_deleted", {
+          threadId: threadId.toString(),
+        });
+      }
+    }
+
+    return res.status(200).json({
+      message: "Group chat deleted successfully",
+      threadId: threadId.toString(),
+    });
+  } catch (error) {
+    console.error("deleteGroupChat error:", error);
+
+    return res.status(500).json({
+      message: "Failed to delete group chat",
     });
   }
 };

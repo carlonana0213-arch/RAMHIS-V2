@@ -138,7 +138,9 @@ io.on("connection", (socket) => {
 
       socket.userId = userId;
 
-      await User.findByIdAndUpdate(userId, {
+socket.join(`user:${userId}`);
+
+await User.findByIdAndUpdate(userId, {
         isOnline: true,
         lastSeen: null,
         socketId: socket.id,
