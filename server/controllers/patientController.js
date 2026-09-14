@@ -171,10 +171,155 @@ exports.updatePatient = async (req, res) => {
   try {
     const { id } = req.params;
 
+    // ---------------------------------------------------------
+    // Offline synchronization metadata
+    // ---------------------------------------------------------
+
+    const syncMetadata = req.body?._sync || {};
+
+    const { operationId = null, baseUpdatedAt = null } = syncMetadata;
+
+    // Remove synchronization metadata from the actual
+    // patient update.
+    const { _sync, ...patientUpdateData } = req.body;
+
+    // ---------------------------------------------------------
+    // Get the CURRENT patient
+    // ---------------------------------------------------------
+
+    const currentPatient = await Patient.findById(id);
+
+    if (!currentPatient) {
+      return res.status(404).json({
+        message: "Patient not found",
+      });
+    }
+
+    // ---------------------------------------------------------
+    // SERVER-SIDE CONFLICT DETECTION
+    // ---------------------------------------------------------
+
+    if (baseUpdatedAt) {
+      const clientBaseDate = new Date(baseUpdatedAt);
+      const serverUpdatedAt = currentPatient.updatedAt;
+
+      if (Number.isNaN(clientBaseDate.getTime()) || !serverUpdatedAt) {
+        return res.status(400).json({
+          message: "Invalid synchronization version",
+          conflict: false,
+        });
+      }
+
+      const clientVersion = clientBaseDate.getTime();
+      const serverVersion = new Date(serverUpdatedAt).getTime();
+
+      // -------------------------------------------------------
+      // STALE VERSION = CONFLICT
+      // -------------------------------------------------------
+
+      if (clientVersion !== serverVersion) {
+        console.warn(
+          "[SYNC CONFLICT] Patient update is based on an older version",
+          {
+            patientId: id,
+            operationId,
+            baseUpdatedAt,
+            serverUpdatedAt,
+          },
+        );
+
+        // -----------------------------------------------------
+        // SERVER CANDIDATE
+        // -----------------------------------------------------
+
+        const serverCandidate = {
+          ownerKey: req.user?.id,
+
+          operationId: `server-${currentPatient._id}-${serverUpdatedAt.getTime()}`,
+
+          data: currentPatient.toObject(),
+
+          baseUpdatedAt: serverUpdatedAt,
+
+          source: "server",
+
+          createdAt: serverUpdatedAt,
+        };
+
+        // -----------------------------------------------------
+        // OFFLINE CANDIDATE
+        // -----------------------------------------------------
+
+        const incomingCandidate = {
+          ownerKey: req.user?.id,
+
+          operationId: operationId || `offline-${Date.now()}`,
+
+          data: patientUpdateData,
+
+          baseUpdatedAt: clientBaseDate,
+
+          source: "offline",
+
+          createdAt: new Date(),
+        };
+
+        // -----------------------------------------------------
+        // STORE CONFLICT
+        // -----------------------------------------------------
+
+        const conflict = await createOrAppendConflict({
+          patientId: currentPatient._id,
+
+          entityType: "patient",
+
+          entityKey: id,
+
+          baseUpdatedAt: clientBaseDate,
+
+          incomingCandidate,
+
+          serverCandidate,
+        });
+
+        // -----------------------------------------------------
+        // RETURN CONFLICT TO CLIENT
+        // -----------------------------------------------------
+
+        return res.status(409).json({
+          message: "Sync conflict detected",
+
+          conflict: true,
+
+          conflictId: conflict._id,
+
+          entityType: "patient",
+
+          entityKey: id,
+
+          patientId: id,
+
+          operationId,
+
+          baseUpdatedAt,
+
+          serverUpdatedAt,
+
+          candidates: conflict.candidates,
+
+          serverData: currentPatient,
+        });
+      }
+    }
+
+    // ---------------------------------------------------------
+    // NO CONFLICT — NORMAL UPDATE
+    // ---------------------------------------------------------
+
     const updated = await Patient.findByIdAndUpdate(
       id,
       {
-        $set: req.body,
+        $set: patientUpdateData,
       },
       {
         new: true,
@@ -184,31 +329,44 @@ exports.updatePatient = async (req, res) => {
 
     const io = req.app.get("io");
 
-    io.emit("queueUpdated");
+    if (io) {
+      io.emit("queueUpdated");
+    }
 
     if (updated) {
       await logAudit(req, {
         module: "Registration",
+
         action: req.body.status ? "Update Patient Status" : "Update Patient",
-        description: `Updated patient ${updated.generalInfo?.name || "Unknown Patient"}.`,
+
+        description: `Updated patient ${
+          updated.generalInfo?.name || "Unknown Patient"
+        }.`,
+
         targetId: updated._id,
+
         targetName: updated.generalInfo?.name || "Unknown Patient",
+
         location: updated.location,
+
         eventId: updated.eventId,
+
         eventTitle: updated.eventTitle,
+
         metadata: {
-          updatedFields: Object.keys(req.body || {}),
+          updatedFields: Object.keys(patientUpdateData || {}),
           status: updated.status,
           department: updated.department,
+          operationId,
         },
       });
     }
 
-    res.json(updated);
+    return res.json(updated);
   } catch (err) {
-    console.error(err);
+    console.error("UPDATE PATIENT ERROR:", err);
 
-    res.status(500).json({
+    return res.status(500).json({
       error: "Failed to update patient",
     });
   }
@@ -285,6 +443,8 @@ exports.getPatientQueue = async (req, res) => {
         department
         isPriority
         createdAt
+        createdAt
+        updatedAt
         generalInfo.name
         generalInfo.age
         generalInfo.sex
@@ -361,121 +521,129 @@ exports.addDoctorRecord = async (req, res) => {
     }
 
     // ---------------------------------------------------------
-    // SERVER-SIDE CONFLICT DETECTION
+    // OFFLINE PATIENT CONFLICT DETECTION
     // ---------------------------------------------------------
-    if (baseUpdatedAt) {
+    //
+    // Any patient update that arrives with _sync metadata
+    // originated from the offline outbox.
+    //
+    // Offline patient edits must always go through the
+    // conflict-resolution workflow, even when the server
+    // patient has not changed since the offline snapshot.
+    //
+
+    if (operationId && baseUpdatedAt) {
       const clientBaseDate = new Date(baseUpdatedAt);
       const serverUpdatedAt = currentPatient.updatedAt;
 
+      // -------------------------------------------------------
+      // Validate synchronization metadata
+      // -------------------------------------------------------
+
       if (Number.isNaN(clientBaseDate.getTime()) || !serverUpdatedAt) {
         return res.status(400).json({
-          msg: "Invalid synchronization version",
+          message: "Invalid synchronization version",
           conflict: false,
         });
       }
 
-      const clientVersion = clientBaseDate.getTime();
-      const serverVersion = new Date(serverUpdatedAt).getTime();
-
-      // -----------------------------------------------------
-      // STALE VERSION = CONFLICT
-      // -----------------------------------------------------
-      if (clientVersion !== serverVersion) {
-        console.warn(
-          "[SYNC CONFLICT] Doctor record is based on an older patient version",
-          {
-            patientId: id,
-            operationId,
-            baseUpdatedAt,
-            serverUpdatedAt,
-          },
-        );
-
-        // ---------------------------------------------------
-        // Build the server candidate.
-        //
-        // This represents the version that was already
-        // accepted by the server.
-        // ---------------------------------------------------
-        const serverCandidate = {
-          ownerKey:
-            currentPatient.doctorSheets?.length > 0 &&
-            currentPatient.doctorSheets[currentPatient.doctorSheets.length - 1]
-              ?.doctorId
-              ? currentPatient.doctorSheets[
-                  currentPatient.doctorSheets.length - 1
-                ].doctorId
-              : req.user?.id,
-
-          operationId: `server-${currentPatient._id}-${serverUpdatedAt.getTime()}`,
-
-          data: currentPatient,
-
-          baseUpdatedAt: serverUpdatedAt,
-
-          source: "server",
-
-          createdAt: serverUpdatedAt,
-        };
-
-        // ---------------------------------------------------
-        // Build the incoming offline candidate.
-        // ---------------------------------------------------
-        const incomingCandidate = {
-          ownerKey: req.user?.id,
-
-          operationId: operationId || `offline-${Date.now()}`,
-
-          data: doctorRecordData,
-
-          baseUpdatedAt: clientBaseDate,
-
-          source: "offline",
-
-          createdAt: new Date(),
-        };
-
-        // ---------------------------------------------------
-        // Store the conflict.
-        // ---------------------------------------------------
-        const conflict = await createOrAppendConflict({
-          patientId: currentPatient._id,
-          entityType: "doctorRecord",
-          entityKey: id,
-          baseUpdatedAt: clientBaseDate,
-
-          incomingCandidate,
-
-          serverCandidate,
-        });
-
-        // ---------------------------------------------------
-        // Return conflict information to the client.
-        // ---------------------------------------------------
-        return res.status(409).json({
-          msg: "Sync conflict detected",
-
-          conflict: true,
-
-          conflictId: conflict._id,
-
-          entityType: "doctorRecord",
-
-          entityKey: id,
-
+      console.warn(
+        "[OFFLINE PATIENT] Offline patient update requires conflict review",
+        {
           patientId: id,
-
           operationId,
-
           baseUpdatedAt,
-
           serverUpdatedAt,
+        },
+      );
 
-          candidates: conflict.candidates,
+      // -------------------------------------------------------
+      // SERVER CANDIDATE
+      // -------------------------------------------------------
 
-          serverData: currentPatient,
-        });
-      }
+      const serverCandidate = {
+        ownerKey: req.user?.id,
+
+        operationId: `server-${currentPatient._id}-${serverUpdatedAt.getTime()}`,
+
+        data: currentPatient.toObject(),
+
+        baseUpdatedAt: serverUpdatedAt,
+
+        source: "server",
+
+        createdAt: serverUpdatedAt,
+      };
+
+      // -------------------------------------------------------
+      // OFFLINE CANDIDATE
+      // -------------------------------------------------------
+
+      const incomingCandidate = {
+        ownerKey: req.user?.id,
+
+        operationId,
+
+        data: patientUpdateData,
+
+        baseUpdatedAt: clientBaseDate,
+
+        source: "offline",
+
+        createdAt: new Date(),
+      };
+
+      // -------------------------------------------------------
+      // STORE CONFLICT
+      // -------------------------------------------------------
+
+      const conflict = await createOrAppendConflict({
+        patientId: currentPatient._id,
+
+        entityType: "patient",
+
+        entityKey: id,
+
+        baseUpdatedAt: clientBaseDate,
+
+        incomingCandidate,
+
+        serverCandidate,
+      });
+
+      console.warn("[OFFLINE PATIENT] Conflict created", {
+        conflictId: conflict._id,
+        patientId: id,
+        operationId,
+      });
+
+      // -------------------------------------------------------
+      // RETURN CONFLICT TO CLIENT
+      // -------------------------------------------------------
+
+      return res.status(409).json({
+        message: "Offline patient update requires conflict review.",
+
+        conflict: true,
+
+        conflictId: conflict._id,
+
+        entityType: "patient",
+
+        entityKey: id,
+
+        patientId: id,
+
+        operationId,
+
+        baseUpdatedAt,
+
+        serverUpdatedAt,
+
+        candidates: conflict.candidates,
+
+        serverData: currentPatient.toObject(),
+      });
     }
 
     // ---------------------------------------------------------
@@ -738,6 +906,7 @@ exports.getQueueSummary = async (req, res) => {
     ]);
 
     const formatted = {
+      General: 0,
       Pediatrics: 0,
       Neurology: 0,
       Pathology: 0,

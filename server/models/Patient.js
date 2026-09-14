@@ -98,6 +98,7 @@ const PatientSchema = new mongoose.Schema(
     department: {
       type: String,
       enum: [
+        "General",
         "Pediatrics",
         "Neurology",
         "Pathology",
