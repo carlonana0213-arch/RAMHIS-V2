@@ -98,7 +98,9 @@ const PatientSchema = new mongoose.Schema(
     department: {
       type: String,
       enum: [
+        "Ortho",
         "General",
+        "Cardio",
         "Pediatrics",
         "Neurology",
         "Pathology",
