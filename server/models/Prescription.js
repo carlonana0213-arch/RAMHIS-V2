@@ -55,7 +55,7 @@ const prescriptionSchema = new mongoose.Schema(
       default: "",
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 prescriptionSchema.index({ createdAt: 1 });
@@ -63,5 +63,10 @@ prescriptionSchema.index({ "items.medicine": 1 });
 prescriptionSchema.index({ patient: 1 });
 prescriptionSchema.index({ eventId: 1 });
 prescriptionSchema.index({ status: 1, eventId: 1 });
+prescriptionSchema.index({
+  eventId: 1,
+  status: 1,
+  createdAt: -1,
+});
 
 module.exports = mongoose.model("Prescription", prescriptionSchema);

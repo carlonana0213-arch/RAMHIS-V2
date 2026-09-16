@@ -131,27 +131,35 @@ exports.getPendingPrescriptions = async (req, res) => {
 
 exports.getPharmacyQueue = async (req, res) => {
   try {
-    const { page = 1, limit = 15, search = "", filter = "Pending" } = req.query;
+    const requestedPage = Number.parseInt(req.query.page, 10);
 
-    const pageNumber = Number(page);
+    const requestedLimit = Number.parseInt(req.query.limit, 10);
 
-    const pageLimit = Number(limit);
+    const pageNumber =
+      Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+
+    // Prevent excessively large requests.
+    const pageLimit =
+      Number.isInteger(requestedLimit) && requestedLimit > 0
+        ? Math.min(requestedLimit, 50)
+        : 15;
+
+    const search = String(req.query.search || "").trim();
+
+    const filter = req.query.filter === "Given" ? "Given" : "Pending";
 
     const missionFilter = await getCurrentMissionPrescriptionFilter(req);
 
     const query = {
       ...missionFilter,
     };
-console.log("PHARMACY QUEUE REQ QUERY:", req.query);
-console.log("PHARMACY QUEUE DB QUERY:", query);
-    // status
-    if (filter === "Pending") {
-      query.status = "Pending";
-    }
 
-    if (filter === "Given") {
-      query.status = "Completed";
-    }
+    query.status = {
+      $in: ["Pending", "Completed"],
+    };
+    console.log("PHARMACY QUEUE REQ QUERY:", req.query);
+    console.log("PHARMACY QUEUE DB QUERY:", query);
+    // status
 
     // search patient name
     // search patient OR medicine
@@ -240,20 +248,22 @@ console.log("PHARMACY QUEUE DB QUERY:", query);
       .lean();
 
     const grouped = prescriptions
-  .map((prescription) => ({
-    _id: prescription._id,
-    patient: prescription.patient,
-    doctor: prescription.doctor,
-    filteredItems: prescription.items
-      .filter((item) =>
-        filter === "Pending" ? !Boolean(item.isGiven) : Boolean(item.isGiven)
-      )
-      .map((item) => ({
-        ...item,
-        prescriptionId: prescription._id,
-      })),
-  }))
-  .filter((prescription) => prescription.filteredItems.length > 0);
+      .map((prescription) => ({
+        _id: prescription._id,
+        patient: prescription.patient,
+        doctor: prescription.doctor,
+        filteredItems: prescription.items
+          .filter((item) =>
+            filter === "Pending"
+              ? !Boolean(item.isGiven)
+              : Boolean(item.isGiven),
+          )
+          .map((item) => ({
+            ...item,
+            prescriptionId: prescription._id,
+          })),
+      }))
+      .filter((prescription) => prescription.filteredItems.length > 0);
 
     res.json({
       prescriptions: grouped,
@@ -351,13 +361,12 @@ exports.markAsGiven = async (req, res) => {
     // CHECK ALL PRESCRIPTIONS
     // =====================
 
-    const patientPrescriptions = await Prescription.find({
+    const incompletePrescriptionCount = await Prescription.countDocuments({
       patient: prescription.patient,
+      status: { $ne: "Completed" },
     });
 
-    const allCompleted = patientPrescriptions.every(
-      (p) => p.status === "Completed",
-    );
+    const allCompleted = incompletePrescriptionCount === 0;
 
     if (allCompleted) {
       await Patient.findByIdAndUpdate(prescription.patient, {
