@@ -17,12 +17,6 @@ const UserSchema = new mongoose.Schema({
     unique: true,
   },
 
- firebaseUid: {
-  type: String,
-  unique: true,
-  sparse: true,
-  index: true,
-},
   createdAt: {
     type: Date,
     default: Date.now,
@@ -126,11 +120,6 @@ const UserSchema = new mongoose.Schema({
   },
 
   socketId: {
-    type: String,
-    default: null,
-  },
-
-  fcmToken: {
     type: String,
     default: null,
   },

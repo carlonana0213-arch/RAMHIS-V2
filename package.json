@@ -4,7 +4,6 @@
     "dotenv": "^17.3.1",
     "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^8.2.1",
-    "firebase-admin": "^14.5.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "xss-clean": "^0.1.4"

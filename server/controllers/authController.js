@@ -4,7 +4,6 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const sgMail = require("@sendgrid/mail");
 const logAudit = require("../utils/auditLogger");
-const admin = require("../config/firebaseAdmin");
 
 exports.register = async (req, res) => {
   const {
@@ -14,7 +13,6 @@ exports.register = async (req, res) => {
     password,
     role,
     account_type,
-    firebaseUid,
     volunteerType,
     doctorInfo,
     department,
@@ -28,11 +26,6 @@ exports.register = async (req, res) => {
     hospital_clinic,
   } = req.body;
 
-  console.log("🔥 SIGNUP DEBUG");
-console.log("Email:", email);
-console.log("Firebase UID:", firebaseUid);
-console.log("Request body keys:", Object.keys(req.body));
-
   // Normalize mobile/web fields
   const normalizedName = name || full_name;
 
@@ -41,8 +34,7 @@ console.log("Request body keys:", Object.keys(req.body));
   const normalizedRole =
     rawRole.charAt(0).toUpperCase() + rawRole.slice(1).toLowerCase();
 
-  const normalizedVolunteerType =
-    volunteerType || organization || skills || "";
+  const normalizedVolunteerType = volunteerType || organization || skills || "";
 
   const buildUploadPath = (file) => {
     if (!file || !file.filename) return "";
@@ -93,23 +85,15 @@ console.log("Request body keys:", Object.keys(req.body));
       ? {
           ...(parsedDoctorInfo || {}),
 
-          specialization:
-            parsedDoctorInfo?.specialization || specialty || "",
+          specialization: parsedDoctorInfo?.specialization || specialty || "",
 
           licenseNumber:
-            parsedDoctorInfo?.licenseNumber ||
-            prc_license_number ||
-            "",
+            parsedDoctorInfo?.licenseNumber || prc_license_number || "",
 
           hospitalClinic:
-            parsedDoctorInfo?.hospitalClinic ||
-            hospital_clinic ||
-            "",
+            parsedDoctorInfo?.hospitalClinic || hospital_clinic || "",
 
-          proofOfLicense:
-            licensePath ||
-            parsedDoctorInfo?.proofOfLicense ||
-            "",
+          proofOfLicense: licensePath || parsedDoctorInfo?.proofOfLicense || "",
 
           proofOfDoctorate:
             doctoratePath ||
@@ -133,56 +117,15 @@ console.log("Request body keys:", Object.keys(req.body));
     accepted_terms === true || accepted_terms === "true";
 
   try {
-    // ============================================================
-    // FIREBASE UID VALIDATION
-    // ============================================================
+    let user = await User.findOne({ email });
 
-    if (!firebaseUid || firebaseUid.trim() === "") {
+    if (user) {
       return res.status(400).json({
-        success: false,
-        ok: false,
-        message: "Firebase UID is required.",
-        msg: "Firebase UID is required.",
-      });
-    }
-
-    // ============================================================
-    // CHECK IF EMAIL ALREADY EXISTS
-    // ============================================================
-
-    const existingEmailUser = await User.findOne({ email });
-
-    if (existingEmailUser) {
-      return res.status(400).json({
-        success: false,
         ok: false,
         msg: "User already exists",
         message: "User already exists",
       });
     }
-
-    // ============================================================
-    // CHECK IF FIREBASE UID IS ALREADY LINKED
-    // ============================================================
-
-    const existingFirebaseUser = await User.findOne({
-      firebaseUid,
-    });
-
-    if (existingFirebaseUser) {
-      return res.status(409).json({
-        success: false,
-        ok: false,
-        message:
-          "This Firebase account is already linked to a RAMHIS account.",
-        msg:
-          "This Firebase account is already linked to a RAMHIS account.",
-      });
-    }
-
-    // ============================================================
-    // PASSWORD
-    // ============================================================
 
     const generateTempPassword = () => {
       return Math.random().toString(36).slice(-8);
@@ -193,27 +136,18 @@ console.log("Request body keys:", Object.keys(req.body));
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(tempPassword, salt);
 
-    // ============================================================
-    // CREATE USER
-    // ============================================================
-
-    const user = new User({
+    user = new User({
       name: normalizedName,
       full_name: normalizedName,
 
       email,
       password: hashedPassword,
 
-      // Firebase account linked to this MongoDB user
-      firebaseUid: firebaseUid,
-
       role: normalizedRole,
       account_type: normalizedRole,
 
       department:
-        normalizedRole.toLowerCase() === "doctor"
-          ? department
-          : undefined,
+        normalizedRole.toLowerCase() === "doctor" ? department : undefined,
 
       volunteerType: normalizedVolunteerType,
       volunteerInfo: normalizedVolunteerInfo,
@@ -225,52 +159,33 @@ console.log("Request body keys:", Object.keys(req.body));
       bdate: birthdate,
       accepted_terms: normalizedAcceptedTerms,
 
-      // New accounts still require admin approval
-      verificationStatus: "Pending",
-
       tempPassword: password ? undefined : tempPassword,
       mustChangePassword: password ? false : true,
     });
 
-    // ============================================================
-    // SAVE USER
-    // ============================================================
-
     await user.save();
 
-    // ============================================================
-    // AUDIT LOG
-    // ============================================================
-
+    const logAudit = require("../utils/auditLogger");
     await logAudit(req, {
       userId: user._id,
       userName: user.name || user.full_name || user.email,
       userRole: user.role,
       module: "Authentication",
       action: "Sign Up",
-      description:
-        `${user.name || user.email} signed up and is awaiting admin approval.`,
+      description: `${user.name || user.email} signed up and is awaiting admin approval.`,
       targetId: user._id,
       targetName: user.name || user.email,
       location: "System",
       metadata: {
         email: user.email,
         role: user.role,
-        firebaseUid: user.firebaseUid,
         verificationStatus: user.verificationStatus,
       },
     });
 
-    // ============================================================
-    // SUCCESS RESPONSE
-    // ============================================================
-
     return res.json({
       ok: true,
-      success: true,
       userId: user._id,
-      firebaseUid: user.firebaseUid,
-      verificationStatus: user.verificationStatus,
       msg: "Registration successful. Await admin approval.",
       message: "Registration successful. Await admin approval.",
     });
@@ -279,7 +194,6 @@ console.log("Request body keys:", Object.keys(req.body));
 
     return res.status(500).json({
       ok: false,
-      success: false,
       msg: error.message,
       message: error.message,
     });
@@ -459,88 +373,6 @@ exports.updateMe = async (req, res) => {
     res.json(updatedUser);
   } catch (err) {
     res.status(500).json({ msg: "Failed to update account" });
-  }
-};
-
-exports.firebaseLogin = async (req, res) => {
-  try {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({
-        success: false,
-        message: "Firebase authentication token is required.",
-      });
-    }
-
-    const idToken = authHeader.split("Bearer ")[1];
-
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-
-    const firebaseUid = decodedToken.uid;
-
-    const user = await User.findOne({ firebaseUid });
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "Firebase account is not linked to a RAMHIS account.",
-      });
-    }
-
-    if (user.verificationStatus === "Pending") {
-      return res.status(403).json({
-        success: false,
-        message: "Your account is pending approval.",
-      });
-    }
-
-    if (
-      user.verificationStatus === "Rejected" ||
-      user.verificationStatus === "Deactivated"
-    ) {
-      return res.status(403).json({
-        success: false,
-        message: `Your account is ${user.verificationStatus.toLowerCase()}.`,
-      });
-    }
-
-    const token = jwt.sign(
-      {
-        id: user._id,
-        role: user.role,
-      },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "30d",
-      },
-    );
-
-    return res.status(200).json({
-      success: true,
-      message: "Firebase login successful.",
-      accessToken: token,
-      token: token,
-      refreshToken: "",
-      user: {
-        _id: user._id,
-        id: user._id,
-        name: user.name,
-        full_name: user.full_name,
-        email: user.email,
-        role: user.role,
-        account_type: user.account_type,
-        verificationStatus: user.verificationStatus,
-        firebaseUid: user.firebaseUid,
-      },
-    });
-  } catch (error) {
-    console.error("Firebase login error:", error);
-
-    return res.status(401).json({
-      success: false,
-      message: "Invalid or expired Firebase authentication token.",
-    });
   }
 };
 

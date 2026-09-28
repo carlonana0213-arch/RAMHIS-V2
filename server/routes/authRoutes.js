@@ -1,12 +1,9 @@
 const express = require("express");
 const router = express.Router();
 
-const firebaseAuth = require("../middleware/firebaseAuth");
-
 const {
   register,
   login,
-  firebaseLogin,
   forgotPassword,
   resetPassword,
   updateMe,
@@ -71,8 +68,6 @@ router.post("/signup", proofUpload, register);
 
 router.post("/login", login);
 
-router.post("/firebase-login", firebaseLogin);
-
 router.post("/forgot-password", forgotPassword);
 
 router.post("/reset-password", resetPassword);
@@ -105,18 +100,6 @@ router.post("/change-password", auth, async (req, res) => {
   } catch (err) {
     res.status(500).json({ msg: "Failed to update password" });
   }
-});
-
-router.get("/firebase-test", firebaseAuth, (req, res) => {
-  return res.json({
-    success: true,
-    message: "Firebase authentication is working.",
-    user: {
-      id: req.user.id,
-      firebaseUid: req.user.firebaseUid,
-      role: req.user.role,
-    },
-  });
 });
 
 module.exports = router;

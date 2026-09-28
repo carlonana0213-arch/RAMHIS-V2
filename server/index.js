@@ -6,7 +6,6 @@ const helmet = require("helmet");
 const http = require("http");
 const path = require("path");
 const { Server } = require("socket.io");
-const admin = require("./config/firebaseAdmin");
 
 const connectDB = require("./config/db");
 const pharmacyRoutes = require("./routes/pharmacyRoutes");
