@@ -28,6 +28,11 @@ exports.register = async (req, res) => {
     hospital_clinic,
   } = req.body;
 
+  console.log("🔥 SIGNUP DEBUG");
+console.log("Email:", email);
+console.log("Firebase UID:", firebaseUid);
+console.log("Request body keys:", Object.keys(req.body));
+
   // Normalize mobile/web fields
   const normalizedName = name || full_name;
 
