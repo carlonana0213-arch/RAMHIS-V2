@@ -14,6 +14,7 @@ exports.register = async (req, res) => {
     password,
     role,
     account_type,
+    firebaseUid,
     volunteerType,
     doctorInfo,
     department,
@@ -35,7 +36,8 @@ exports.register = async (req, res) => {
   const normalizedRole =
     rawRole.charAt(0).toUpperCase() + rawRole.slice(1).toLowerCase();
 
-  const normalizedVolunteerType = volunteerType || organization || skills || "";
+  const normalizedVolunteerType =
+    volunteerType || organization || skills || "";
 
   const buildUploadPath = (file) => {
     if (!file || !file.filename) return "";
@@ -86,15 +88,23 @@ exports.register = async (req, res) => {
       ? {
           ...(parsedDoctorInfo || {}),
 
-          specialization: parsedDoctorInfo?.specialization || specialty || "",
+          specialization:
+            parsedDoctorInfo?.specialization || specialty || "",
 
           licenseNumber:
-            parsedDoctorInfo?.licenseNumber || prc_license_number || "",
+            parsedDoctorInfo?.licenseNumber ||
+            prc_license_number ||
+            "",
 
           hospitalClinic:
-            parsedDoctorInfo?.hospitalClinic || hospital_clinic || "",
+            parsedDoctorInfo?.hospitalClinic ||
+            hospital_clinic ||
+            "",
 
-          proofOfLicense: licensePath || parsedDoctorInfo?.proofOfLicense || "",
+          proofOfLicense:
+            licensePath ||
+            parsedDoctorInfo?.proofOfLicense ||
+            "",
 
           proofOfDoctorate:
             doctoratePath ||
@@ -118,15 +128,56 @@ exports.register = async (req, res) => {
     accepted_terms === true || accepted_terms === "true";
 
   try {
-    let user = await User.findOne({ email });
+    // ============================================================
+    // FIREBASE UID VALIDATION
+    // ============================================================
 
-    if (user) {
+    if (!firebaseUid || firebaseUid.trim() === "") {
       return res.status(400).json({
+        success: false,
+        ok: false,
+        message: "Firebase UID is required.",
+        msg: "Firebase UID is required.",
+      });
+    }
+
+    // ============================================================
+    // CHECK IF EMAIL ALREADY EXISTS
+    // ============================================================
+
+    const existingEmailUser = await User.findOne({ email });
+
+    if (existingEmailUser) {
+      return res.status(400).json({
+        success: false,
         ok: false,
         msg: "User already exists",
         message: "User already exists",
       });
     }
+
+    // ============================================================
+    // CHECK IF FIREBASE UID IS ALREADY LINKED
+    // ============================================================
+
+    const existingFirebaseUser = await User.findOne({
+      firebaseUid,
+    });
+
+    if (existingFirebaseUser) {
+      return res.status(409).json({
+        success: false,
+        ok: false,
+        message:
+          "This Firebase account is already linked to a RAMHIS account.",
+        msg:
+          "This Firebase account is already linked to a RAMHIS account.",
+      });
+    }
+
+    // ============================================================
+    // PASSWORD
+    // ============================================================
 
     const generateTempPassword = () => {
       return Math.random().toString(36).slice(-8);
@@ -137,18 +188,27 @@ exports.register = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(tempPassword, salt);
 
-    user = new User({
+    // ============================================================
+    // CREATE USER
+    // ============================================================
+
+    const user = new User({
       name: normalizedName,
       full_name: normalizedName,
 
       email,
       password: hashedPassword,
 
+      // Firebase account linked to this MongoDB user
+      firebaseUid: firebaseUid,
+
       role: normalizedRole,
       account_type: normalizedRole,
 
       department:
-        normalizedRole.toLowerCase() === "doctor" ? department : undefined,
+        normalizedRole.toLowerCase() === "doctor"
+          ? department
+          : undefined,
 
       volunteerType: normalizedVolunteerType,
       volunteerInfo: normalizedVolunteerInfo,
@@ -160,33 +220,52 @@ exports.register = async (req, res) => {
       bdate: birthdate,
       accepted_terms: normalizedAcceptedTerms,
 
+      // New accounts still require admin approval
+      verificationStatus: "Pending",
+
       tempPassword: password ? undefined : tempPassword,
       mustChangePassword: password ? false : true,
     });
 
+    // ============================================================
+    // SAVE USER
+    // ============================================================
+
     await user.save();
 
-    const logAudit = require("../utils/auditLogger");
+    // ============================================================
+    // AUDIT LOG
+    // ============================================================
+
     await logAudit(req, {
       userId: user._id,
       userName: user.name || user.full_name || user.email,
       userRole: user.role,
       module: "Authentication",
       action: "Sign Up",
-      description: `${user.name || user.email} signed up and is awaiting admin approval.`,
+      description:
+        `${user.name || user.email} signed up and is awaiting admin approval.`,
       targetId: user._id,
       targetName: user.name || user.email,
       location: "System",
       metadata: {
         email: user.email,
         role: user.role,
+        firebaseUid: user.firebaseUid,
         verificationStatus: user.verificationStatus,
       },
     });
 
+    // ============================================================
+    // SUCCESS RESPONSE
+    // ============================================================
+
     return res.json({
       ok: true,
+      success: true,
       userId: user._id,
+      firebaseUid: user.firebaseUid,
+      verificationStatus: user.verificationStatus,
       msg: "Registration successful. Await admin approval.",
       message: "Registration successful. Await admin approval.",
     });
@@ -195,6 +274,7 @@ exports.register = async (req, res) => {
 
     return res.status(500).json({
       ok: false,
+      success: false,
       msg: error.message,
       message: error.message,
     });
