@@ -130,6 +130,11 @@ const UserSchema = new mongoose.Schema({
     default: null,
   },
 
+  fcmToken: {
+    type: String,
+    default: null,
+  },
+
   accepted_terms: {
     type: Boolean,
     default: false,

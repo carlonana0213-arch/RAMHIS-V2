@@ -75,6 +75,60 @@ router.get("/online", authMiddleware, async (req, res) => {
   }
 });
 
+// POST /api/users/fcm-token
+router.post("/fcm-token", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user?.id || req.user?._id;
+    const { fcmToken } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({
+        ok: false,
+        message: "Unauthorized",
+      });
+    }
+
+    if (!fcmToken || typeof fcmToken !== "string") {
+      return res.status(400).json({
+        ok: false,
+        message: "FCM token is required",
+      });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        $set: {
+          fcmToken: fcmToken.trim(),
+        },
+      },
+      {
+        new: true,
+      }
+    ).select("_id email fcmToken");
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        ok: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      ok: true,
+      message: "FCM token saved successfully",
+    });
+  } catch (error) {
+    console.error("Save FCM token error:", error);
+
+    return res.status(500).json({
+      ok: false,
+      message: "Failed to save FCM token",
+      error: error.message,
+    });
+  }
+});
+
 router.get("/:id", authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select(
