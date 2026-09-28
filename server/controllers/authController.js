@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const sgMail = require("@sendgrid/mail");
 const logAudit = require("../utils/auditLogger");
+const admin = require("../config/firebaseAdmin");
 
 exports.register = async (req, res) => {
   const {
@@ -373,6 +374,88 @@ exports.updateMe = async (req, res) => {
     res.json(updatedUser);
   } catch (err) {
     res.status(500).json({ msg: "Failed to update account" });
+  }
+};
+
+exports.firebaseLogin = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        success: false,
+        message: "Firebase authentication token is required.",
+      });
+    }
+
+    const idToken = authHeader.split("Bearer ")[1];
+
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+
+    const firebaseUid = decodedToken.uid;
+
+    const user = await User.findOne({ firebaseUid });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Firebase account is not linked to a RAMHIS account.",
+      });
+    }
+
+    if (user.verificationStatus === "Pending") {
+      return res.status(403).json({
+        success: false,
+        message: "Your account is pending approval.",
+      });
+    }
+
+    if (
+      user.verificationStatus === "Rejected" ||
+      user.verificationStatus === "Deactivated"
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: `Your account is ${user.verificationStatus.toLowerCase()}.`,
+      });
+    }
+
+    const token = jwt.sign(
+      {
+        id: user._id,
+        role: user.role,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "30d",
+      },
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Firebase login successful.",
+      accessToken: token,
+      token: token,
+      refreshToken: "",
+      user: {
+        _id: user._id,
+        id: user._id,
+        name: user.name,
+        full_name: user.full_name,
+        email: user.email,
+        role: user.role,
+        account_type: user.account_type,
+        verificationStatus: user.verificationStatus,
+        firebaseUid: user.firebaseUid,
+      },
+    });
+  } catch (error) {
+    console.error("Firebase login error:", error);
+
+    return res.status(401).json({
+      success: false,
+      message: "Invalid or expired Firebase authentication token.",
+    });
   }
 };
 

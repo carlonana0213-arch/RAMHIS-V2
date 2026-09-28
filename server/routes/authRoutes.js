@@ -6,6 +6,7 @@ const firebaseAuth = require("../middleware/firebaseAuth");
 const {
   register,
   login,
+  firebaseLogin,
   forgotPassword,
   resetPassword,
   updateMe,
@@ -69,6 +70,8 @@ router.post("/register", proofUpload, register);
 router.post("/signup", proofUpload, register);
 
 router.post("/login", login);
+
+router.post("/firebase-login", firebaseLogin);
 
 router.post("/forgot-password", forgotPassword);
 
