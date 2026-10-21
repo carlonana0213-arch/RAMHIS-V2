@@ -23,6 +23,30 @@ const getMissionFilter = async (req) => {
   };
 };
 const logAudit = require("../utils/auditLogger");
+const { diffObjects, summarizeChanges } = logAudit;
+const {
+  findDuplicatePatient,
+  buildIdentityQuery,
+} = require("../utils/patientIdentity");
+
+// "Juan Dela Cruz (34 yrs, Male, born 1990-01-01)"
+const describePatient = (patient) => {
+  const info = patient?.generalInfo || {};
+
+  const details = [
+    info.age !== null && info.age !== undefined && info.age !== ""
+      ? `${info.age} yrs`
+      : null,
+    info.sex || info.gender || null,
+    info.birthdate ? `born ${String(info.birthdate).slice(0, 10)}` : null,
+  ].filter(Boolean);
+
+  const name = String(info.name || "").trim().replace(/\s+/g, " ");
+
+  return `${name || "Unknown Patient"}${
+    details.length ? ` (${details.join(", ")})` : ""
+  }`;
+};
 
 exports.getAllPatients = async (req, res) => {
   try {
@@ -74,6 +98,51 @@ exports.createPatient = async (req, res) => {
       generalInfo.gender = generalInfo.sex;
     }
 
+    // ---------------------------------------------------------
+    // DUPLICATE PATIENT GUARD
+    //
+    // A patient with the same name and birthdate must not be
+    // registered twice.
+    // ---------------------------------------------------------
+
+    const duplicate = await findDuplicatePatient(
+      generalInfo.name,
+      generalInfo.birthdate,
+    );
+
+    if (duplicate) {
+      await logAudit(req, {
+        module: "Registration",
+        action: "Duplicate Registration Blocked",
+        status: "Blocked",
+        reason:
+          "A patient with the same name and birthdate is already registered.",
+        description: `Blocked registration of ${describePatient({
+          generalInfo,
+        })}: ${describePatient(duplicate)} is already registered.`,
+        targetType: "Patient",
+        targetId: duplicate._id,
+        targetName: duplicate.generalInfo?.name || "Unknown Patient",
+        location,
+        eventId: duplicate.eventId,
+        metadata: {
+          existingPatientId: duplicate._id,
+          existingRegisteredAt: duplicate.createdAt,
+          existingStatus: duplicate.status,
+          existingDepartment: duplicate.department,
+          attemptedDepartment: department,
+          attemptedLocation: location,
+        },
+      });
+
+      return res.status(409).json({
+        duplicate: true,
+        message:
+          "This patient already exists. A patient with the same name and birthdate is already registered.",
+        existingPatient: duplicate,
+      });
+    }
+
     const ongoingEvent = await Event.findOne({
       status: "Ongoing",
     });
@@ -108,16 +177,25 @@ exports.createPatient = async (req, res) => {
     await logAudit(req, {
       module: "Registration",
       action: "Add Patient",
-      description: `Added patient ${patient.generalInfo?.name || "Unknown Patient"} to the queue.`,
+      description: `Registered ${describePatient(patient)} to the ${
+        patient.department || "unassigned"
+      } queue${patient.isPriority ? " as a priority patient" : ""} at ${
+        patient.location
+      }.`,
+      targetType: "Patient",
       targetId: patient._id,
       targetName: patient.generalInfo?.name || "Unknown Patient",
       location: patient.location,
       eventId: patient.eventId,
-      eventTitle: patient.eventTitle,
       metadata: {
         department: patient.department,
         status: patient.status,
         isPriority: patient.isPriority,
+        initComplaint: patient.initComplaint,
+        age: patient.generalInfo?.age,
+        sex: patient.generalInfo?.sex,
+        birthdate: patient.generalInfo?.birthdate,
+        missionDate: patient.missionDate,
       },
     });
 
@@ -139,19 +217,9 @@ exports.getPatientsByName = async (req, res) => {
       return res.json([]);
     }
 
-    const cleanedName = name.trim();
-
-    const query = {
-      "generalInfo.name": {
-        $regex: `^${cleanedName}$`,
-        $options: "i",
-      },
-    };
-
-    // safer duplicate matching
-    if (birthdate) {
-      query["generalInfo.birthdate"] = birthdate;
-    }
+    // Name and birthdate are escaped/normalised so special
+    // characters in a name cannot break the search.
+    const query = buildIdentityQuery(name, birthdate);
 
     const patients = await Patient.find(query).sort({
       updatedAt: -1,
@@ -194,6 +262,9 @@ exports.updatePatient = async (req, res) => {
         message: "Patient not found",
       });
     }
+
+    // Snapshot used to record exactly what this update changed.
+    const patientBefore = currentPatient.toObject();
 
     // ---------------------------------------------------------
     // SERVER-SIDE CONFLICT DETECTION
@@ -282,6 +353,32 @@ exports.updatePatient = async (req, res) => {
           serverCandidate,
         });
 
+        await logAudit(req, {
+          module: "Sync",
+          action: "Sync Conflict Detected",
+          status: "Blocked",
+          reason:
+            "The offline change was based on an older version of this patient.",
+          description: `Offline update to ${describePatient(
+            currentPatient,
+          )} was held for review because the record changed on the server after it was downloaded.`,
+          targetType: "Patient",
+          targetId: currentPatient._id,
+          targetName: currentPatient.generalInfo?.name || "Unknown Patient",
+          location: currentPatient.location,
+          eventId: currentPatient.eventId,
+          operationId,
+          changes: diffObjects(patientBefore, patientUpdateData, {
+            fields: Object.keys(patientUpdateData || {}),
+          }),
+          metadata: {
+            conflictId: conflict._id,
+            entityType: "patient",
+            baseUpdatedAt,
+            serverUpdatedAt,
+          },
+        });
+
         // -----------------------------------------------------
         // RETURN CONFLICT TO CLIENT
         // -----------------------------------------------------
@@ -334,14 +431,20 @@ exports.updatePatient = async (req, res) => {
     }
 
     if (updated) {
+      const changes = diffObjects(patientBefore, updated.toObject(), {
+        fields: Object.keys(patientUpdateData || {}),
+      });
+
       await logAudit(req, {
         module: "Registration",
 
         action: req.body.status ? "Update Patient Status" : "Update Patient",
 
-        description: `Updated patient ${
-          updated.generalInfo?.name || "Unknown Patient"
-        }.`,
+        description: changes.length
+          ? `Updated ${describePatient(updated)}. ${summarizeChanges(changes)}.`
+          : `Saved ${describePatient(updated)} with no field changes.`,
+
+        targetType: "Patient",
 
         targetId: updated._id,
 
@@ -351,13 +454,14 @@ exports.updatePatient = async (req, res) => {
 
         eventId: updated.eventId,
 
-        eventTitle: updated.eventTitle,
+        operationId,
+
+        changes,
 
         metadata: {
           updatedFields: Object.keys(patientUpdateData || {}),
           status: updated.status,
           department: updated.department,
-          operationId,
         },
       });
     }
@@ -389,12 +493,24 @@ exports.deletePatient = async (req, res) => {
     await logAudit(req, {
       module: "Registration",
       action: "Delete Patient",
-      description: `Deleted patient ${patient.generalInfo?.name || "Unknown Patient"}.`,
+      description: `Deleted ${describePatient(patient)} from ${
+        patient.location
+      }, including ${patient.doctorSheets?.length || 0} doctor record(s).`,
+      targetType: "Patient",
       targetId: patient._id,
       targetName: patient.generalInfo?.name || "Unknown Patient",
       location: patient.location,
       eventId: patient.eventId,
-      eventTitle: patient.eventTitle,
+      metadata: {
+        // Kept so there is still a trace of what was removed.
+        deletedRecord: {
+          generalInfo: patient.generalInfo,
+          department: patient.department,
+          status: patient.status,
+          registeredAt: patient.createdAt,
+          doctorRecordCount: patient.doctorSheets?.length || 0,
+        },
+      },
     });
 
     res.json({ msg: "Patient deleted" });
@@ -599,6 +715,32 @@ exports.addDoctorRecord = async (req, res) => {
           serverCandidate,
         });
 
+        await logAudit(req, {
+          module: "Sync",
+          action: "Sync Conflict Detected",
+          status: "Blocked",
+          reason:
+            "The offline doctor record was based on an older version of this patient.",
+          description: `Offline doctor record for ${describePatient(
+            currentPatient,
+          )} (${doctorRecordData.department || "no department"}, Dr. ${
+            doctorRecordData.doctorName || "unknown"
+          }) was held for review because the patient changed on the server.`,
+          targetType: "Doctor Record",
+          targetId: currentPatient._id,
+          targetName: currentPatient.generalInfo?.name || "Unknown Patient",
+          location: currentPatient.location,
+          eventId: currentPatient.eventId,
+          operationId,
+          metadata: {
+            conflictId: conflict._id,
+            entityType: "doctorRecord",
+            diagnosis: doctorRecordData.diagnosis,
+            baseUpdatedAt,
+            serverUpdatedAt,
+          },
+        });
+
         return res.status(409).json({
           message: "Doctor record sync conflict detected",
 
@@ -642,22 +784,38 @@ exports.addDoctorRecord = async (req, res) => {
 
     io.emit("queueUpdated");
 
+    const savedRecord =
+      currentPatient.doctorSheets[currentPatient.doctorSheets.length - 1];
+
     await logAudit(req, {
       module: "Consultation",
       action: "Add Doctor Record",
-      description: `Added doctor record for ${
-        currentPatient.generalInfo?.name || "Unknown Patient"
+      description: `Added a consultation record (${
+        doctorRecordData.recordType || "initial"
+      }, ${doctorRecordData.department || "no department"}) by Dr. ${
+        doctorRecordData.doctorName || "unknown"
+      } for ${describePatient(currentPatient)}${
+        doctorRecordData.diagnosis
+          ? `. Diagnosis: ${doctorRecordData.diagnosis}`
+          : ""
       }.`,
+      targetType: "Doctor Record",
       targetId: currentPatient._id,
       targetName: currentPatient.generalInfo?.name || "Unknown Patient",
       location: currentPatient.location,
       eventId: currentPatient.eventId,
-      eventTitle: currentPatient.eventTitle,
+      operationId,
       metadata: {
+        recordId: savedRecord?._id,
+        recordType: doctorRecordData.recordType || "initial",
         doctorName: doctorRecordData.doctorName,
         department: doctorRecordData.department,
+        initComplaint: doctorRecordData.initComplaint,
         diagnosis: doctorRecordData.diagnosis,
-        operationId,
+        treatment: doctorRecordData.treatment,
+        medication: doctorRecordData.medication,
+        referral: doctorRecordData.referral,
+        totalRecordsForPatient: currentPatient.doctorSheets.length,
       },
     });
 
@@ -699,6 +857,8 @@ exports.deleteDoctorRecord = async (req, res) => {
       });
     }
 
+    const removedRecord = record.toObject();
+
     patient.deletedDoctorRecords = patient.deletedDoctorRecords || [];
 
     patient.deletedDoctorRecords.push({
@@ -718,15 +878,33 @@ exports.deleteDoctorRecord = async (req, res) => {
     await logAudit(req, {
       module: "Consultation",
       action: "Delete Doctor Record",
-      description: `Deleted doctor record for ${patient.generalInfo?.name || "Unknown Patient"}.`,
+      description: `Deleted the ${
+        removedRecord.department || "unspecified department"
+      } consultation record by Dr. ${
+        removedRecord.doctorName || "unknown"
+      } for ${describePatient(patient)}${
+        removedRecord.diagnosis ? `. Diagnosis was: ${removedRecord.diagnosis}` : ""
+      }.`,
+      targetType: "Doctor Record",
       targetId: patient._id,
       targetName: patient.generalInfo?.name || "Unknown Patient",
       location: patient.location,
       eventId: patient.eventId,
-      eventTitle: patient.eventTitle,
       metadata: {
+        recordId,
         deletedBy,
         deletedAt,
+        // The record is also kept in patient.deletedDoctorRecords.
+        deletedRecord: {
+          date: removedRecord.date,
+          recordType: removedRecord.recordType,
+          doctorName: removedRecord.doctorName,
+          department: removedRecord.department,
+          initComplaint: removedRecord.initComplaint,
+          diagnosis: removedRecord.diagnosis,
+          treatment: removedRecord.treatment,
+          medication: removedRecord.medication,
+        },
       },
     });
 

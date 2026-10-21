@@ -8,7 +8,9 @@ const {
   resetPassword,
   updateMe,
   getMe,
+  logout,
 } = require("../controllers/authController");
+const logAudit = require("../utils/auditLogger");
 
 const auth = require("../middleware/authMiddleware");
 const bcrypt = require("bcryptjs");
@@ -80,6 +82,8 @@ router.get("/reset-password", (req, res) => {
 
 router.get("/me", auth, getMe);
 
+router.post("/logout", auth, logout);
+
 router.post("/change-password", auth, async (req, res) => {
   try {
     const { newPassword } = req.body;
@@ -95,6 +99,16 @@ router.post("/change-password", auth, async (req, res) => {
     user.tempPassword = undefined;
 
     await user.save();
+
+    await logAudit(req, {
+      module: "Authentication",
+      action: "Change Password",
+      description: `${user.name || user.email} changed their password.`,
+      targetType: "User",
+      targetId: user._id,
+      targetName: user.name || user.email,
+      location: "Account Settings",
+    });
 
     res.json({ msg: "Password updated" });
   } catch (err) {

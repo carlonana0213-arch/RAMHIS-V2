@@ -5,10 +5,17 @@ const router = express.Router();
 const auth = require("../middleware/authMiddleware");
 
 const {
+  getPendingConflicts,
   getPatientConflicts,
   getConflict,
   resolveConflict,
 } = require("../controllers/SyncConflictController");
+
+// ---------------------------------------------------------
+// Get every pending conflict (must stay above "/:conflictId")
+// ---------------------------------------------------------
+
+router.get("/pending", auth, getPendingConflicts);
 
 // ---------------------------------------------------------
 // Get all pending conflicts for a patient

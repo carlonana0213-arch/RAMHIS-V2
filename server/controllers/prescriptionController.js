@@ -53,17 +53,47 @@ exports.createPrescription = async (req, res) => {
 
     io.emit("queueUpdated");
 
+    // Resolve the medicine names so the log says what was prescribed.
+    const prescribedMedicines = await Medicine.find({
+      _id: { $in: (items || []).map((item) => item.medicine) },
+    })
+      .select("names name")
+      .lean();
+
+    const prescribedItems = (items || []).map((item) => {
+      const medicine = prescribedMedicines.find(
+        (med) => String(med._id) === String(item.medicine),
+      );
+
+      return {
+        medicine: getMedicineName(medicine),
+        medicineId: item.medicine,
+        quantity: item.quantity,
+        directions: item.directions,
+      };
+    });
+
     await logAudit(req, {
       module: "Consultation",
       action: "Create Prescription",
-      description: `Created prescription for ${patientRecord.generalInfo?.name || "Unknown Patient"}.`,
+      description: `Created a prescription for ${
+        patientRecord.generalInfo?.name || "Unknown Patient"
+      }: ${
+        prescribedItems.length
+          ? prescribedItems
+              .map((item) => `${item.medicine} ×${item.quantity}`)
+              .join(", ")
+          : "no items"
+      }.`,
+      targetType: "Prescription",
       targetId: prescription._id,
       targetName: patientRecord.generalInfo?.name || "Unknown Patient",
       location: patientRecord.location || "System",
       eventId: patientRecord.eventId,
-      eventTitle: patientRecord.eventTitle,
       metadata: {
-        itemCount: items?.length || 0,
+        patientId: patientRecord._id,
+        itemCount: prescribedItems.length,
+        items: prescribedItems,
         status: prescription.status,
       },
     });
@@ -320,6 +350,8 @@ exports.markAsGiven = async (req, res) => {
       });
     }
 
+    const stockBefore = medicine.quantity;
+
     // deduct stock
     medicine.quantity -= item.quantity;
 
@@ -342,16 +374,30 @@ exports.markAsGiven = async (req, res) => {
     await logAudit(req, {
       module: "Medicine Release",
       action: "Medicine Given",
-      description: `Released ${item.quantity} ${getMedicineName(medicine)} to ${patientRecord?.generalInfo?.name || "Unknown Patient"}.`,
+      description: `Released ${item.quantity} ${getMedicineName(medicine)} to ${
+        patientRecord?.generalInfo?.name || "Unknown Patient"
+      }. Stock went from ${stockBefore} to ${medicine.quantity}.`,
+      targetType: "Prescription",
       targetId: prescription._id,
       targetName: getMedicineName(medicine),
       location: patientRecord?.location || "Pharmacy",
       eventId: patientRecord?.eventId || prescription.eventId,
-      eventTitle: patientRecord?.eventTitle || prescription.eventTitle,
+      changes: [
+        {
+          field: "stock",
+          label: `${getMedicineName(medicine)} › Stock`,
+          before: stockBefore,
+          after: medicine.quantity,
+        },
+      ],
       metadata: {
+        patientId: prescription.patient,
+        patientName: patientRecord?.generalInfo?.name,
         medicineId: medicine._id,
         medicineName: getMedicineName(medicine),
+        directions: item.directions,
         quantityGiven: item.quantity,
+        previousStock: stockBefore,
         remainingStock: medicine.quantity,
         prescriptionStatus: prescription.status,
       },

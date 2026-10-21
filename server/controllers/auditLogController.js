@@ -1,4 +1,9 @@
+const mongoose = require("mongoose");
+
 const AuditLog = require("../models/AuditLog");
+
+const escapeRegex = (value) =>
+  String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const isAdmin = (req) => {
   return (req.user?.role || "").toLowerCase() === "admin";
@@ -18,6 +23,8 @@ exports.getAuditLogs = async (req, res) => {
       module,
       action,
       location,
+      status,
+      source,
       dateFrom,
       dateTo,
       limit = 300,
@@ -37,6 +44,14 @@ exports.getAuditLogs = async (req, res) => {
       query.location = location;
     }
 
+    if (status && status !== "All") {
+      query.status = status;
+    }
+
+    if (source && source !== "All") {
+      query.source = source;
+    }
+
     if (dateFrom || dateTo) {
       query.createdAt = {};
 
@@ -52,17 +67,21 @@ exports.getAuditLogs = async (req, res) => {
     }
 
     if (search && search.trim() !== "") {
-      const regex = new RegExp(search.trim(), "i");
+      const regex = new RegExp(escapeRegex(search.trim()), "i");
 
       query.$or = [
         { userName: regex },
         { userRole: regex },
+        { userEmail: regex },
         { module: regex },
         { action: regex },
         { description: regex },
+        { reason: regex },
         { targetName: regex },
+        { targetType: regex },
         { location: regex },
         { eventTitle: regex },
+        { ipAddress: regex },
       ];
     }
 
@@ -84,6 +103,40 @@ exports.getAuditLogs = async (req, res) => {
       ok: false,
       message: "Failed to fetch audit logs",
       error: error.message,
+    });
+  }
+};
+
+exports.getAuditLog = async (req, res) => {
+  try {
+    if (!isAdmin(req)) {
+      return res.status(403).json({
+        ok: false,
+        message: "Access denied",
+      });
+    }
+
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({
+        ok: false,
+        message: "Invalid audit log id",
+      });
+    }
+
+    const log = await AuditLog.findById(req.params.id);
+
+    if (!log) {
+      return res.status(404).json({
+        ok: false,
+        message: "Audit log not found",
+      });
+    }
+
+    res.json({ ok: true, data: log });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      message: "Failed to fetch audit log",
     });
   }
 };

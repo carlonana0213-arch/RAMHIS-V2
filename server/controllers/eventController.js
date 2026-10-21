@@ -2,6 +2,24 @@ const Event = require("../models/Event");
 const ChatThread = require("../models/ChatThread");
 const logAudit = require("../utils/auditLogger");
 
+const { diffObjects, summarizeChanges } = logAudit;
+
+// "Sat, Jun 6, 2026 · 08:00 – 17:00"
+const describeSchedule = (event) => {
+  const date = event?.date
+    ? new Date(event.date).toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "no date";
+
+  const time = [event?.startTime, event?.endTime].filter(Boolean).join(" – ");
+
+  return time ? `${date} · ${time}` : date;
+};
+
 let io = null;
 
 exports.initEventController = (socketIo) => {
@@ -209,7 +227,10 @@ if (event.status === "Ongoing") {
     await logAudit(req, {
       module: "Events",
       action: "Create Event",
-      description: `Created event ${event.title}.`,
+      description: `Created ${event.type || "event"} "${event.title}" at ${
+        event.location
+      } on ${describeSchedule(event)} with status ${event.status}.`,
+      targetType: "Event",
       targetId: event._id,
       targetName: event.title,
       location: event.location,
@@ -219,6 +240,9 @@ if (event.status === "Ongoing") {
         type: event.type,
         status: event.status,
         date: event.date,
+        startTime: event.startTime,
+        endTime: event.endTime,
+        description: event.description,
       },
     });
 
@@ -289,19 +313,53 @@ exports.updateEvent = async (req, res) => {
     ) {
       emitMissionCompleted(event);
     }
+    const changedFields = Object.keys(req.body || {}).filter(
+      (key) => !["participants", "createdBy"].includes(key),
+    );
+
+    const changes = diffObjects(previousEvent.toObject(), event.toObject(), {
+      fields: changedFields,
+    });
+
+    const statusChanged = previousEvent.status !== event.status;
+
+    const action = !statusChanged
+      ? "Update Event"
+      : event.status === "Ongoing"
+        ? "Start Mission"
+        : event.status === "Completed"
+          ? "Complete Mission"
+          : event.status === "Cancelled"
+            ? "Cancel Event"
+            : "Update Event";
+
     await logAudit(req, {
       module: "Events",
-      action: "Update Event",
-      description: `Updated event ${event.title}.`,
+      action,
+      description: statusChanged
+        ? `Changed the status of "${event.title}" from ${previousEvent.status} to ${event.status}.${
+            changes.filter((change) => change.field !== "status").length
+              ? ` Also: ${summarizeChanges(
+                  changes.filter((change) => change.field !== "status"),
+                  2,
+                )}.`
+              : ""
+          }`
+        : changes.length
+          ? `Updated "${event.title}". ${summarizeChanges(changes)}.`
+          : `Saved "${event.title}" with no field changes.`,
+      targetType: "Event",
       targetId: event._id,
       targetName: event.title,
       location: event.location,
       eventId: event._id,
       eventTitle: event.title,
+      changes,
       metadata: {
         updatedFields: Object.keys(req.body || {}),
         type: event.type,
         status: event.status,
+        previousStatus: previousEvent.status,
       },
     });
 
@@ -344,12 +402,23 @@ exports.deleteEvent = async (req, res) => {
     await logAudit(req, {
       module: "Events",
       action: "Delete Event",
-      description: `Deleted event ${event.title}.`,
+      description: `Deleted ${event.type || "event"} "${event.title}" (${
+        event.status
+      }, ${describeSchedule(event)}) at ${event.location}.`,
+      targetType: "Event",
       targetId: event._id,
       targetName: event.title,
       location: event.location,
       eventId: event._id,
       eventTitle: event.title,
+      metadata: {
+        deletedRecord: {
+          type: event.type,
+          status: event.status,
+          date: event.date,
+          participantCount: event.participants?.length || 0,
+        },
+      },
     });
     
     res.status(200).json({
@@ -418,7 +487,10 @@ exports.joinEvent = async (req, res) => {
     await logAudit(req, {
       module: "Events",
       action: "Join Event",
-      description: `Submitted join request for ${event.title}.`,
+      description: `Submitted a request to join "${event.title}" (${describeSchedule(
+        event,
+      )}) at ${event.location}.`,
+      targetType: "Event",
       targetId: event._id,
       targetName: event.title,
       location: event.location,
@@ -465,7 +537,10 @@ exports.leaveEvent = async (req, res) => {
     await logAudit(req, {
       module: "Events",
       action: "Leave Event",
-      description: `Cancelled join request for ${event.title}.`,
+      description: `Cancelled their request to join "${event.title}" (${describeSchedule(
+        event,
+      )}).`,
+      targetType: "Event",
       targetId: event._id,
       targetName: event.title,
       location: event.location,
@@ -519,6 +594,8 @@ exports.updateParticipantStatus = async (req, res) => {
         message: "Participant not found",
       });
     }
+
+    const previousParticipantStatus = participant.status;
 
     participant.status = status;
 
@@ -586,17 +663,38 @@ exports.updateParticipantStatus = async (req, res) => {
 
     emitEventsUpdated(eventId);
 
+    const participantUser = updatedEvent?.participants?.find(
+      (item) => String(item.userId?._id || item.userId) === String(userId),
+    )?.userId;
+
+    const participantName =
+      participantUser?.name || participantUser?.email || "a volunteer";
+
     await logAudit(req, {
       module: "Events",
       action: `${status} Event Participant`,
-      description: `Marked participant as ${status} for ${event.title}.`,
+      description: `Marked ${participantName}${
+        participantUser?.role ? ` (${participantUser.role})` : ""
+      } as ${status} for "${event.title}".`,
+      targetType: "Event",
       targetId: event._id,
       targetName: event.title,
       location: event.location,
       eventId: event._id,
       eventTitle: event.title,
+      changes: [
+        {
+          field: "participant.status",
+          label: `${participantName} › Status`,
+          before: previousParticipantStatus,
+          after: status,
+        },
+      ],
       metadata: {
         participantId: userId,
+        participantName,
+        participantEmail: participantUser?.email,
+        participantRole: participantUser?.role,
         participantStatus: status,
       },
     });

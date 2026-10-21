@@ -200,6 +200,29 @@ exports.register = async (req, res) => {
   }
 };
 
+// Records a rejected sign-in attempt. Passwords are never logged.
+const logFailedLogin = (req, { attemptedEmail, user, reason }) =>
+  logAudit(req, {
+    userId: user?._id,
+    userName: user ? user.name || user.full_name || user.email : attemptedEmail,
+    userRole: user?.role,
+    userEmail: user?.email || attemptedEmail,
+    module: "Authentication",
+    action: "Failed Login",
+    status: "Failed",
+    reason,
+    description: `Sign-in attempt for ${attemptedEmail || "an unknown account"} was rejected: ${reason}.`,
+    targetType: "User",
+    targetId: user?._id,
+    targetName: user ? user.name || user.email : attemptedEmail,
+    location: "System",
+    metadata: {
+      attemptedEmail,
+      accountFound: Boolean(user),
+      verificationStatus: user?.verificationStatus,
+    },
+  });
+
 exports.login = async (req, res) => {
   const { email, password } = req.body;
 
@@ -207,10 +230,21 @@ exports.login = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (!user) {
+      await logFailedLogin(req, {
+        attemptedEmail: String(email || ""),
+        reason: "no account matches that email",
+      });
+
       return res.status(400).json({ msg: "Invalid credentials" });
     }
 
     if (user.verificationStatus === "Pending") {
+      await logFailedLogin(req, {
+        attemptedEmail: user.email,
+        user,
+        reason: "the account is still awaiting admin approval",
+      });
+
       return res.status(403).json({
         msg: "Your account is awaiting admin approval",
       });
@@ -221,6 +255,14 @@ exports.login = async (req, res) => {
       user.verificationStatus === "Deactivated" ||
       user.status === "deactivated"
     ) {
+      await logFailedLogin(req, {
+        attemptedEmail: user.email,
+        user,
+        reason: `the account is ${String(
+          user.verificationStatus || user.status,
+        ).toLowerCase()}`,
+      });
+
       return res.status(403).json({
         msg: "Your account is deactivated, please contact administrator",
       });
@@ -234,6 +276,12 @@ console.log("Password field exists:", !!user.password);
 console.log("Password match:", isMatch);
 
 if (!isMatch) {
+  await logFailedLogin(req, {
+    attemptedEmail: user.email,
+    user,
+    reason: "incorrect password",
+  });
+
   return res.status(400).json({ msg: "Invalid credentials" });
 }
 
@@ -252,7 +300,10 @@ if (!isMatch) {
       userRole: user.role,
       module: "Authentication",
       action: "Login",
-      description: `${user.name || user.email} logged in.`,
+      description: `${user.name || user.email} (${user.role}${
+        user.department ? `, ${user.department}` : ""
+      }) logged in.`,
+      targetType: "User",
       targetId: user._id,
       targetName: user.name || user.email,
       location: "System",
@@ -352,6 +403,33 @@ if (!isMatch) {
   }
 };
 
+exports.logout = async (req, res) => {
+  try {
+    const user = await User.findById(req.user?.id).select(
+      "name full_name email role department",
+    );
+
+    const timedOut = req.body?.reason === "timeout";
+
+    await logAudit(req, {
+      module: "Authentication",
+      action: timedOut ? "Session Timed Out" : "Logout",
+      description: timedOut
+        ? `${user?.name || user?.email || "A user"} was signed out after the session timed out.`
+        : `${user?.name || user?.email || "A user"} logged out.`,
+      targetType: "User",
+      targetId: req.user?.id,
+      targetName: user?.name || user?.email || "",
+      location: "System",
+      metadata: { reason: timedOut ? "timeout" : "manual" },
+    });
+
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ ok: false, msg: "Logout logging failed" });
+  }
+};
+
 exports.updateMe = async (req, res) => {
   try {
     const updates = {
@@ -366,8 +444,30 @@ exports.updateMe = async (req, res) => {
       updates.password = await bcrypt.hash(req.body.password, salt);
     }
 
+    const userBefore = await User.findById(req.user.id)
+      .select("-password")
+      .lean();
+
     const updatedUser = await User.findByIdAndUpdate(req.user.id, updates, {
       new: true,
+    });
+
+    const changes = logAudit.diffObjects(userBefore, updatedUser?.toObject(), {
+      fields: ["name", "email", "age", "birthday"],
+    });
+
+    await logAudit(req, {
+      module: "Accounts",
+      action: "Update Own Account",
+      description: `${updatedUser?.name || updatedUser?.email} updated their own account${
+        req.body.password ? " and changed their password" : ""
+      }.${changes.length ? ` ${logAudit.summarizeChanges(changes)}.` : ""}`,
+      targetType: "User",
+      targetId: req.user.id,
+      targetName: updatedUser?.name || updatedUser?.email,
+      location: "Account Settings",
+      changes,
+      metadata: { passwordChanged: Boolean(req.body.password) },
     });
 
     res.json(updatedUser);
@@ -486,6 +586,19 @@ await User.updateOne(
 
     console.log("EMAIL SENT SUCCESSFULLY");
 
+    await logAudit(req, {
+      userId: user._id,
+      userName: user.name || user.full_name || user.email,
+      userRole: user.role,
+      module: "Authentication",
+      action: "Password Reset Requested",
+      description: `A password reset link was emailed to ${user.email}. It expires in 15 minutes.`,
+      targetType: "User",
+      targetId: user._id,
+      targetName: user.name || user.email,
+      location: "System",
+    });
+
     res.json({
       ok: true,
       message: "If an account exists, a reset link has been sent.",
@@ -547,6 +660,19 @@ exports.resetPassword = async (req, res) => {
         },
       }
     );
+
+    await logAudit(req, {
+      userId: user._id,
+      userName: user.name || user.full_name || user.email,
+      userRole: user.role,
+      module: "Authentication",
+      action: "Password Reset Completed",
+      description: `${user.name || user.email} set a new password using a reset link.`,
+      targetType: "User",
+      targetId: user._id,
+      targetName: user.name || user.email,
+      location: "System",
+    });
 
     res.json({
       ok: true,

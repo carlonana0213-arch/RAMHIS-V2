@@ -4,6 +4,8 @@ const sgMail = require("@sendgrid/mail");
 const bcrypt = require("bcryptjs");
 const logAudit = require("../utils/auditLogger");
 
+const { diffObjects, summarizeChanges } = logAudit;
+
 const generateTempPassword = () => {
   return Math.random().toString(36).slice(-8);
 };
@@ -99,6 +101,25 @@ exports.approveUser = async (req, res) => {
   `,
     });
 
+    await logAudit(req, {
+      module: "Accounts",
+      action: "Approve User",
+      description: `Approved the account of ${user.name || user.email} (${
+        user.role || "no role"
+      }) and emailed temporary login details to ${user.email}.`,
+      targetType: "User",
+      targetId: user._id,
+      targetName: user.name || user.email,
+      location: "Account Management",
+      metadata: {
+        email: user.email,
+        role: user.role,
+        department: user.department,
+        verificationStatus: user.verificationStatus,
+        credentialsEmailed: true,
+      },
+    });
+
     res.json({
       ok: true,
       msg: "User approved and email sent",
@@ -116,6 +137,10 @@ exports.approveUser = async (req, res) => {
 
 exports.rejectUser = async (req, res) => {
   try {
+    const previousUser = await User.findById(req.params.id)
+      .select("verificationStatus status")
+      .lean();
+
     const user = await User.findByIdAndUpdate(
       req.params.id,
       {
@@ -136,15 +161,27 @@ exports.rejectUser = async (req, res) => {
 
     await logAudit(req, {
       module: "Accounts",
-      action: "Update User",
-      description: `Updated user ${user.name || user.email}.`,
+      action: "Reject User",
+      description: `Rejected the account of ${user.name || user.email} (${
+        user.role || "no role"
+      }). Status changed from ${
+        previousUser?.verificationStatus || "unknown"
+      } to ${user.verificationStatus}.`,
+      targetType: "User",
       targetId: user._id,
       targetName: user.name || user.email,
       location: "Account Management",
+      changes: [
+        {
+          field: "verificationStatus",
+          label: "Verification Status",
+          before: previousUser?.verificationStatus || null,
+          after: user.verificationStatus,
+        },
+      ],
       metadata: {
         email: user.email,
         role: user.role,
-        verificationStatus: user.verificationStatus,
       },
     });
 
@@ -229,6 +266,10 @@ exports.updateUser = async (req, res) => {
       updates.volunteerInfo = volunteerInfo;
     }
 
+    const userBefore = await User.findById(req.params.id)
+      .select("-password")
+      .lean();
+
     const user = await User.findByIdAndUpdate(
       req.params.id,
       { $set: updates },
@@ -245,13 +286,21 @@ exports.updateUser = async (req, res) => {
       });
     }
 
+    const changes = diffObjects(userBefore, user.toObject(), {
+      fields: Object.keys(updates),
+    });
+
     await logAudit(req, {
       module: "Accounts",
       action: "Update User",
-      description: `Updated user ${user.name || user.email}.`,
+      description: changes.length
+        ? `Updated the account of ${user.name || user.email}. ${summarizeChanges(changes)}.`
+        : `Saved the account of ${user.name || user.email} with no field changes.`,
+      targetType: "User",
       targetId: user._id,
       targetName: user.name || user.email,
       location: "Account Management",
+      changes,
       metadata: {
         email: user.email,
         role: user.role,
@@ -322,6 +371,10 @@ exports.updateUser = async (req, res) => {
       updates.volunteerInfo = volunteerInfo;
     }
 
+    const userBefore = await User.findById(req.params.id)
+      .select("-password")
+      .lean();
+
     const user = await User.findByIdAndUpdate(
       req.params.id,
       { $set: updates },
@@ -338,13 +391,21 @@ exports.updateUser = async (req, res) => {
       });
     }
 
+    const changes = diffObjects(userBefore, user.toObject(), {
+      fields: Object.keys(updates),
+    });
+
     await logAudit(req, {
       module: "Accounts",
       action: "Update User",
-      description: `Updated user ${user.name || user.email}.`,
+      description: changes.length
+        ? `Updated the account of ${user.name || user.email}. ${summarizeChanges(changes)}.`
+        : `Saved the account of ${user.name || user.email} with no field changes.`,
+      targetType: "User",
       targetId: user._id,
       targetName: user.name || user.email,
       location: "Account Management",
+      changes,
       metadata: {
         email: user.email,
         role: user.role,
@@ -402,6 +463,10 @@ exports.updateUserStatus = async (req, res) => {
       isActive = false;
     }
 
+    const previousUser = await User.findById(req.params.id)
+      .select("verificationStatus")
+      .lean();
+
     const user = await User.findByIdAndUpdate(
       req.params.id,
       {
@@ -422,10 +487,21 @@ exports.updateUserStatus = async (req, res) => {
             : verificationStatus === "Deactivated"
               ? "Deactivate User"
               : "Update User Status",
-        description: `Changed ${user.name || user.email} status to ${verificationStatus}.`,
+        description: `Changed the account status of ${user.name || user.email} (${
+          user.role || "no role"
+        }) from ${previousUser?.verificationStatus || "unknown"} to ${verificationStatus}.`,
+        targetType: "User",
         targetId: user._id,
         targetName: user.name || user.email,
         location: "Account Management",
+        changes: [
+          {
+            field: "verificationStatus",
+            label: "Verification Status",
+            before: previousUser?.verificationStatus || null,
+            after: verificationStatus,
+          },
+        ],
         metadata: {
           verificationStatus,
           status,
@@ -506,7 +582,10 @@ exports.resetUserPassword = async (req, res) => {
     await logAudit(req, {
       module: "Accounts",
       action: "Reset User Password",
-      description: `Reset password for ${user.name || user.email}.`,
+      description: `Reset the password of ${user.name || user.email} (${
+        user.role || "no role"
+      }) and emailed a temporary password to ${user.email}.`,
+      targetType: "User",
       targetId: user._id,
       targetName: user.name || user.email,
       location: "Account Management",

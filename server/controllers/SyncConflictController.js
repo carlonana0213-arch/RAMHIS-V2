@@ -1,5 +1,13 @@
 const SyncConflict = require("../models/SyncConflict");
 const Patient = require("../models/Patient");
+const logAudit = require("../utils/auditLogger");
+
+const { diffObjects, summarizeChanges } = logAudit;
+
+const candidateOwnerName = (candidate) =>
+  candidate?.ownerKey?.name ||
+  candidate?.ownerKey?.full_name ||
+  (candidate?.ownerKey ? String(candidate.ownerKey) : "Unknown user");
 
 // ---------------------------------------------------------
 // Add a candidate to an existing conflict or create a new
@@ -82,6 +90,48 @@ exports.createOrAppendConflict = async ({
     console.error("CREATE/APPEND SYNC CONFLICT ERROR:", err);
 
     throw err;
+  }
+};
+
+// ---------------------------------------------------------
+// Get ALL pending conflicts (used by the sync status panel)
+// ---------------------------------------------------------
+exports.getPendingConflicts = async (req, res) => {
+  try {
+    const conflicts = await SyncConflict.find({ status: "pending" })
+      .populate({
+        path: "candidates.ownerKey",
+        select: "name full_name role",
+      })
+      .populate({
+        path: "patientId",
+        select: "generalInfo location department status updatedAt",
+      })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const shaped = conflicts.map((conflict) => {
+      const patient =
+        conflict.patientId && typeof conflict.patientId === "object"
+          ? conflict.patientId
+          : null;
+
+      return {
+        ...conflict,
+        // Keep patientId a plain id so it matches the other endpoints.
+        patientId: patient ? String(patient._id) : String(conflict.patientId),
+        patient,
+      };
+    });
+
+    return res.json(shaped);
+  } catch (err) {
+    console.error("GET PENDING CONFLICTS ERROR:", err);
+
+    return res.status(500).json({
+      message: "Failed to fetch pending conflicts",
+      error: err.message,
+    });
   }
 };
 
@@ -210,6 +260,9 @@ exports.resolveConflict = async (req, res) => {
       });
     }
 
+    // Snapshot used to record exactly what this resolution overwrote.
+    const patientBefore = patient.toObject();
+
     // -----------------------------------------------------
     // Handle doctorRecord conflicts
     // -----------------------------------------------------
@@ -274,6 +327,53 @@ exports.resolveConflict = async (req, res) => {
     conflict.resolvedAt = new Date();
 
     await conflict.save();
+
+    // -----------------------------------------------------
+    // Audit trail: who approved/rejected which version
+    // -----------------------------------------------------
+
+    const approvedOffline = selectedCandidate.source === "offline";
+
+    const changes = diffObjects(patientBefore, patient.toObject());
+
+    await logAudit(req, {
+      module: "Sync",
+      action: approvedOffline
+        ? "Approve Offline Overwrite"
+        : "Keep Server Version",
+      description: approvedOffline
+        ? `Approved the offline ${conflict.entityType} changes by ${candidateOwnerName(
+            selectedCandidate,
+          )} to overwrite the current record of ${
+            patient.generalInfo?.name || "Unknown Patient"
+          }.${changes.length ? ` ${summarizeChanges(changes)}.` : ""}`
+        : `Rejected the offline ${conflict.entityType} changes and kept the current server record of ${
+            patient.generalInfo?.name || "Unknown Patient"
+          }.`,
+      targetType:
+        conflict.entityType === "doctorRecord" ? "Doctor Record" : "Patient",
+      targetId: patient._id,
+      targetName: patient.generalInfo?.name || "Unknown Patient",
+      location: patient.location,
+      eventId: patient.eventId,
+      operationId: selectedCandidate.source === "offline" ? selectedOperationId : "",
+      changes,
+      metadata: {
+        conflictId: conflict._id,
+        entityType: conflict.entityType,
+        selectedSource: selectedCandidate.source,
+        selectedOperationId,
+        offlineAuthor: approvedOffline
+          ? candidateOwnerName(selectedCandidate)
+          : undefined,
+        candidates: conflict.candidates.map((candidate) => ({
+          operationId: candidate.operationId,
+          source: candidate.source,
+          createdAt: candidate.createdAt,
+        })),
+        editedBeforeSaving: resolvedData !== undefined,
+      },
+    });
 
     // -----------------------------------------------------
     // Notify connected clients
